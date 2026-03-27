@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="shortcut icon" href="assets/favicon.png" />
+  <style>
+    body { display:flex; flex-direction:column; min-height:100vh; }
+    .pub-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .pub-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; color:var(--accent); }
+    .pub-logo span { color:var(--text); }
+    .pub-empresa { font-size:0.88rem; color:var(--muted); border-left:1px solid var(--border); padding-left:12px; margin-left:4px; }
+    .pub-content { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:2rem 1rem; }
+    .pub-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow-lg); width:100%; max-width:540px; overflow:hidden; }
+    .pub-card-header { padding:1.5rem 2rem; border-bottom:1px solid var(--border); }
+    .pub-card-header h2 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--text); }
+    .pub-card-body { padding:1.5rem 2rem; }
+    .steps { display:flex; gap:0; margin-bottom:1.5rem; }
+    .step-dot {
+      flex:1; height:4px; border-radius:999px;
+      background:var(--border); transition:background 0.3s;
+    }
+    .step-dot.ativo { background:var(--accent); }
+    .step-dot + .step-dot { margin-left:4px; }
+    .step-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-bottom:1.2rem; }
+    .opcao-card {
+      display:flex; align-items:center; gap:12px;
+      border:2px solid var(--border); border-radius:10px;
+      padding:12px 14px; cursor:pointer; margin-bottom:0.5rem;
+      transition:all 0.15s; background:var(--surface);
+    }
+    .opcao-card:hover { border-color:var(--accent); background:rgba(13,148,136,0.04); }
+    .opcao-card.selecionado { border-color:var(--accent); background:rgba(13,148,136,0.08); }
+    .opcao-cor { width:10px; height:40px; border-radius:999px; flex-shrink:0; }
+    .opcao-nome { font-weight:600; font-size:0.9rem; color:var(--text); }
+    .opcao-sub { font-size:0.78rem; color:var(--muted); }
+    .pub-footer { text-align:center; padding:1.5rem; color:var(--muted2); font-size:0.75rem; border-top:1px solid var(--border); }
+
+    /* Sucesso */
+    .sucesso-wrap { text-align:center; padding:2rem 0; }
+    .sucesso-icon { font-size:3rem; margin-bottom:1rem; }
+    .sucesso-titulo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; color:var(--text); margin-bottom:0.5rem; }
+    .sucesso-sub { font-size:0.9rem; color:var(--muted); margin-bottom:1.5rem; }
+    .detalhe-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; text-align:left; margin-bottom:1.5rem; }
+    .detalhe-linha { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.88rem; }
+    .detalhe-linha:last-child { border-bottom:none; }
+    .detalhe-label { color:var(--muted); }
+    .detalhe-val { font-weight:600; color:var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="pub-header">
+  <div class="pub-logo">Agenda<span>re</span></div>
+  <div class="pub-empresa" id="pubEmpresaNome">Carregando...</div>
+</div>
+
+<div class="pub-content">
+  <div class="pub-card">
+    <div class="pub-card-header">
+      <div class="steps" id="stepsBar">
+        <div class="step-dot ativo"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+        <div class="step-dot"></div>
+      </div>
+      <div class="step-label">
+        <span>Serviço</span><span>Profissional</span><span>Data</span><span>Horário</span><span>Dados</span>
+      </div>
+      <h2 id="pubTitulo">Escolha o serviço</h2>
+    </div>
+    <div class="pub-card-body" id="pubBody">
+      <p style="color:var(--muted)">Carregando...</p>
+    </div>
+    <div class="pub-footer">Agendare · Sistema de Agendamentos Online</div>
+  </div>
+</div>
+
+<script>
+const API = 'https://agendare-production.up.railway.app/api';
+// const API = 'http://localhost:3002/api';
+
+// Pega slug da URL: /agendar?empresa=minha-empresa
+const params = new URLSearchParams(window.location.search);
+const slug = params.get('empresa') || params.get('slug');
+
+let empresaId = null, etapa = 1;
+let selecionado = { servico: null, profissional: null, data: null, horario: null };
+let calAtual = new Date();
+
+// ── Inicialização ──────────────────────────────────────────
+async function init() {
+  if (!slug) { mostrarErro('Link de agendamento inválido.'); return; }
+  try {
+    const r = await fetch(`${API}/empresas/slug/${slug}`);
+    if (!r.ok) { mostrarErro('Empresa não encontrada.'); return; }
+    const empresa = await r.json();
+    empresaId = empresa.id;
+    document.getElementById('pubEmpresaNome').textContent = empresa.nome;
+    document.title = `Agendar — ${empresa.nome}`;
+    if (empresa.cor) {
+      document.documentElement.style.setProperty('--accent', empresa.cor);
+    }
+    carregarEtapa1();
+  } catch { mostrarErro('Erro ao carregar. Tente novamente.'); }
+}
+
+function mostrarErro(msg) {
+  document.getElementById('pubBody').innerHTML = `<div class="alert alert-error">${msg}</div>`;
+}
+
+// ── ETAPA 1: Serviço ──────────────────────────────────────
+async function carregarEtapa1() {
+  etapa = 1; atualizarSteps();
+  document.getElementById('pubTitulo').textContent = '🛠️ Escolha o serviço';
+  document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Carregando serviços...</p>';
+  try {
+    const r = await fetch(`${API}/servicos?empresa_id=${empresaId}`);
+    const servicos = await r.json();
+    if (!servicos.length) { mostrarErro('Nenhum serviço disponível.'); return; }
+    document.getElementById('pubBody').innerHTML = servicos.map(s => `
+      <div class="opcao-card ${selecionado.servico?.id === s.id ? 'selecionado' : ''}" onclick="selecionarServico(${s.id},'${s.nome.replace(/'/g,"\\'")}','${s.cor||'#0d9488'}')">
+        <div class="opcao-cor" style="background:${s.cor||'#0d9488'}"></div>
+        <div>
+          <div class="opcao-nome">${s.nome}</div>
+          <div class="opcao-sub">${s.duracao_minutos} min${s.preco ? ' · R$ ' + parseFloat(s.preco).toFixed(2).replace('.',',') : ''}</div>
+        </div>
+      </div>`).join('') + `
+      <button class="btn btn-primary" style="width:100%;margin-top:1rem" onclick="irEtapa2()" ${!selecionado.servico ? 'disabled' : ''} id="btnProx1">
+        Próximo →
+      </button>`;
+  } catch { mostrarErro('Erro ao carregar serviços.'); }
+}
+
+function selecionarServico(id, nome, cor) {
+  selecionado.servico = { id, nome, cor };
+  selecionado.profissional = null; selecionado.data = null; selecionado.horario = null;
+  document.querySelectorAll('.opcao-card').forEach(c => c.classList.remove('selecionado'));
+  event.currentTarget.classList.add('selecionado');
+  const btn = document.getElementById('btnProx1');
+  if (btn) btn.disabled = false;
+}
+
+// ── ETAPA 2: Profissional ──────────────────────────────────
+async function irEtapa2() {
+  if (!selecionado.servico) return;
+  etapa = 2; atualizarSteps();
+  document.getElementById('pubTitulo').textContent = '👤 Escolha o profissional';
+  document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Carregando...</p>';
+  try {
+    const r = await fetch(`${API}/profissionais?empresa_id=${empresaId}&servico_id=${selecionado.servico.id}`);
+    const profs = await r.json();
+    if (!profs.length) { mostrarErro('Nenhum profissional disponível para este serviço.'); return; }
+    document.getElementById('pubBody').innerHTML = profs.map(p => `
+      <div class="opcao-card ${selecionado.profissional?.id === p.id ? 'selecionado' : ''}" onclick="selecionarProf(${p.id},'${p.nome.replace(/'/g,"\\'")}')">
+        <div style="width:40px;height:40px;border-radius:50%;background:${selecionado.servico.cor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0;">${p.nome.charAt(0).toUpperCase()}</div>
+        <div>
+          <div class="opcao-nome">${p.nome}</div>
+          <div class="opcao-sub">${p.perfil === 'admin' ? 'Administrador' : 'Profissional'}</div>
+        </div>
+      </div>`).join('') + `
+      <div style="display:flex;gap:0.5rem;margin-top:1rem">
+        <button class="btn btn-secondary" style="flex:1" onclick="carregarEtapa1()">← Voltar</button>
+        <button class="btn btn-primary" style="flex:2" onclick="irEtapa3()" ${!selecionado.profissional ? 'disabled' : ''} id="btnProx2">Próximo →</button>
+      </div>`;
+  } catch { mostrarErro('Erro ao carregar profissionais.'); }
+}
+
+function selecionarProf(id, nome) {
+  selecionado.profissional = { id, nome };
+  selecionado.data = null; selecionado.horario = null;
+  document.querySelectorAll('.opcao-card').forEach(c => c.classList.remove('selecionado'));
+  event.currentTarget.classList.add('selecionado');
+  const btn = document.getElementById('btnProx2');
+  if (btn) btn.disabled = false;
+}
+
+// ── ETAPA 3: Data ──────────────────────────────────────────
+function irEtapa3() {
+  if (!selecionado.profissional) return;
+  etapa = 3; atualizarSteps();
+  document.getElementById('pubTitulo').textContent = '📅 Escolha a data';
+  renderCalendario();
+}
+
+function renderCalendario() {
+  const hoje = new Date();
+  const ano = calAtual.getFullYear();
+  const mes = calAtual.getMonth();
+  const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const diasSem = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
+
+  let html = `
+    <div class="calendario-nav" style="margin-bottom:0.75rem">
+      <button class="btn-icon btn-sm" onclick="navCal(-1)">‹</button>
+      <span style="font-weight:700;font-size:0.95rem">${nomesMes[mes]} ${ano}</span>
+      <button class="btn-icon btn-sm" onclick="navCal(1)">›</button>
+    </div>
+    <div class="calendario-grid">
+      ${diasSem.map(d => `<div class="cal-header">${d}</div>`).join('')}
+      ${Array(primeiroDia).fill('<div></div>').join('')}`;
+
+  for (let d = 1; d <= ultimoDia; d++) {
+    const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dataObj = new Date(ano, mes, d);
+    const passado = dataObj < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+    const sel = selecionado.data === dataStr;
+    html += `<div class="cal-dia ${passado ? 'inativo' : ''} ${sel ? 'selecionado' : ''} ${dataStr === hoje.toISOString().split('T')[0] ? 'hoje' : ''}" onclick="${passado ? '' : `selecionarData('${dataStr}')`}"><span class="num">${d}</span></div>`;
+  }
+  html += `</div>
+    <div style="display:flex;gap:0.5rem;margin-top:1rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="irEtapa2()">← Voltar</button>
+      <button class="btn btn-primary" style="flex:2" onclick="irEtapa4()" ${!selecionado.data ? 'disabled' : ''} id="btnProx3">Próximo →</button>
+    </div>`;
+  document.getElementById('pubBody').innerHTML = html;
+}
+
+function navCal(dir) { calAtual.setMonth(calAtual.getMonth() + dir); renderCalendario(); }
+
+function selecionarData(data) {
+  selecionado.data = data; selecionado.horario = null;
+  renderCalendario();
+}
+
+// ── ETAPA 4: Horário ──────────────────────────────────────
+async function irEtapa4() {
+  if (!selecionado.data) return;
+  etapa = 4; atualizarSteps();
+  document.getElementById('pubTitulo').textContent = '🕐 Escolha o horário';
+  document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Buscando horários disponíveis...</p>';
+  try {
+    const r = await fetch(`${API}/agendamentos/horarios-disponiveis?empresa_id=${empresaId}&profissional_id=${selecionado.profissional.id}&servico_id=${selecionado.servico.id}&data=${selecionado.data}`);
+    const { horarios } = await r.json();
+    if (!horarios.length) {
+      document.getElementById('pubBody').innerHTML = `
+        <div class="alert alert-error" style="margin-bottom:1rem">😕 Nenhum horário disponível neste dia.</div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary" style="flex:1" onclick="irEtapa3()">← Voltar</button>
+        </div>`;
+      return;
+    }
+    const dataFmt = new Date(selecionado.data + 'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+    document.getElementById('pubBody').innerHTML = `
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;text-transform:capitalize">${dataFmt}</p>
+      <div class="slots-grid">
+        ${horarios.map(h => `
+          <div class="slot ${selecionado.horario?.hora === h.hora ? 'selecionado' : ''}"
+            onclick="selecionarHorario('${h.hora}','${h.data_inicio}','${h.data_fim}')">
+            ${h.hora}
+          </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-top:1rem">
+        <button class="btn btn-secondary" style="flex:1" onclick="irEtapa3()">← Voltar</button>
+        <button class="btn btn-primary" style="flex:2" onclick="irEtapa5()" ${!selecionado.horario ? 'disabled' : ''} id="btnProx4">Próximo →</button>
+      </div>`;
+  } catch { mostrarErro('Erro ao buscar horários.'); }
+}
+
+function selecionarHorario(hora, ini, fim) {
+  selecionado.horario = { hora, data_inicio: ini, data_fim: fim };
+  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selecionado'));
+  event.currentTarget.classList.add('selecionado');
+  const btn = document.getElementById('btnProx4');
+  if (btn) btn.disabled = false;
+}
+
+// ── ETAPA 5: Dados do cliente ─────────────────────────────
+function irEtapa5() {
+  if (!selecionado.horario) return;
+  etapa = 5; atualizarSteps();
+  document.getElementById('pubTitulo').textContent = '📝 Seus dados';
+  const dataFmt = new Date(selecionado.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('pubBody').innerHTML = `
+    <div class="detalhe-box" style="margin-bottom:1.2rem">
+      <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${selecionado.servico.nome}</span></div>
+      <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${selecionado.profissional.nome}</span></div>
+      <div class="detalhe-linha"><span class="detalhe-label">Data/Hora</span><span class="detalhe-val">${dataFmt}</span></div>
+    </div>
+    <div class="form-group"><label>Nome completo *</label><input type="text" id="cliNome" placeholder="Seu nome" /></div>
+    <div class="form-group"><label>Telefone</label><input type="tel" id="cliTel" placeholder="(00) 00000-0000" /></div>
+    <div class="form-group"><label>E-mail <span style="font-size:0.72rem;color:var(--muted)">(para receber confirmação)</span></label><input type="email" id="cliEmail" placeholder="seu@email.com" /></div>
+    <div class="form-group"><label>Observações</label><textarea id="cliObs" placeholder="Alguma observação?" style="resize:none;height:70px;"></textarea></div>
+    <div id="erroAgPub" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="irEtapa4()">← Voltar</button>
+      <button class="btn btn-primary" style="flex:2" onclick="confirmarAgendamento()">
+        <span id="btnConfText">✅ Confirmar Agendamento</span>
+        <div class="spinner" id="spinnerConf"></div>
+      </button>
+    </div>`;
+}
+
+async function confirmarAgendamento() {
+  const nome = document.getElementById('cliNome').value.trim();
+  const tel  = document.getElementById('cliTel').value.trim();
+  const email = document.getElementById('cliEmail').value.trim();
+  const obs  = document.getElementById('cliObs').value.trim();
+  const erro = document.getElementById('erroAgPub');
+  if (!nome) { erro.textContent = 'Informe seu nome'; erro.style.display = 'block'; return; }
+  erro.style.display = 'none';
+  document.getElementById('btnConfText').style.display = 'none';
+  document.getElementById('spinnerConf').style.display = 'inline-block';
+  try {
+    const r = await fetch(`${API}/agendamentos`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        empresa_id: empresaId,
+        profissional_id: selecionado.profissional.id,
+        servico_id: selecionado.servico.id,
+        cliente_nome: nome,
+        cliente_email: email || null,
+        cliente_telefone: tel || null,
+        data_inicio: selecionado.horario.data_inicio,
+        data_fim: selecionado.horario.data_fim,
+        observacoes: obs || null,
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) { erro.textContent = data.erro || 'Erro ao agendar'; erro.style.display = 'block'; return; }
+    mostrarSucesso(nome, email);
+  } catch { erro.textContent = 'Erro de conexão. Tente novamente.'; erro.style.display = 'block'; }
+  finally { document.getElementById('btnConfText').style.display = 'inline'; document.getElementById('spinnerConf').style.display = 'none'; }
+}
+
+function mostrarSucesso(nome, email) {
+  document.getElementById('pubTitulo').textContent = 'Agendado! 🎉';
+  document.getElementById('stepsBar').querySelectorAll('.step-dot').forEach(d => d.classList.add('ativo'));
+  const dataFmt = new Date(selecionado.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.getElementById('pubBody').innerHTML = `
+    <div class="sucesso-wrap">
+      <div class="sucesso-icon">✅</div>
+      <div class="sucesso-titulo">Agendamento confirmado!</div>
+      <div class="sucesso-sub">${email ? `Enviamos uma confirmação para <strong>${email}</strong>` : 'Seu agendamento foi registrado com sucesso!'}</div>
+      <div class="detalhe-box">
+        <div class="detalhe-linha"><span class="detalhe-label">Cliente</span><span class="detalhe-val">${nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${selecionado.servico.nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${selecionado.profissional.nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Data/Hora</span><span class="detalhe-val" style="text-transform:capitalize">${dataFmt}</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%" onclick="location.reload()">+ Fazer outro agendamento</button>
+    </div>`;
+}
+
+function atualizarSteps() {
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.classList.toggle('ativo', i < etapa);
+  });
+}
+
+init();
+</script>
+</body>
+</html>

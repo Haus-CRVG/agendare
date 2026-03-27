@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cancelar Agendamento — Agendare</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="shortcut icon" href="assets/favicon.png" />
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:1rem; }
+    .wrap { width:100%; max-width:420px; }
+    .card-cancel { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:2.5rem; box-shadow:var(--shadow-lg); text-align:center; }
+    .icon { font-size:3rem; margin-bottom:1rem; }
+    .titulo { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:800; color:var(--text); margin-bottom:0.5rem; }
+    .sub { font-size:0.88rem; color:var(--muted); margin-bottom:1.5rem; }
+    .detalhe { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:1.5rem; text-align:left; }
+    .dl { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.88rem; }
+    .dl:last-child { border-bottom:none; }
+    .dl-label { color:var(--muted); }
+    .dl-val { font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card-cancel" id="conteudo">
+    <div class="icon">⏳</div>
+    <div class="titulo">Carregando...</div>
+  </div>
+</div>
+<script>
+const API = 'https://agendare-production.up.railway.app/api';
+// const API = 'http://localhost:3002/api';
+
+const token = new URLSearchParams(window.location.search).get('token');
+
+async function init() {
+  if (!token) { mostrarErro('Link inválido.'); return; }
+  try {
+    const r = await fetch(`${API}/agendamentos/cancelar/${token}`);
+    if (!r.ok) { mostrarErro('Agendamento não encontrado.'); return; }
+    const ag = await r.json();
+    if (ag.status === 'cancelado') { mostrarJaCancelado(ag); return; }
+    if (ag.status === 'concluido') { mostrarErro('Este agendamento já foi concluído e não pode ser cancelado.'); return; }
+    mostrarConfirmacao(ag);
+  } catch { mostrarErro('Erro ao carregar. Tente novamente.'); }
+}
+
+function fmt(iso) {
+  return new Date(iso).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function mostrarConfirmacao(ag) {
+  document.getElementById('conteudo').innerHTML = `
+    <div class="icon">❓</div>
+    <div class="titulo">Cancelar agendamento?</div>
+    <div class="sub">Tem certeza que deseja cancelar este agendamento?</div>
+    <div class="detalhe">
+      <div class="dl"><span class="dl-label">Cliente</span><span class="dl-val">${ag.cliente_nome}</span></div>
+      <div class="dl"><span class="dl-label">Serviço</span><span class="dl-val">${ag.servico_nome}</span></div>
+      <div class="dl"><span class="dl-label">Profissional</span><span class="dl-val">${ag.profissional_nome}</span></div>
+      <div class="dl"><span class="dl-label">Data/Hora</span><span class="dl-val" style="text-transform:capitalize">${fmt(ag.data_inicio)}</span></div>
+    </div>
+    <div class="form-group" style="text-align:left;margin-bottom:1rem">
+      <label>Motivo (opcional)</label>
+      <textarea id="motivo" placeholder="Por que está cancelando?" style="resize:none;height:70px;"></textarea>
+    </div>
+    <div id="erroCancelamento" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+    <div style="display:flex;gap:0.75rem">
+      <a href="javascript:history.back()" class="btn btn-secondary" style="flex:1;justify-content:center">← Voltar</a>
+      <button class="btn btn-danger" style="flex:2" onclick="cancelar()">
+        <span id="btnCancText">Confirmar Cancelamento</span>
+        <div class="spinner" id="spCanc"></div>
+      </button>
+    </div>`;
+}
+
+async function cancelar() {
+  const motivo = document.getElementById('motivo')?.value.trim();
+  document.getElementById('btnCancText').style.display = 'none';
+  document.getElementById('spCanc').style.display = 'inline-block';
+  try {
+    const r = await fetch(`${API}/agendamentos/cancelar/${token}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ motivo: motivo || null })
+    });
+    const data = await r.json();
+    if (!r.ok) { document.getElementById('erroCancelamento').textContent = data.erro; document.getElementById('erroCancelamento').style.display = 'block'; return; }
+    mostrarCancelado();
+  } catch { document.getElementById('erroCancelamento').textContent = 'Erro ao cancelar. Tente novamente.'; document.getElementById('erroCancelamento').style.display = 'block'; }
+  finally { document.getElementById('btnCancText').style.display = 'inline'; document.getElementById('spCanc').style.display = 'none'; }
+}
+
+function mostrarCancelado() {
+  document.getElementById('conteudo').innerHTML = `
+    <div class="icon">✅</div>
+    <div class="titulo">Cancelamento confirmado</div>
+    <div class="sub">Seu agendamento foi cancelado com sucesso. Lamentamos não poder atendê-lo desta vez.</div>`;
+}
+
+function mostrarJaCancelado(ag) {
+  document.getElementById('conteudo').innerHTML = `
+    <div class="icon">❌</div>
+    <div class="titulo">Já cancelado</div>
+    <div class="sub">Este agendamento já foi cancelado anteriormente.</div>`;
+}
+
+function mostrarErro(msg) {
+  document.getElementById('conteudo').innerHTML = `
+    <div class="icon">⚠️</div>
+    <div class="titulo">Ops!</div>
+    <div class="sub">${msg}</div>`;
+}
+
+init();
+</script>
+</body>
+</html>

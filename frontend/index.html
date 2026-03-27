@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendare — Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="shortcut icon" href="assets/favicon.png" />
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:1rem; }
+    .login-wrap { width:100%; max-width:420px; }
+    .login-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:20px; padding:2.5rem; box-shadow:var(--shadow-lg);
+      animation: slideUp 0.4s ease both;
+    }
+    .login-logo { text-align:center; margin-bottom:2rem; }
+    .login-logo .logo-text { font-family:'Syne',sans-serif; font-size:2rem; font-weight:800; color:var(--accent); }
+    .login-logo .logo-text span { color:var(--text); }
+    .login-logo p { font-size:0.82rem; color:var(--muted); margin-top:4px; }
+    .step { display:none; }
+    .step.active { display:block; animation: slideUp 0.3s ease both; }
+    .empresa-card {
+      background:rgba(13,148,136,0.06); border:1px solid rgba(13,148,136,0.25);
+      border-radius:10px; padding:12px 16px; margin-bottom:1rem;
+      display:none; font-size:0.9rem;
+    }
+    .empresa-card strong { color:var(--accent); }
+    .empresa-bloqueada {
+      background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.25);
+      border-radius:10px; padding:12px 16px; margin-bottom:1rem;
+      display:none; font-size:0.88rem; color:var(--error);
+    }
+    .divider { display:flex; align-items:center; gap:1rem; margin:1.5rem 0; }
+    .divider hr { flex:1; border:none; border-top:1px solid var(--border); }
+    .divider span { font-size:0.72rem; color:var(--muted2); }
+    .sa-link { text-align:center; margin-top:1rem; }
+    .sa-link button { background:none; border:none; color:var(--muted); font-size:0.78rem; cursor:pointer; text-decoration:underline; font-family:inherit; }
+    .sa-link button:hover { color:var(--text); }
+    .doc-status { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:0.8rem; }
+    .input-wrap { position:relative; }
+    .input-wrap input { width:100%; padding-right:40px; }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <!--<div class="logo-text">Agenda<span>re</span></div>-->
+      <img src="assets/logo-agendare.png" class="logo-img" />
+      <p id="loginSubtitulo">Informe o CNPJ ou CPF da sua empresa</p>
+    </div>
+
+    <!-- MODO EMPRESA -->
+    <div id="modoEmpresa">
+      <!-- Step 1: documento -->
+      <div class="step active" id="step1">
+        <div class="form-group">
+          <label>CNPJ ou CPF</label>
+          <div class="input-wrap">
+            <input type="text" id="docInput" placeholder="00.000.000/0001-00 ou 000.000.000-00"
+              maxlength="18" oninput="formatarDoc(this)" autocomplete="off" />
+            <span class="doc-status" id="docStatus"></span>
+          </div>
+        </div>
+        <div class="empresa-card" id="empresaCard">🏢 <strong id="empresaNome"></strong></div>
+        <div class="empresa-bloqueada" id="empresaBloqueada">🔒 <span id="empresaMotivo"></span></div>
+        <div id="camposLogin" style="display:none">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="emailInput" placeholder="seu@email.com" />
+          </div>
+          <div class="form-group">
+            <label>Senha</label>
+            <input type="password" id="senhaInput" placeholder="••••••••"
+              onkeydown="if(event.key==='Enter')fazerLogin()" />
+          </div>
+          <div id="erroLogin" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="fazerLogin()">
+            <span id="btnLoginText">Entrar</span>
+            <div class="spinner" id="spinnerLogin"></div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODO SUPER ADMIN -->
+    <div id="modoSA" style="display:none">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="saEmail" placeholder="superadmin@email.com" />
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="saSenha" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')fazerLoginSA()" />
+      </div>
+      <div id="erroSA" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+      <button class="btn btn-primary" style="width:100%" onclick="fazerLoginSA()">
+        <span id="btnSAText">Entrar como Super Admin</span>
+        <div class="spinner" id="spinnerSA"></div>
+      </button>
+    </div>
+
+    <div class="sa-link">
+      <button id="toggleBtn" onclick="toggleModo()">🔑 Acesso Super Admin</button>
+    </div>
+  </div>
+</div>
+
+<script>
+//const API = 'https://agendare-production.up.railway.app/api';
+ const API = 'http://localhost:3002/api';
+
+let empresaId = null, modoSA = false, docTimer = null;
+
+function toggleModo() {
+  modoSA = !modoSA;
+  document.getElementById('modoEmpresa').style.display = modoSA ? 'none' : 'block';
+  document.getElementById('modoSA').style.display = modoSA ? 'block' : 'none';
+  document.getElementById('toggleBtn').textContent = modoSA ? '← Voltar ao login normal' : '🔑 Acesso Super Admin';
+  document.getElementById('loginSubtitulo').textContent = modoSA ? 'Painel administrativo global' : 'Informe o CNPJ ou CPF da sua empresa';
+}
+
+function formatarDoc(input) {
+  let v = input.value.replace(/\D/g, '').substring(0, 14);
+  if (v.length <= 11) {
+    if (v.length > 9)      v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/^(\d{3})(\d{0,3})$/, '$1.$2');
+  } else {
+    if (v.length > 12)     v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
+  }
+  input.value = v;
+  clearTimeout(docTimer);
+  const digits = v.replace(/\D/g, '');
+  if (digits.length === 11 || digits.length === 14) {
+    docTimer = setTimeout(() => buscarEmpresa(digits), 500);
+  } else {
+    resetarEmpresa();
+  }
+}
+
+async function buscarEmpresa(doc) {
+  document.getElementById('docStatus').textContent = '🔍';
+  try {
+    const r = await fetch(`${API}/auth/empresa/${doc}`);
+    const data = await r.json();
+    if (!data.encontrado) { document.getElementById('docStatus').textContent = '❌'; resetarEmpresa(); return; }
+    if (data.bloqueado) {
+      document.getElementById('docStatus').textContent = '🔒';
+      document.getElementById('empresaBloqueada').style.display = 'block';
+      document.getElementById('empresaCard').style.display = 'none';
+      const motivos = { suspenso: 'Conta suspensa. Entre em contato.', cancelado: 'Conta cancelada.' };
+      document.getElementById('empresaMotivo').textContent = motivos[data.motivo] || 'Acesso bloqueado';
+      document.getElementById('camposLogin').style.display = 'none';
+      return;
+    }
+    document.getElementById('docStatus').textContent = '✅';
+    document.getElementById('empresaNome').textContent = data.nome;
+    document.getElementById('empresaCard').style.display = 'block';
+    document.getElementById('empresaBloqueada').style.display = 'none';
+    document.getElementById('camposLogin').style.display = 'block';
+    empresaId = data.id;
+    setTimeout(() => document.getElementById('emailInput').focus(), 100);
+  } catch { document.getElementById('docStatus').textContent = '❌'; }
+}
+
+function resetarEmpresa() {
+  empresaId = null;
+  document.getElementById('empresaCard').style.display = 'none';
+  document.getElementById('empresaBloqueada').style.display = 'none';
+  document.getElementById('camposLogin').style.display = 'none';
+}
+
+async function fazerLogin() {
+  const email = document.getElementById('emailInput').value.trim();
+  const senha = document.getElementById('senhaInput').value;
+  const erro = document.getElementById('erroLogin');
+  if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha'; erro.style.display = 'block'; return; }
+  if (!empresaId) { erro.textContent = 'Selecione uma empresa válida'; erro.style.display = 'block'; return; }
+  document.getElementById('btnLoginText').style.display = 'none';
+  document.getElementById('spinnerLogin').style.display = 'inline-block';
+  erro.style.display = 'none';
+  try {
+    const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha, empresa_id: empresaId }) });
+    const data = await r.json();
+    if (!r.ok) { erro.textContent = data.erro || 'Erro ao fazer login'; erro.style.display = 'block'; return; }
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+    localStorage.setItem('cnpj_salvo', document.getElementById('docInput').value);
+    window.location.href = 'dashboard.html';
+  } catch { erro.textContent = 'Erro de conexão'; erro.style.display = 'block'; }
+  finally { document.getElementById('btnLoginText').style.display = 'inline'; document.getElementById('spinnerLogin').style.display = 'none'; }
+}
+
+async function fazerLoginSA() {
+  const email = document.getElementById('saEmail').value.trim();
+  const senha = document.getElementById('saSenha').value;
+  const erro = document.getElementById('erroSA');
+  if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha'; erro.style.display = 'block'; return; }
+  document.getElementById('btnSAText').style.display = 'none';
+  document.getElementById('spinnerSA').style.display = 'inline-block';
+  erro.style.display = 'none';
+  try {
+    const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha }) });
+    const data = await r.json();
+    if (!r.ok) { erro.textContent = data.erro || 'Acesso negado'; erro.style.display = 'block'; return; }
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+    window.location.href = 'dashboard.html';
+  } catch { erro.textContent = 'Erro de conexão'; erro.style.display = 'block'; }
+  finally { document.getElementById('btnSAText').style.display = 'inline'; document.getElementById('spinnerSA').style.display = 'none'; }
+}
+
+// Carrega CNPJ salvo
+const u = JSON.parse(localStorage.getItem('usuario') || 'null');
+if (u) window.location.href = 'dashboard.html';
+const cnpjSalvo = localStorage.getItem('cnpj_salvo');
+if (cnpjSalvo) {
+  const inp = document.getElementById('docInput');
+  inp.value = cnpjSalvo;
+  const digits = cnpjSalvo.replace(/\D/g, '');
+  if (digits.length === 11 || digits.length === 14) buscarEmpresa(digits);
+}
+</script>
+</body>
+</html>

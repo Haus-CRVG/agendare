@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendare — Painel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="shortcut icon" href="assets/favicon.png" />
+</head>
+<body>
+
+<div id="toastContainer"></div>
+
+<div class="topbar">
+  <!--<a class="topbar-brand" href="#">Agenda<span>re</span></a>-->
+  <img src="assets/logo-agendare.png" class="logo-top" />
+  <div class="topbar-user">
+    Olá, <strong id="nomeUsuario">...</strong>
+    <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
+    <button class="btn-icon" onclick="abrirNotificacoes()" title="Notificações" id="btnNotif">🔔</button>
+    <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
+    <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
+    <button class="btn-logout" onclick="logoff()">Logoff</button>
+    <button class="btn-logout" onclick="sair()" style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
+  </div>
+</div>
+
+<!-- Abas mobile -->
+<div class="mobile-tabs" id="mobileTabs"></div>
+
+<div class="layout">
+  <!-- Sidebar desktop -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda">
+        <span class="icon">📅</span> Agenda
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista">
+        <span class="icon">📋</span> Agendamentos
+      </button>
+    </div>
+    <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+      <div class="sidebar-label">Gestão</div>
+      <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+        <span class="icon">🛠️</span> Serviços
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+        <span class="icon">👥</span> Profissionais
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+        <span class="icon">⚙️</span> Configurações
+      </button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Minha conta</div>
+      <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade">
+        <span class="icon">🕐</span> Disponibilidade
+      </button>
+    </div>
+  </nav>
+
+  <!-- Conteúdo -->
+  <main class="content">
+
+    <!-- ABA: AGENDA (CALENDÁRIO) -->
+    <div id="abaAgenda">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div class="page-title">Agenda <span>do Dia</span></div>
+          <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="mudarVisualizacao('mes')">📅 Mês</button>
+          <button class="btn btn-secondary btn-sm" onclick="mudarVisualizacao('semana')">📆 Semana</button>
+          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="statsAgenda"></div>
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:1.5rem;" id="agendaLayout">
+        <!-- Mini calendário -->
+        <div class="card">
+          <div class="card-body" style="padding:1rem">
+            <div class="calendario-nav">
+              <button class="btn-icon btn-sm" onclick="navegarMes(-1)">‹</button>
+              <span class="calendario-mes" id="calMes"></span>
+              <button class="btn-icon btn-sm" onclick="navegarMes(1)">›</button>
+            </div>
+            <div class="calendario-grid" id="calendarioGrid"></div>
+            <div style="margin-top:1rem">
+              <div class="form-group" style="margin-bottom:0">
+                <label>Profissional</label>
+                <select id="filtroProfissional" onchange="carregarAgenda()">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Timeline do dia -->
+        <div class="card">
+          <div class="card-header">
+            <h2 id="tituloTimeline">Hoje</h2>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+          </div>
+          <div class="card-body">
+            <div id="timelineDia" class="timeline-dia">
+              <p style="color:var(--muted);text-align:center;padding:2rem;">Selecione um dia no calendário</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: LISTA -->
+    <div id="abaLista" style="display:none">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div>
+          <div class="page-title">Todos os <span>Agendamentos</span></div>
+          <div class="page-subtitle">Busque, filtre e gerencie</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+      </div>
+      <!-- Filtros -->
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-body" style="padding:1rem">
+          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="margin:0;flex:1;min-width:160px">
+              <label>De</label>
+              <input type="date" id="filtroInicio" />
+            </div>
+            <div class="form-group" style="margin:0;flex:1;min-width:160px">
+              <label>Até</label>
+              <input type="date" id="filtroFim" />
+            </div>
+            <div class="form-group" style="margin:0;flex:1;min-width:160px">
+              <label>Status</label>
+              <select id="filtroStatus">
+                <option value="">Todos</option>
+                <option value="confirmado">Confirmado</option>
+                <option value="pendente">Pendente</option>
+                <option value="cancelado">Cancelado</option>
+                <option value="concluido">Concluído</option>
+                <option value="faltou">Faltou</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0;flex:1;min-width:160px">
+              <label>Profissional</label>
+              <select id="filtroProf2"><option value="">Todos</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="carregarLista()">Buscar</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Data/Hora</th><th>Cliente</th><th>Serviço</th><th>Profissional</th><th>Status</th><th>Ações</th></tr></thead>
+            <tbody id="tabelaAgendamentos"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: SERVIÇOS -->
+    <div id="abaServicos" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">Nossos <span>Serviços</span></div><div class="page-subtitle">Gerencie os serviços oferecidos</div></div>
+        <button class="btn btn-primary" onclick="abrirNovoServico()">+ Novo Serviço</button>
+      </div>
+      <div id="listaServicos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
+    </div>
+
+    <!-- ABA: PROFISSIONAIS -->
+    <div id="abaProfissionais" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">Nossa <span>Equipe</span></div><div class="page-subtitle">Gerencie profissionais e permissões</div></div>
+        <button class="btn btn-primary" onclick="abrirNovoProfissional()">+ Novo Profissional</button>
+      </div>
+      <div id="listaProfissionais" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
+    </div>
+
+    <!-- ABA: DISPONIBILIDADE -->
+    <div id="abaDisponibilidade" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Minha <span>Disponibilidade</span></div>
+        <div class="page-subtitle">Configure seus dias e horários de atendimento</div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div id="formDisponibilidade"></div>
+          <button class="btn btn-primary" style="margin-top:1.5rem" onclick="salvarDisponibilidade()">Salvar Disponibilidade</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: CONFIGURAÇÕES -->
+    <div id="abaConfiguracoes" style="display:none">
+      <div class="page-header">
+        <div class="page-title">⚙️ <span>Configurações</span></div>
+        <div class="page-subtitle">Configurações gerais da empresa</div>
+      </div>
+      <div class="card" style="max-width:600px">
+        <div class="card-header"><h2>Link de Agendamento Público</h2></div>
+        <div class="card-body">
+          <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Compartilhe este link com seus clientes para que possam agendar online:</p>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" id="linkPublico" readonly style="flex:1;background:var(--surface2);font-family:monospace;font-size:0.82rem;" />
+            <button class="btn btn-primary" onclick="copiarLink()">Copiar</button>
+          </div>
+          <div id="linkCopiado" style="display:none;margin-top:0.5rem;" class="alert alert-success">✅ Link copiado!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA: EMPRESAS (superadmin) -->
+<div id="abaEmpresas" style="display:none">
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <div class="page-title">🏢 <span>Empresas</span></div>
+      <div class="page-subtitle">Gerencie as empresas cadastradas no sistema</div>
+    </div>
+    <button class="btn btn-primary" onclick="abrirNovaEmpresa()">+ Nova Empresa</button>
+  </div>
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Empresa</th><th>CNPJ</th><th>E-mail</th>
+            <th>Slug</th><th>Status</th><th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="tabelaEmpresas">
+          <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+  </main>
+</div>
+
+<!-- Modal Novo/Editar Agendamento -->
+<div class="modal-overlay" id="modalAgendamento">
+  <div class="modal" style="max-width:540px">
+    <h3 id="modalAgTitle">📅 Novo Agendamento</h3>
+    <input type="hidden" id="agId" />
+    <div class="form-grid" style="grid-template-columns:1fr 1fr">
+      <div class="form-group"><label>Serviço <span style="color:var(--accent)">*</span></label>
+        <select id="agServico" onchange="carregarProfissionaisServico()"></select></div>
+      <div class="form-group"><label>Profissional <span style="color:var(--accent)">*</span></label>
+        <select id="agProfissional" onchange="carregarHorarios()"></select></div>
+    </div>
+    <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label>
+      <input type="date" id="agData" onchange="carregarHorarios()" /></div>
+    <div class="form-group" id="slotsWrapper" style="display:none">
+      <label>Horário disponível <span style="color:var(--accent)">*</span></label>
+      <div class="slots-grid" id="slotsHorario"></div>
+      <input type="hidden" id="agDataInicio" />
+      <input type="hidden" id="agDataFim" />
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-top:0.5rem">
+      <div class="form-group"><label>Nome do Cliente <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="agCliente" placeholder="Nome completo" /></div>
+      <div class="form-group"><label>Telefone</label>
+        <input type="tel" id="agTelefone" placeholder="(00) 00000-0000" /></div>
+    </div>
+    <div class="form-group"><label>E-mail do Cliente</label>
+      <input type="email" id="agEmail" placeholder="cliente@email.com" /></div>
+    <div class="form-group"><label>Observações</label>
+      <textarea id="agObs" placeholder="Informações adicionais..." style="resize:none;height:70px;"></textarea></div>
+    <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarAgendamento()">
+        <span id="btnAgendar">Confirmar Agendamento</span>
+        <div class="spinner" id="spinnerAgendar"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver Agendamento -->
+<div class="modal-overlay" id="modalVerAgendamento">
+  <div class="modal" style="max-width:520px">
+    <h3>📋 Detalhes do Agendamento</h3>
+    <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select id="editStatus">
+        <option value="confirmado">✅ Confirmado</option>
+        <option value="concluido">🏁 Concluído</option>
+        <option value="faltou">❌ Faltou</option>
+        <option value="cancelado">🚫 Cancelado</option>
+      </select>
+    </div>
+
+    <input type="hidden" id="editAgId"/>
+
+    <!-- PARTICIPANTES -->
+    <hr style="border-color:var(--border);margin:1.25rem 0"/>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <strong style="font-size:0.88rem">👥 Participantes</strong>
+      <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
+    </div>
+
+    <!-- Form adicionar participante -->
+    <div id="formParticipante" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+        <button class="btn btn-secondary btn-sm" id="btnTipoInterno"
+          onclick="setTipoParticipante('interno')"
+          style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">
+          👤 Interno
+        </button>
+        <button class="btn btn-secondary btn-sm" id="btnTipoExterno"
+          onclick="setTipoParticipante('externo')"
+          style="flex:1">
+          🌐 Externo
+        </button>
+      </div>
+
+      <!-- Interno -->
+      <div id="campoInterno">
+        <div class="form-group" style="margin-bottom:0.5rem">
+          <label>Profissional</label>
+          <select id="partProfissional"></select>
+        </div>
+      </div>
+
+      <!-- Externo -->
+      <div id="campoExterno" style="display:none">
+        <div class="form-group" style="margin-bottom:0.5rem">
+          <label>Nome *</label>
+          <input type="text" id="partNome" placeholder="Nome completo"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0.5rem">
+          <label>E-mail *</label>
+          <input type="email" id="partEmail" placeholder="email@exemplo.com"/>
+        </div>
+      </div>
+
+      <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:0.5rem"></div>
+      <button class="btn btn-primary btn-sm" style="width:100%;margin-top:0.75rem"
+        onclick="adicionarParticipante()">
+        Enviar convite
+      </button>
+    </div>
+
+    <!-- Lista de participantes -->
+    <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
+      <button class="btn btn-primary" onclick="atualizarStatus()">Salvar status</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Novo Profissional -->
+<div class="modal-overlay" id="modalProfissional">
+  <div class="modal" style="max-width:460px">
+    <h3>👤 Novo Profissional</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label>
+        <input type="text" id="profNome" /></div>
+      <div class="form-group"><label>E-mail <span style="color:var(--accent)">*</span></label>
+        <input type="email" id="profEmail" /></div>
+      <div class="form-group"><label>Telefone</label>
+        <input type="text" id="profTelefone" /></div>
+      <div class="form-group"><label>Senha <span style="color:var(--accent)">*</span></label>
+        <input type="password" id="profSenha" /></div>
+    </div>
+    <div class="form-group"><label>Perfil</label>
+      <select id="profPerfil">
+        <option value="profissional">🔧 Profissional</option>
+        <option value="admin">👑 Administrador</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Serviços que atende</label>
+      <div id="checkServicos" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.3rem;"></div>
+    </div>
+    <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProfissional()">Cadastrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Perfil -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal" style="max-width:420px">
+    <h3>⚙️ Meu Perfil</h3>
+    <div id="perfilInfo" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;"></div>
+    <hr style="border-color:var(--border);margin-bottom:1.5rem" />
+    <h4 style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">ALTERAR SENHA</h4>
+    <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••" /></div>
+    <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP" placeholder="••••••••" /></div>
+    <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+    <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:1rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button>
+      <button class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Nova/Editar Empresa -->
+<div class="modal-overlay" id="modalEmpresa">
+  <div class="modal" style="max-width:580px">
+    <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
+    <input type="hidden" id="empId"/>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+      <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Dados da Empresa</p>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Nome Fantasia <span style="color:var(--accent)">*</span></label>
+          <input type="text" id="empNome" placeholder="Ex: Salão da Maria"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label>
+          <input type="text" id="empCnpj" placeholder="00.000.000/0001-00"/>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>E-mail</label>
+          <input type="email" id="empEmail" placeholder="contato@empresa.com"/>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Telefone</label>
+          <input type="text" id="empTelefone" placeholder="(00) 00000-0000"/>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Slug (URL pública) <span style="color:var(--accent)">*</span></label>
+          <input type="text" id="empSlug" placeholder="salao-da-maria" oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')"/>
+          <span style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong id="slugPreview">slug</strong></span>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Cor primária</label>
+          <input type="color" id="empCor" value="#0d9488" style="height:42px;padding:4px;cursor:pointer;"/>
+        </div>
+      </div>
+    </div>
+
+    <div id="secaoAdmin">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+        <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">👑 Administrador da Empresa</p>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0.75rem">
+            <label>Nome <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="empAdminNome" placeholder="Nome completo"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0.75rem">
+            <label>E-mail <span style="color:var(--accent)">*</span></label>
+            <input type="email" id="empAdminEmail" placeholder="admin@empresa.com"/>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Senha <span style="color:var(--accent)">*</span></label>
+          <input type="password" id="empAdminSenha" placeholder="Mínimo 6 caracteres"/>
+        </div>
+      </div>
+    </div>
+
+    <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEmpresa()">
+        <span id="btnEmpresaText">Criar Empresa</span>
+        <div class="spinner" id="spinnerEmpresa"></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Serviço (ESTAVA FALTANDO) -->
+<div class="modal-overlay" id="modalServico">
+  <div class="modal" style="max-width:460px">
+    <h3 id="servicoModalTitle">🛠️ Novo Serviço</h3>
+    <input type="hidden" id="servicoId" />
+    <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label>
+      <input type="text" id="servicoNome" placeholder="Ex: Corte de cabelo" /></div>
+    <div class="form-group"><label>Descrição</label>
+      <textarea id="servicoDesc" placeholder="Descrição do serviço..." style="resize:none;height:70px;"></textarea></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Duração (minutos) <span style="color:var(--accent)">*</span></label>
+        <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" /></div>
+      <div class="form-group"><label>Preço (R$)</label>
+        <input type="number" id="servicoPreco" placeholder="0,00" step="0.01" min="0" /></div>
+    </div>
+    <div class="form-group"><label>Cor</label>
+      <input type="color" id="servicoCor" value="#0d9488" style="height:40px;padding:4px;" /></div>
+    <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalServico()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarServico()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ver/Editar Empresa (expandido) -->
+<div class="modal-overlay" id="modalVerEmpresa">
+  <div class="modal" style="max-width:600px">
+    <h3 id="tituloModalVerEmpresa">🏢 Editar Empresa</h3>
+    <input type="hidden" id="editEmpresaId"/>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:0.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.25rem;width:fit-content;margin-bottom:1.25rem">
+      <button class="tab-emp active" id="tabDados" onclick="setTabEmpresa('dados')"
+        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text)">
+        📋 Dados
+      </button>
+      <button class="tab-emp" id="tabStatus" onclick="setTabEmpresa('status')"
+        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:none;color:var(--muted)">
+        ⚙️ Status
+      </button>
+      <button class="tab-emp" id="tabUsuarios" onclick="setTabEmpresa('usuarios')"
+        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:none;color:var(--muted)">
+        👥 Usuários
+      </button>
+    </div>
+
+    <!-- Tab: Dados cadastrais -->
+    <div id="tabConteudoDados">
+      <div class="form-grid">
+        <div class="form-group"><label>Nome Fantasia *</label>
+          <input type="text" id="editEmpNome"/></div>
+        <div class="form-group"><label>CNPJ</label>
+          <input type="text" id="editEmpCnpj"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>E-mail</label>
+          <input type="email" id="editEmpEmail"/></div>
+        <div class="form-group"><label>Telefone</label>
+          <input type="text" id="editEmpTelefone"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Slug</label>
+          <input type="text" id="editEmpSlug"/></div>
+        <div class="form-group"><label>Cor primária</label>
+          <input type="color" id="editEmpCor" style="height:42px;padding:4px;"/></div>
+      </div>
+      <div class="form-group"><label>Vencimento</label>
+        <input type="date" id="editEmpVencimento"/></div>
+    </div>
+
+    <!-- Tab: Status -->
+    <div id="tabConteudoStatus" style="display:none">
+      <div class="form-group">
+        <label>Status da empresa</label>
+        <select id="editEmpresaStatus">
+          <option value="ativo">✅ Ativo</option>
+          <option value="suspenso">⚠️ Suspenso</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.82rem;color:var(--muted)">
+        ⚠️ <strong>Suspenso</strong>: empresa não consegue logar mas os dados são mantidos.<br/>
+        ❌ <strong>Cancelado</strong>: empresa bloqueada permanentemente.
+      </div>
+    </div>
+
+    <!-- Tab: Usuários -->
+    <div id="tabConteudoUsuarios" style="display:none">
+      <div id="listaUsuariosEmpresa" style="margin-bottom:1rem"></div>
+      <hr style="border-color:var(--border);margin-bottom:1rem"/>
+      <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:0.75rem">Adicionar usuário</p>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0.75rem"><label>Nome *</label>
+          <input type="text" id="novoUserNome" placeholder="Nome completo"/></div>
+        <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail *</label>
+          <input type="email" id="novoUserEmail" placeholder="email@empresa.com"/></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0"><label>Senha *</label>
+          <input type="password" id="novoUserSenha" placeholder="Mínimo 6 caracteres"/></div>
+        <div class="form-group" style="margin-bottom:0"><label>Perfil</label>
+          <select id="novoUserPerfil">
+            <option value="admin">👑 Admin</option>
+            <option value="profissional">🔧 Profissional</option>
+          </select>
+        </div>
+      </div>
+      <div id="erroNovoUser" class="alert alert-error" style="display:none;margin-top:0.75rem"></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:0.75rem" onclick="adicionarUsuarioEmpresa()">
+        + Adicionar usuário
+      </button>
+    </div>
+
+    <div id="erroEditEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarEdicaoEmpresa()">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+# 📅 AGENDARE
+> Never miss a schedule again.
+
+Sistema de agendamento online com link público para clientes, painel de gestão interno e multi-tenant.
+Mesma stack do Implanta: **Node.js + PostgreSQL + HTML/CSS/JS puro — Railway**.
+
+---
+
+## 🗂️ Estrutura
+
+```
+agendare/
+├── backend/
+│   ├── server.js                  # Express — ponto de entrada
+│   ├── Dockerfile                 # Deploy Railway
+│   ├── package.json
+│   ├── .env.example
+│   ├── db/index.js                # PostgreSQL + criação de tabelas
+│   ├── middleware/auth.js         # JWT (igual ao Implanta)
+│   ├── services/mailer.js         # E-mails: confirmação, notificação, cancelamento
+│   ├── routes/
+│   │   ├── auth.js                # Login
+│   │   ├── empresas.js            # Multi-tenant
+│   │   ├── usuarios.js            # Gestão de usuários
+│   │   ├── servicos.js            # CRUD de serviços
+│   │   ├── profissionais.js       # CRUD + disponibilidade semanal
+│   │   ├── agendamentos.js        # Agendamento público, horários, cancelamento
+│   │   └── public.js              # API pública (sem auth)
+│   └── scripts/criar-superadmin.js
+└── frontend/
+    ├── index.html                 # Login do painel
+    ├── dashboard.html             # Painel interno
+    ├── agendar.html               # Link público do cliente (4 etapas)
+    ├── cancelar.html              # Cancelamento via link no e-mail
+    └── css/style.css              # Tema claro — Outfit + DM Sans
+```
+
+---
+
+## 🗄️ Banco de Dados (tabelas)
+
+| Tabela                    | Descrição                                      |
+|---------------------------|------------------------------------------------|
+| `empresas`                | Multi-tenant — cada cliente/empresa            |
+| `usuarios`                | Admins por empresa                             |
+| `servicos`                | Serviços oferecidos (duração, preço, cor)      |
+| `profissionais`           | Equipe da empresa                              |
+| `profissional_servicos`   | N:N — qual profissional faz qual serviço       |
+| `disponibilidade`         | Horários de trabalho por dia da semana         |
+| `bloqueios`               | Folgas e bloqueios pontuais                    |
+| `agendamentos`            | Todos os agendamentos + token de cancelamento  |
+
+---
+
+## 🚀 Rodando localmente
+
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edite o .env com DATABASE_URL local e JWT_SECRET
+node server.js
+```
+
+Servidor sobe na porta **3002**.
+
+Depois abra `frontend/index.html` no navegador.
+
+### Criar Super Admin (1ª vez)
+```bash
+node scripts/criar-superadmin.js
+# E-mail: admin@agendare.com  |  Senha: admin123
+```
+
+---
+
+## ☁️ Deploy Railway (igual ao Implanta)
+
+### 1. Backend
+1. Novo projeto no **railway.com**
+2. Adicione serviço **PostgreSQL**
+3. Adicione serviço GitHub → pasta `backend/`
+4. Variáveis de ambiente:
+
+| Variável        | Valor                               |
+|-----------------|-------------------------------------|
+| `DATABASE_URL`  | Copiado do serviço Postgres         |
+| `JWT_SECRET`    | String longa aleatória              |
+| `PORT`          | 8080                                |
+| `FRONTEND_URL`  | URL do seu frontend (GitHub Pages)  |
+| `MAIL_USER`     | Gmail para envio                    |
+| `MAIL_PASS`     | App Password do Gmail               |
+
+5. `railway up` na pasta `backend/`
+6. `railway run node scripts/criar-superadmin.js`
+
+### 2. Frontend
+Hospede a pasta `frontend/` no **GitHub Pages** (igual ao Implanta).
+
+⚠️ **Importante:** Após o deploy, atualize `const API = 'https://SEU-BACKEND.railway.app/api'`
+nos arquivos `index.html`, `dashboard.html`, `agendar.html` e `cancelar.html`.
+
+---
+
+## 🔗 Link público de agendamento
+
+Cada empresa tem seu próprio link:
+```
+https://seu-frontend.github.io/agendar.html?empresa=SLUG-DA-EMPRESA
+```
+
+O cliente percorre 4 etapas sem precisar de login:
+1. Escolhe o **serviço**
+2. Escolhe o **profissional**
+3. Escolhe a **data e horário** disponível
+4. Preenche seus **dados** e confirma
+
+Ao confirmar, o sistema envia:
+- ✉️ **E-mail de confirmação** para o cliente (com link de cancelamento)
+- ✉️ **E-mail de notificação** para o profissional
+
+---
+
+## 🔗 Integração com o Implanta
+
+Adicione no menu do Implanta:
+```html
+<a href="https://seu-agendare.github.io" target="_blank" class="nav-item">
+  <span class="nav-icon">📅</span> Agendare
+</a>
+```
+
+---
+
+## 👥 Perfis
+
+| Perfil       | Pode fazer                                          |
+|--------------|-----------------------------------------------------|
+| `superadmin` | Gerenciar todas as empresas                         |
+| `admin`      | Gerenciar serviços, profissionais, agendamentos     |
+
+---
+
+## 📌 Próximos passos
+
+- [ ] Configurar e-mail (App Password Gmail ou SendGrid + DNS)
+- [ ] Gestão de bloqueios/folgas pontuais por profissional
+- [ ] Relatórios e gráficos de agendamentos
+- [ ] Integração SSO com o Implanta (token compartilhado)
+- [ ] Notificação por WhatsApp (Twilio ou Z-API)
