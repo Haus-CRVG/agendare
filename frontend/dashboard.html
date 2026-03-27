@@ -482,124 +482,23 @@
   </div>
 </div>
 
-<!-- Modal Serviço (ESTAVA FALTANDO) -->
-<div class="modal-overlay" id="modalServico">
-  <div class="modal" style="max-width:460px">
-    <h3 id="servicoModalTitle">🛠️ Novo Serviço</h3>
-    <input type="hidden" id="servicoId" />
-    <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label>
-      <input type="text" id="servicoNome" placeholder="Ex: Corte de cabelo" /></div>
-    <div class="form-group"><label>Descrição</label>
-      <textarea id="servicoDesc" placeholder="Descrição do serviço..." style="resize:none;height:70px;"></textarea></div>
-    <div class="form-grid">
-      <div class="form-group"><label>Duração (minutos) <span style="color:var(--accent)">*</span></label>
-        <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" /></div>
-      <div class="form-group"><label>Preço (R$)</label>
-        <input type="number" id="servicoPreco" placeholder="0,00" step="0.01" min="0" /></div>
-    </div>
-    <div class="form-group"><label>Cor</label>
-      <input type="color" id="servicoCor" value="#0d9488" style="height:40px;padding:4px;" /></div>
-    <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="fecharModalServico()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarServico()">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Ver/Editar Empresa (expandido) -->
+<!-- Modal Ver/Editar Empresa -->
 <div class="modal-overlay" id="modalVerEmpresa">
-  <div class="modal" style="max-width:600px">
-    <h3 id="tituloModalVerEmpresa">🏢 Editar Empresa</h3>
+  <div class="modal" style="max-width:480px">
+    <h3>🏢 Detalhes da Empresa</h3>
+    <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
+    <div class="form-group">
+      <label>Status</label>
+      <select id="editEmpresaStatus">
+        <option value="ativo">✅ Ativo</option>
+        <option value="suspenso">⚠️ Suspenso</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+    </div>
     <input type="hidden" id="editEmpresaId"/>
-
-    <!-- Tabs -->
-    <div style="display:flex;gap:0.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.25rem;width:fit-content;margin-bottom:1.25rem">
-      <button class="tab-emp active" id="tabDados" onclick="setTabEmpresa('dados')"
-        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text)">
-        📋 Dados
-      </button>
-      <button class="tab-emp" id="tabStatus" onclick="setTabEmpresa('status')"
-        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:none;color:var(--muted)">
-        ⚙️ Status
-      </button>
-      <button class="tab-emp" id="tabUsuarios" onclick="setTabEmpresa('usuarios')"
-        style="padding:0.4rem 1rem;border-radius:6px;border:none;font-size:0.82rem;font-weight:600;cursor:pointer;background:none;color:var(--muted)">
-        👥 Usuários
-      </button>
-    </div>
-
-    <!-- Tab: Dados cadastrais -->
-    <div id="tabConteudoDados">
-      <div class="form-grid">
-        <div class="form-group"><label>Nome Fantasia *</label>
-          <input type="text" id="editEmpNome"/></div>
-        <div class="form-group"><label>CNPJ</label>
-          <input type="text" id="editEmpCnpj"/></div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group"><label>E-mail</label>
-          <input type="email" id="editEmpEmail"/></div>
-        <div class="form-group"><label>Telefone</label>
-          <input type="text" id="editEmpTelefone"/></div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group"><label>Slug</label>
-          <input type="text" id="editEmpSlug"/></div>
-        <div class="form-group"><label>Cor primária</label>
-          <input type="color" id="editEmpCor" style="height:42px;padding:4px;"/></div>
-      </div>
-      <div class="form-group"><label>Vencimento</label>
-        <input type="date" id="editEmpVencimento"/></div>
-    </div>
-
-    <!-- Tab: Status -->
-    <div id="tabConteudoStatus" style="display:none">
-      <div class="form-group">
-        <label>Status da empresa</label>
-        <select id="editEmpresaStatus">
-          <option value="ativo">✅ Ativo</option>
-          <option value="suspenso">⚠️ Suspenso</option>
-          <option value="cancelado">❌ Cancelado</option>
-        </select>
-      </div>
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.82rem;color:var(--muted)">
-        ⚠️ <strong>Suspenso</strong>: empresa não consegue logar mas os dados são mantidos.<br/>
-        ❌ <strong>Cancelado</strong>: empresa bloqueada permanentemente.
-      </div>
-    </div>
-
-    <!-- Tab: Usuários -->
-    <div id="tabConteudoUsuarios" style="display:none">
-      <div id="listaUsuariosEmpresa" style="margin-bottom:1rem"></div>
-      <hr style="border-color:var(--border);margin-bottom:1rem"/>
-      <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:0.75rem">Adicionar usuário</p>
-      <div class="form-grid">
-        <div class="form-group" style="margin-bottom:0.75rem"><label>Nome *</label>
-          <input type="text" id="novoUserNome" placeholder="Nome completo"/></div>
-        <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail *</label>
-          <input type="email" id="novoUserEmail" placeholder="email@empresa.com"/></div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group" style="margin-bottom:0"><label>Senha *</label>
-          <input type="password" id="novoUserSenha" placeholder="Mínimo 6 caracteres"/></div>
-        <div class="form-group" style="margin-bottom:0"><label>Perfil</label>
-          <select id="novoUserPerfil">
-            <option value="admin">👑 Admin</option>
-            <option value="profissional">🔧 Profissional</option>
-          </select>
-        </div>
-      </div>
-      <div id="erroNovoUser" class="alert alert-error" style="display:none;margin-top:0.75rem"></div>
-      <button class="btn btn-primary btn-sm" style="margin-top:0.75rem" onclick="adicionarUsuarioEmpresa()">
-        + Adicionar usuário
-      </button>
-    </div>
-
-    <div id="erroEditEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
-      <button class="btn btn-primary" onclick="salvarEdicaoEmpresa()">Salvar alterações</button>
+      <button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar</button>
     </div>
   </div>
 </div>

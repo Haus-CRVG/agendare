@@ -1,5 +1,4 @@
- const API = 'https://agendare-production.up.railway.app/api';
-//const API = 'http://localhost:3002/api';
+const API = 'https://agendare-backend-production.up.railway.app/api';
 
 let usuario = null, token = null;
 let pollingInterval = null, ultimaNotifId = 0;
@@ -659,7 +658,7 @@ async function carregarEmpresas() {
         <td><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:0.78rem">${e.slug||'—'}</code></td>
         <td><span class="badge ${e.status==='ativo'?'badge-confirmado':'badge-cancelado'}">${e.status}</span></td>
         <td style="display:flex;gap:0.4rem">
-          <button class="btn btn-secondary btn-sm" onclick="abrirVerEmpresa(${e.id})">✏️ Editar</button>
+          <button class="btn btn-secondary btn-sm" onclick="abrirVerEmpresa(${e.id},'${e.status}')">✏️ Editar</button>
           <button class="btn btn-secondary btn-sm" onclick="copiarLinkEmpresa('${e.slug}')">🔗 Link</button>
         </td>
       </tr>`).join('');
@@ -685,133 +684,28 @@ function abrirNovaEmpresa() {
 }
 function fecharModalEmpresa() { document.getElementById('modalEmpresa').classList.remove('active'); }
 
-let _empresaAtual = null;
-
-async function abrirVerEmpresa(id) {
-  document.getElementById('editEmpresaId').value = id;
-  document.getElementById('erroEditEmpresa').style.display = 'none';
-  setTabEmpresa('dados');
-
-  // Busca dados da empresa
-  try {
-    const r = await fetch(`${API}/empresas/${id}`, { headers:{ Authorization:`Bearer ${token}` } });
-    const emp = await r.json();
-    _empresaAtual = emp;
-
-    document.getElementById('editEmpNome').value      = emp.nome_fantasia || '';
-    document.getElementById('editEmpCnpj').value      = emp.cnpj || '';
-    document.getElementById('editEmpEmail').value     = emp.email || '';
-    document.getElementById('editEmpTelefone').value  = emp.telefone || '';
-    document.getElementById('editEmpSlug').value      = emp.slug || '';
-    document.getElementById('editEmpCor').value       = emp.cor_primaria || '#0d9488';
-    document.getElementById('editEmpVencimento').value = emp.vencimento ? emp.vencimento.split('T')[0] : '';
-    document.getElementById('editEmpresaStatus').value = emp.status || 'ativo';
-  } catch { mostrarToast('❌ Erro','Não foi possível carregar os dados.'); return; }
-
+function abrirVerEmpresa(id, status) {
+  document.getElementById('editEmpresaId').value=id;
+  document.getElementById('editEmpresaStatus').value=status;
+  const emp=document.querySelector(`#tabelaEmpresas tr td strong`);
+  document.getElementById('detalheEmpresa').innerHTML=`<p style="color:var(--muted);font-size:0.88rem">Atualize o status da empresa abaixo.</p>`;
   document.getElementById('modalVerEmpresa').classList.add('active');
 }
+function fecharModalVerEmpresa() { document.getElementById('modalVerEmpresa').classList.remove('active'); }
 
-function fecharModalVerEmpresa() {
-  document.getElementById('modalVerEmpresa').classList.remove('active');
-  _empresaAtual = null;
-}
-
-function setTabEmpresa(tab) {
-  ['dados','status','usuarios'].forEach(t => {
-    const btn = document.getElementById(`tab${t.charAt(0).toUpperCase()+t.slice(1)}`);
-    const conteudo = document.getElementById(`tabConteudo${t.charAt(0).toUpperCase()+t.slice(1)}`);
-    const ativo = t === tab;
-    if (btn) {
-      btn.style.background = ativo ? 'var(--surface)' : 'none';
-      btn.style.color      = ativo ? 'var(--text)'    : 'var(--muted)';
-      btn.style.boxShadow  = ativo ? 'var(--shadow)'  : 'none';
-    }
-    if (conteudo) conteudo.style.display = ativo ? 'block' : 'none';
-  });
-  if (tab === 'usuarios') carregarUsuariosEmpresa();
-}
-
-async function carregarUsuariosEmpresa() {
-  const id = document.getElementById('editEmpresaId').value;
+async function atualizarEmpresa() {
+  const id    =document.getElementById('editEmpresaId').value;
+  const status=document.getElementById('editEmpresaStatus').value;
   try {
-    const r = await fetch(`${API}/empresas/${id}/usuarios`, { headers:{ Authorization:`Bearer ${token}` } });
-    const lista = await r.json();
-    const el = document.getElementById('listaUsuariosEmpresa');
-    if (!lista.length) {
-      el.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Nenhum usuário cadastrado.</p>';
-      return;
-    }
-    el.innerHTML = lista.map(u => `
-      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;
-           background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:0.4rem">
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:0.85rem">${u.nome}</div>
-          <div style="font-size:0.75rem;color:var(--muted)">${u.email}</div>
-        </div>
-        <span class="badge ${u.perfil==='admin'?'badge-confirmado':'badge-pendente'}" style="font-size:0.7rem">
-          ${u.perfil==='admin'?'👑 Admin':'🔧 Profissional'}
-        </span>
-        <span class="badge ${u.ativo?'badge-confirmado':'badge-cancelado'}" style="font-size:0.7rem">
-          ${u.ativo?'Ativo':'Inativo'}
-        </span>
-      </div>`).join('');
-  } catch { console.error('Erro ao carregar usuários'); }
-}
-
-async function adicionarUsuarioEmpresa() {
-  const empId = document.getElementById('editEmpresaId').value;
-  const nome  = document.getElementById('novoUserNome').value.trim();
-  const email = document.getElementById('novoUserEmail').value.trim();
-  const senha = document.getElementById('novoUserSenha').value;
-  const perfil= document.getElementById('novoUserPerfil').value;
-  const erro  = document.getElementById('erroNovoUser');
-  erro.style.display = 'none';
-
-  if (!nome || !email || !senha) { erro.textContent='Nome, e-mail e senha são obrigatórios'; erro.style.display='block'; return; }
-  if (senha.length < 6) { erro.textContent='Senha deve ter no mínimo 6 caracteres'; erro.style.display='block'; return; }
-
-  try {
-    const r = await fetch(`${API}/empresas/${empId}/usuarios`, {
-      method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-      body: JSON.stringify({ nome, email, senha, perfil })
+    const r=await fetch(`${API}/empresas/${id}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+      body:JSON.stringify({status})
     });
-    const d = await r.json();
-    if (!r.ok) { erro.textContent=d.erro||'Erro ao adicionar'; erro.style.display='block'; return; }
-    ['novoUserNome','novoUserEmail','novoUserSenha'].forEach(id => document.getElementById(id).value='');
-    await carregarUsuariosEmpresa();
-    mostrarToast('✅ Usuário adicionado!', `${nome} foi cadastrado com sucesso.`);
-  } catch { erro.textContent='Erro de conexão'; erro.style.display='block'; }
-}
-
-async function salvarEdicaoEmpresa() {
-  const id     = document.getElementById('editEmpresaId').value;
-  const nome   = document.getElementById('editEmpNome').value.trim();
-  const slug   = document.getElementById('editEmpSlug').value.trim();
-  const erro   = document.getElementById('erroEditEmpresa');
-  erro.style.display = 'none';
-
-  if (!nome || !slug) { erro.textContent='Nome e slug são obrigatórios'; erro.style.display='block'; return; }
-
-  try {
-    const r = await fetch(`${API}/empresas/${id}`, {
-      method:'PATCH', headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-      body: JSON.stringify({
-        nome_fantasia: nome,
-        cnpj:         document.getElementById('editEmpCnpj').value,
-        email:        document.getElementById('editEmpEmail').value,
-        telefone:     document.getElementById('editEmpTelefone').value,
-        slug:         slug.toLowerCase().replace(/\s+/g,'-'),
-        cor_primaria: document.getElementById('editEmpCor').value,
-        vencimento:   document.getElementById('editEmpVencimento').value || null,
-        status:       document.getElementById('editEmpresaStatus').value,
-      })
-    });
-    const d = await r.json();
-    if (!r.ok) { erro.textContent=d.erro||'Erro ao salvar'; erro.style.display='block'; return; }
+    if (!r.ok) { const d=await r.json(); mostrarToast('❌ Erro',d.erro); return; }
     fecharModalVerEmpresa();
     carregarEmpresas();
-    mostrarToast('✅ Empresa atualizada!','Dados salvos com sucesso.');
-  } catch { erro.textContent='Erro de conexão'; erro.style.display='block'; }
+    mostrarToast('✅ Empresa atualizada!','Status alterado com sucesso.');
+  } catch { mostrarToast('❌ Erro de conexão','Tente novamente.'); }
 }
 
 async function salvarEmpresa() {
