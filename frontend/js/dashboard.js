@@ -1,5 +1,5 @@
-// const API = 'https://agendare-production.up.railway.app/api';
-const API = 'http://localhost:3002/api';
+ const API = 'https://agendare-production.up.railway.app/api';
+//const API = 'http://localhost:3002/api';
 
 let usuario = null, token = null;
 let pollingInterval = null, ultimaNotifId = 0;
