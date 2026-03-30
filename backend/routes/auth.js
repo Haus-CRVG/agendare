@@ -10,10 +10,7 @@ function auth(perfisPermitidos = []) {
     try {
       const payload = jwt.verify(token, process.env.JWT_SECRET);
       req.usuario = payload;
-
-      // Se não passou lista de perfis, qualquer autenticado passa
-      // Se passou lista, verifica se o perfil está nela
-      // Superadmin sempre tem acesso a tudo
+      // superadmin sempre passa, independente da lista
       if (perfisPermitidos.length > 0 &&
           payload.perfil !== 'superadmin' &&
           !perfisPermitidos.includes(payload.perfil)) {

@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const { pool } = require('../db');
 const auth = require('../middleware/auth');
 
-// ── GET /api/servicos — lista serviços da empresa ─────────
 router.get('/', async (req, res) => {
   const eid = req.query.empresa_id || req.usuario?.empresa_id;
   if (!eid) return res.status(400).json({ erro: 'empresa_id obrigatório' });
@@ -15,21 +14,20 @@ router.get('/', async (req, res) => {
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// ── POST /api/servicos — criar serviço ────────────────────
 router.post('/', auth(['admin']), async (req, res) => {
   const { nome, descricao, duracao_minutos, preco, cor } = req.body;
   const eid = req.usuario.empresa_id;
   if (!nome || !duracao_minutos) return res.status(400).json({ erro: 'Nome e duração obrigatórios' });
   try {
     const result = await pool.query(
-      `INSERT INTO servicos (empresa_id, nome, descricao, duracao_minutos, preco, cor) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [eid, nome, descricao || null, duracao_minutos, preco || null, cor || '#0d9488']
+      `INSERT INTO servicos (empresa_id, nome, descricao, duracao_minutos, preco, cor)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [eid, nome, descricao||null, duracao_minutos, preco||null, cor||'#0d9488']
     );
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// ── PATCH /api/servicos/:id ───────────────────────────────
 router.patch('/:id', auth(['admin']), async (req, res) => {
   const { nome, descricao, duracao_minutos, preco, cor, ativo } = req.body;
   const eid = req.usuario.empresa_id;

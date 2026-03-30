@@ -60,8 +60,8 @@
         <div class="form-group">
           <label>CNPJ ou CPF</label>
           <div class="input-wrap">
-            <input type="text" id="docInput" placeholder="00.000.000/0001-00 ou 000.000.000-00"
-              maxlength="18" oninput="formatarDoc(this)" autocomplete="off" />
+            <input type="text" id="docInput" placeholder="Digite o CNPJ ou CPF"
+              maxlength="14" oninput="formatarDoc(this)" autocomplete="off" inputmode="numeric" />
             <span class="doc-status" id="docStatus"></span>
           </div>
         </div>
@@ -111,7 +111,7 @@
 </div>
 
 <script>
-const API = 'https://agendare-backend-production.up.railway.app/api';
+const API = 'https://agendare-backend-production.up.railway.app/api'; 
 
 let empresaId = null, modoSA = false, docTimer = null;
 
@@ -125,21 +125,10 @@ function toggleModo() {
 
 function formatarDoc(input) {
   let v = input.value.replace(/\D/g, '').substring(0, 14);
-  if (v.length <= 11) {
-    if (v.length > 9)      v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/, '$1.$2.$3-$4');
-    else if (v.length > 6) v = v.replace(/^(\d{3})(\d{3})(\d{0,3})$/, '$1.$2.$3');
-    else if (v.length > 3) v = v.replace(/^(\d{3})(\d{0,3})$/, '$1.$2');
-  } else {
-    if (v.length > 12)     v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})$/, '$1.$2.$3/$4-$5');
-    else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})$/, '$1.$2.$3/$4');
-    else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{0,3})$/, '$1.$2.$3');
-    else if (v.length > 2) v = v.replace(/^(\d{2})(\d{0,3})$/, '$1.$2');
-  }
   input.value = v;
   clearTimeout(docTimer);
-  const digits = v.replace(/\D/g, '');
-  if (digits.length === 11 || digits.length === 14) {
-    docTimer = setTimeout(() => buscarEmpresa(digits), 500);
+  if (v.length === 11 || v.length === 14) {
+    docTimer = setTimeout(() => buscarEmpresa(v), 500);
   } else {
     resetarEmpresa();
   }

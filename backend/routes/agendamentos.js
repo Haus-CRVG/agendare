@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const { pool } = require('../db');
 const auth = require('../middleware/auth');
 const crypto = require('crypto');
 const { enviarConfirmacao, enviarCancelamento, enviarNotificacaoProfissional } = require('../services/mailer');
@@ -34,20 +34,16 @@ router.get('/horarios-disponiveis', async (req, res) => {
   if (!empresa_id || !profissional_id || !servico_id || !data)
     return res.status(400).json({ erro: 'Parâmetros obrigatórios: empresa_id, profissional_id, servico_id, data' });
   try {
-    // Duração do serviço
     const svc = await pool.query(`SELECT duracao_minutos FROM servicos WHERE id = $1`, [servico_id]);
     if (!svc.rows.length) return res.status(404).json({ erro: 'Serviço não encontrado' });
     const duracao = svc.rows[0].duracao_minutos;
 
-    // Config da empresa
     const cfg = await pool.query(`SELECT * FROM configuracoes WHERE empresa_id = $1`, [empresa_id]);
     const intervalo = cfg.rows[0]?.intervalo_agenda_minutos || 30;
 
-    // Dia da semana (0=dom, 6=sab)
     const dataObj = new Date(data + 'T00:00:00-03:00');
     const diaSemana = dataObj.getDay();
 
-    // Disponibilidade do profissional neste dia
     const disp = await pool.query(
       `SELECT hora_inicio, hora_fim FROM disponibilidade
        WHERE profissional_id = $1 AND dia_semana = $2 AND ativo = true`,
@@ -55,7 +51,6 @@ router.get('/horarios-disponiveis', async (req, res) => {
     );
     if (!disp.rows.length) return res.json({ horarios: [] });
 
-    // Agendamentos já existentes no dia
     const agExist = await pool.query(
       `SELECT data_inicio, data_fim FROM agendamentos
        WHERE profissional_id = $1 AND status NOT IN ('cancelado')
@@ -63,7 +58,6 @@ router.get('/horarios-disponiveis', async (req, res) => {
       [profissional_id, data]
     );
 
-    // Bloqueios no dia
     const bloq = await pool.query(
       `SELECT data_inicio, data_fim FROM bloqueios
        WHERE profissional_id = $1
@@ -83,14 +77,11 @@ router.get('/horarios-disponiveis', async (req, res) => {
       while (cur + duracao <= fim) {
         const slotIni = new Date(`${data}T${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')}:00-03:00`);
         const slotFim = new Date(slotIni.getTime() + duracao * 60000);
-
-        // Verifica conflito
         const conflito = ocupados.some(oc => {
           const ocIni = new Date(oc.data_inicio);
           const ocFim = new Date(oc.data_fim);
           return slotIni < ocFim && slotFim > ocIni;
         });
-
         if (!conflito) {
           horarios.push({
             hora: `${String(Math.floor(cur/60)).padStart(2,'0')}:${String(cur%60).padStart(2,'0')}`,
@@ -101,44 +92,50 @@ router.get('/horarios-disponiveis', async (req, res) => {
         cur += intervalo;
       }
     }
-
     res.json({ horarios });
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// ── POST /api/agendamentos — criar (público ou autenticado) ─
+// ── POST /api/agendamentos — criar ────────────────────────
 router.post('/', async (req, res) => {
-  const { empresa_id, profissional_id, servico_id, cliente_nome, cliente_email, cliente_telefone, data_inicio, data_fim, observacoes } = req.body;
+  const { empresa_id, profissional_id, servico_id, cliente_nome, cliente_email,
+          cliente_telefone, data_inicio, data_fim, observacoes } = req.body;
   if (!empresa_id || !profissional_id || !servico_id || !cliente_nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: 'Campos obrigatórios faltando' });
   try {
     const token_cancelamento = crypto.randomBytes(32).toString('hex');
     const result = await pool.query(`
-      INSERT INTO agendamentos (empresa_id, profissional_id, servico_id, cliente_nome, cliente_email, cliente_telefone, data_inicio, data_fim, observacoes, token_cancelamento)
+      INSERT INTO agendamentos (empresa_id, profissional_id, servico_id, cliente_nome,
+        cliente_email, cliente_telefone, data_inicio, data_fim, observacoes, token_cancelamento)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [empresa_id, profissional_id, servico_id, cliente_nome, cliente_email || null, cliente_telefone || null, data_inicio, data_fim, observacoes || null, token_cancelamento]
+      [empresa_id, profissional_id, servico_id, cliente_nome,
+       cliente_email||null, cliente_telefone||null, data_inicio, data_fim,
+       observacoes||null, token_cancelamento]
     );
     const ag = result.rows[0];
 
-    // Busca dados para e-mail
     const [prof, svc] = await Promise.all([
       pool.query(`SELECT nome, email FROM usuarios WHERE id = $1`, [profissional_id]),
       pool.query(`SELECT nome FROM servicos WHERE id = $1`, [servico_id]),
     ]);
 
-    // Notificação interna para o profissional
     await pool.query(
       `INSERT INTO notificacoes (usuario_id, titulo, mensagem) VALUES ($1,$2,$3)`,
-      [profissional_id, `Novo agendamento: ${cliente_nome}`, `${svc.rows[0]?.nome} — ${new Date(data_inicio).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}`]
+      [profissional_id,
+       `Novo agendamento: ${cliente_nome}`,
+       `${svc.rows[0]?.nome} — ${new Date(data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}`]
     );
 
-    // E-mails
     if (cliente_email) {
-      enviarConfirmacao({ para: cliente_email, nomeCliente: cliente_nome, servico: svc.rows[0]?.nome, profissional: prof.rows[0]?.nome, dataInicio: data_inicio, tokenCancelamento: token_cancelamento })
+      enviarConfirmacao({ para: cliente_email, nomeCliente: cliente_nome,
+        servico: svc.rows[0]?.nome, profissional: prof.rows[0]?.nome,
+        dataInicio: data_inicio, tokenCancelamento: token_cancelamento })
         .catch(e => console.error('❌ E-mail cliente:', e.message));
     }
     if (prof.rows[0]?.email) {
-      enviarNotificacaoProfissional({ para: prof.rows[0].email, nomeProfissional: prof.rows[0].nome, cliente: cliente_nome, servico: svc.rows[0]?.nome, dataInicio: data_inicio })
+      enviarNotificacaoProfissional({ para: prof.rows[0].email,
+        nomeProfissional: prof.rows[0].nome, cliente: cliente_nome,
+        servico: svc.rows[0]?.nome, dataInicio: data_inicio })
         .catch(e => console.error('❌ E-mail profissional:', e.message));
     }
 
@@ -152,7 +149,8 @@ router.patch('/:id', auth(), async (req, res) => {
   const eid = req.usuario.empresa_id;
   try {
     const result = await pool.query(
-      `UPDATE agendamentos SET status=$1, observacoes=COALESCE($2,observacoes) WHERE id=$3 AND empresa_id=$4 RETURNING *`,
+      `UPDATE agendamentos SET status=$1, observacoes=COALESCE($2,observacoes)
+       WHERE id=$3 AND empresa_id=$4 RETURNING *`,
       [status, observacoes, req.params.id, eid]
     );
     if (!result.rows.length) return res.status(404).json({ erro: 'Agendamento não encontrado' });
@@ -160,29 +158,29 @@ router.patch('/:id', auth(), async (req, res) => {
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// ── POST /api/agendamentos/cancelar/:token — cancelamento público ─
+// ── POST /api/agendamentos/cancelar/:token ────────────────
 router.post('/cancelar/:token', async (req, res) => {
   const { motivo } = req.body;
   try {
     const result = await pool.query(
       `UPDATE agendamentos SET status='cancelado', cancelado_em=NOW(), motivo_cancelamento=$1
        WHERE token_cancelamento=$2 AND status NOT IN ('cancelado','concluido') RETURNING *`,
-      [motivo || null, req.params.token]
+      [motivo||null, req.params.token]
     );
-    if (!result.rows.length) return res.status(404).json({ erro: 'Agendamento não encontrado ou já cancelado' });
+    if (!result.rows.length)
+      return res.status(404).json({ erro: 'Agendamento não encontrado ou já cancelado' });
     const ag = result.rows[0];
-
-    // E-mail de confirmação de cancelamento
     if (ag.cliente_email) {
       const svc = await pool.query(`SELECT nome FROM servicos WHERE id = $1`, [ag.servico_id]);
-      enviarCancelamento({ para: ag.cliente_email, nomeCliente: ag.cliente_nome, servico: svc.rows[0]?.nome, dataInicio: ag.data_inicio })
+      enviarCancelamento({ para: ag.cliente_email, nomeCliente: ag.cliente_nome,
+        servico: svc.rows[0]?.nome, dataInicio: ag.data_inicio })
         .catch(e => console.error('❌ E-mail cancelamento:', e.message));
     }
     res.json({ ok: true, mensagem: 'Agendamento cancelado com sucesso' });
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
-// ── GET /api/agendamentos/cancelar/:token — verifica token ─
+// ── GET /api/agendamentos/cancelar/:token ─────────────────
 router.get('/cancelar/:token', async (req, res) => {
   try {
     const result = await pool.query(

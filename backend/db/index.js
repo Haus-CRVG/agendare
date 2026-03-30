@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const pool = new Pool(
   process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: false }
+    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
     : { host: process.env.DB_HOST, port: process.env.DB_PORT, database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD }
 );
 
@@ -139,19 +139,19 @@ async function initDB() {
     `);
 
     await pool.query(`
-  CREATE TABLE IF NOT EXISTS agendamento_participantes (
-    id               SERIAL PRIMARY KEY,
-    agendamento_id   INTEGER REFERENCES agendamentos(id) ON DELETE CASCADE,
-    profissional_id  INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-    nome_externo     VARCHAR(200),
-    email_externo    VARCHAR(100),
-    status           VARCHAR(20) DEFAULT 'pendente' 
-                     CHECK (status IN ('pendente','confirmado','cancelado')),
-    token_resposta   VARCHAR(100) UNIQUE,
-    respondido_em    TIMESTAMP,
-    criado_em        TIMESTAMP DEFAULT NOW()
-  )
-`);
+      CREATE TABLE IF NOT EXISTS agendamento_participantes (
+        id               SERIAL PRIMARY KEY,
+        agendamento_id   INTEGER REFERENCES agendamentos(id) ON DELETE CASCADE,
+        profissional_id  INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+        nome_externo     VARCHAR(200),
+        email_externo    VARCHAR(100),
+        status           VARCHAR(20) DEFAULT 'pendente'
+                         CHECK (status IN ('pendente','confirmado','cancelado')),
+        token_resposta   VARCHAR(100) UNIQUE,
+        respondido_em    TIMESTAMP,
+        criado_em        TIMESTAMP DEFAULT NOW()
+      )
+    `);
 
     console.log('✅ Banco Agendare inicializado com sucesso');
   } catch (err) {
@@ -161,9 +161,7 @@ async function initDB() {
 }
 
 pool.connect()
-  .then(() => {
-    console.log('✅ Conectado ao PostgreSQL');
-  })
+  .then(() => console.log('✅ Conectado ao PostgreSQL'))
   .catch(err => console.error('❌ Erro ao conectar ao banco:', err.message));
 
 module.exports = { pool, initDB };
