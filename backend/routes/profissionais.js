@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const { pool } = require('../db'); // ← corrigido aqui
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 
@@ -39,13 +39,11 @@ router.post('/', auth(['admin']), async (req, res) => {
       [eid, nome, email, telefone || null, hash, perfil || 'profissional']
     );
     const u = result.rows[0];
-    // Vincula serviços
     if (servicos?.length) {
       for (const sid of servicos) {
         await pool.query(`INSERT INTO profissional_servicos (profissional_id, servico_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [u.id, sid]);
       }
     }
-    // Configura disponibilidade padrão (seg-sex 08:00-18:00)
     for (let dia = 1; dia <= 5; dia++) {
       await pool.query(
         `INSERT INTO disponibilidade (profissional_id, dia_semana, hora_inicio, hora_fim) VALUES ($1,$2,'08:00','18:00')`,
@@ -72,9 +70,8 @@ router.get('/:id/disponibilidade', async (req, res) => {
 
 // ── PUT /api/profissionais/:id/disponibilidade ────────────
 router.put('/:id/disponibilidade', auth(), async (req, res) => {
-  const { disponibilidade } = req.body; // array de { dia_semana, hora_inicio, hora_fim, ativo }
+  const { disponibilidade } = req.body;
   const profId = parseInt(req.params.id);
-  // Só o próprio profissional ou admin pode editar
   if (req.usuario.perfil !== 'admin' && req.usuario.id !== profId) {
     return res.status(403).json({ erro: 'Sem permissão' });
   }
@@ -96,12 +93,29 @@ router.put('/:id/disponibilidade', auth(), async (req, res) => {
 router.patch('/:id/senha', auth(), async (req, res) => {
   const { senha } = req.body;
   const profId = parseInt(req.params.id);
+
   if (req.usuario.perfil !== 'admin' && req.usuario.id !== profId)
     return res.status(403).json({ erro: 'Sem permissão' });
-  if (!senha || senha.length < 6) return res.status(400).json({ erro: 'Senha deve ter no mínimo 6 caracteres' });
+  if (!senha || senha.length < 6)
+    return res.status(400).json({ erro: 'Senha deve ter no mínimo 6 caracteres' });
+
   try {
     const hash = await bcrypt.hash(senha, 10);
-    await pool.query(`UPDATE usuarios SET senha = $1 WHERE id = $2`, [hash, profId]);
+
+    // ── Super admin: atualiza em super_admins ──────────────
+    if (req.usuario.perfil === 'superadmin') {
+      await pool.query(
+        `UPDATE super_admins SET senha = $1 WHERE id = $2`,
+        [hash, profId]
+      );
+    } else {
+      // ── Demais usuários: atualiza em usuarios ──────────────
+      await pool.query(
+        `UPDATE usuarios SET senha = $1 WHERE id = $2`,
+        [hash, profId]
+      );
+    }
+
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
