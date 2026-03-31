@@ -5,7 +5,6 @@ let pollingInterval = null, ultimaNotifId = 0;
 let dataSelecionada = new Date().toISOString().split('T')[0];
 let calAtual = new Date();
 let servicos = [], profissionais = [];
-let agSlotSelecionado = null;
 let tipoParticipante = 'interno';
 
 const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -21,11 +20,10 @@ function init() {
   document.getElementById('nomeUsuario').textContent = usuario.nome;
   document.getElementById('badgePerfil').textContent =
     usuario.perfil === 'superadmin' ? '⚡ Super Admin' :
-    usuario.perfil === 'admin'      ? '👑 Admin'       : '🔧 Profissional';
+    usuario.perfil === 'admin'      ? '👑 Admin'       : '🔧 Analista';
 
   // ── SUPER ADMIN: só vê gestão de empresas ──────────────
   if (usuario.perfil === 'superadmin') {
-    // Esconde itens do menu que não são do superadmin
     const esconder = ['agenda','lista','disponibilidade'];
     esconder.forEach(aba => {
       const btn = document.querySelector(`[data-aba="${aba}"]`);
@@ -33,7 +31,6 @@ function init() {
     });
     document.getElementById('sidebarAdmin').style.display = 'none';
 
-    // Adiciona seção Empresas no sidebar
     const secao = document.createElement('div');
     secao.className = 'sidebar-section';
     secao.id = 'sidebarSuperAdmin';
@@ -44,12 +41,11 @@ function init() {
       </button>
     `;
     document.getElementById('sidebar').appendChild(secao);
-
     mudarAba('empresas');
     return;
   }
 
-  // ── ADMIN e PROFISSIONAL ────────────────────────────────
+  // ── ADMIN e ANALISTA ────────────────────────────────────
   if (usuario.perfil === 'admin') {
     document.getElementById('sidebarAdmin').style.display = 'block';
   }
@@ -60,7 +56,6 @@ function init() {
   }
 
   montarAbasMobile();
-  carregarServicos();
   carregarProfissionaisFiltro();
   mudarAba('agenda');
   iniciarPolling();
@@ -150,18 +145,22 @@ async function carregarAgenda() {
       <div class="stat-card" style="--accent:#0891b2"><div class="stat-label">Concluídos</div><div class="stat-value" style="color:#0891b2">${ags.filter(a=>a.status==='concluido').length}</div></div>`;
 
     if (!ags.length) {
-      document.getElementById('timelineDia').innerHTML = `<p style="color:var(--muted);text-align:center;padding:2rem;">Nenhum agendamento neste dia 🎉</p>`;
+      document.getElementById('timelineDia').innerHTML = `<p style="color:var(--muted);text-align:center;padding:2rem;">Nenhum compromisso neste dia 🎉</p>`;
       return;
     }
     const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente', cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
     document.getElementById('timelineDia').innerHTML = ags.map(a => {
-      const hora = new Date(a.data_inicio).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
-      return `<div class="ag-item" onclick="abrirVerAgendamento(${a.id})">
-        <div class="ag-hora">${hora}</div>
-        <div class="ag-cor" style="background:${a.servico_cor||'#0d9488'}"></div>
+      const ehDiaTodo = a.dia_todo;
+      const hora = ehDiaTodo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+      const horaFim = (!ehDiaTodo && a.data_fim) ? new Date(a.data_fim).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}) : '';
+      // Analista só pode editar o próprio agendamento
+      const podeEditar = usuario.perfil === 'admin' || a.profissional_id === usuario.id;
+      return `<div class="ag-item" onclick="${podeEditar ? `abrirVerAgendamento(${a.id})` : ''}\" style="${!podeEditar ? 'cursor:default;opacity:0.85' : ''}">
+        <div class="ag-hora">${hora}${horaFim ? `<br><span style="font-size:0.75rem;color:var(--muted)">${horaFim}</span>` : ''}</div>
+        <div class="ag-cor" style="background:#0d9488"></div>
         <div class="ag-info">
           <div class="ag-cliente">${a.cliente_nome}</div>
-          <div class="ag-servico">${a.servico_nome||'—'} · ${a.duracao_minutos||60}min</div>
+          <div class="ag-servico">${a.observacoes ? `💬 ${a.observacoes.substring(0,40)}${a.observacoes.length>40?'...':''}` : '—'}</div>
           <div class="ag-prof">👤 ${a.profissional_nome||'—'}</div>
         </div>
         <span class="badge ${statusBadge[a.status]||''}">${a.status}</span>
@@ -185,17 +184,21 @@ async function carregarLista() {
     const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
     const ags = await r.json();
     const tbody = document.getElementById('tabelaAgendamentos');
-    if (!ags.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum agendamento encontrado</td></tr>`; return; }
+    if (!ags.length) { tbody.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum compromisso encontrado</td></tr>`; return; }
     const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente', cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
     tbody.innerHTML = ags.map(a => {
-      const dt = new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const ehDiaTodo = a.dia_todo;
+      const dt = ehDiaTodo
+        ? new Date(a.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit'}) + ' · Dia todo'
+        : new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      const podeEditar = usuario.perfil === 'admin' || a.profissional_id === usuario.id;
       return `<tr>
         <td>${dt}</td>
-        <td><strong>${a.cliente_nome}</strong>${a.cliente_telefone?`<br><span style="color:var(--muted);font-size:0.78rem">${a.cliente_telefone}</span>`:''}</td>
-        <td>${a.servico_nome||'—'}</td>
+        <td><strong>${a.cliente_nome}</strong></td>
         <td>${a.profissional_nome||'—'}</td>
+        <td>${a.observacoes ? a.observacoes.substring(0,30)+(a.observacoes.length>30?'...':'') : '—'}</td>
         <td><span class="badge ${statusBadge[a.status]||''}">${a.status}</span></td>
-        <td><button class="btn btn-secondary btn-sm" onclick="abrirVerAgendamento(${a.id})">Ver</button></td>
+        <td>${podeEditar ? `<button class="btn btn-secondary btn-sm" onclick="abrirVerAgendamento(${a.id})">Ver</button>` : '—'}</td>
       </tr>`;
     }).join('');
   } catch(err) { console.error(err); }
@@ -203,84 +206,105 @@ async function carregarLista() {
 
 // ── Modal Novo Agendamento ────────────────────────────────
 function abrirNovoAgendamento() {
-  document.getElementById('agId').value='';
-  document.getElementById('agCliente').value='';
-  document.getElementById('agEmail').value='';
-  document.getElementById('agTelefone').value='';
-  document.getElementById('agObs').value='';
-  document.getElementById('agData').value=dataSelecionada;
-  document.getElementById('slotsWrapper').style.display='none';
-  document.getElementById('erroAgendamento').style.display='none';
-  document.getElementById('agServico').innerHTML=servicos.map(s=>`<option value="${s.id}">${s.nome}</option>`).join('');
-  agSlotSelecionado=null;
-  carregarProfissionaisServico();
+  document.getElementById('agId').value = '';
+  document.getElementById('agTitulo').value = '';
+  document.getElementById('agObs').value = '';
+  document.getElementById('agData').value = dataSelecionada;
+
+  // Hora início padrão = hora atual arredondada
+  const agora = new Date();
+  const h = String(agora.getHours()).padStart(2,'0');
+  const m = agora.getMinutes() < 30 ? '00' : '30';
+  document.getElementById('agHoraInicio').value = `${h}:${m}`;
+  document.getElementById('agHoraFim').value = '';
+
+  // Resetar checkboxes
+  document.getElementById('chkDiaTodo').checked = false;
+  document.getElementById('chkAddParticipante').checked = false;
+  document.getElementById('camposHora').style.display = 'flex';
+  document.getElementById('campoParticipante').style.display = 'none';
+
+  // Carregar profissionais no select
+  document.getElementById('agParticipante').innerHTML =
+    profissionais.filter(p => p.id !== usuario.id)
+      .map(p => `<option value="${p.id}">${p.nome}</option>`).join('');
+
+  document.getElementById('erroAgendamento').style.display = 'none';
   document.getElementById('modalAgendamento').classList.add('active');
 }
+
 function fecharModalAgendamento() { document.getElementById('modalAgendamento').classList.remove('active'); }
 
-async function carregarProfissionaisServico() {
-  const sid = document.getElementById('agServico').value;
-  agSlotSelecionado=null;
-  document.getElementById('slotsWrapper').style.display='none';
-  if (!sid) return;
-  try {
-    const r = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${sid}`,{headers:{Authorization:`Bearer ${token}`}});
-    const profs = await r.json();
-    document.getElementById('agProfissional').innerHTML=profs.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-    carregarHorarios();
-  } catch(err) { console.error(err); }
+function toggleDiaTodo(chk) {
+  document.getElementById('camposHora').style.display = chk.checked ? 'none' : 'flex';
 }
 
-async function carregarHorarios() {
-  const sid  = document.getElementById('agServico').value;
-  const pid  = document.getElementById('agProfissional').value;
-  const data = document.getElementById('agData').value;
-  agSlotSelecionado=null;
-  if (!sid||!pid||!data) { document.getElementById('slotsWrapper').style.display='none'; return; }
-  try {
-    const r = await fetch(`${API}/agendamentos/horarios-disponiveis?empresa_id=${usuario.empresa_id}&profissional_id=${pid}&servico_id=${sid}&data=${data}`,{headers:{Authorization:`Bearer ${token}`}});
-    const { horarios } = await r.json();
-    document.getElementById('slotsWrapper').style.display='block';
-    document.getElementById('slotsHorario').innerHTML=horarios.length
-      ? horarios.map(h=>`<div class="slot" onclick="selecionarSlot(this,'${h.hora}','${h.data_inicio}','${h.data_fim}')">${h.hora}</div>`).join('')
-      : '<p style="color:var(--muted);font-size:0.85rem;grid-column:1/-1">Nenhum horário disponível neste dia</p>';
-  } catch(err) { console.error(err); }
-}
-
-function selecionarSlot(el,hora,ini,fim) {
-  document.querySelectorAll('#slotsHorario .slot').forEach(s=>s.classList.remove('selecionado'));
-  el.classList.add('selecionado');
-  agSlotSelecionado={hora,data_inicio:ini,data_fim:fim};
-  document.getElementById('agDataInicio').value=ini;
-  document.getElementById('agDataFim').value=fim;
+function toggleAddParticipanteNovo(chk) {
+  document.getElementById('campoParticipante').style.display = chk.checked ? 'block' : 'none';
 }
 
 async function salvarAgendamento() {
-  const cliente=document.getElementById('agCliente').value.trim();
-  const email  =document.getElementById('agEmail').value.trim();
-  const tel    =document.getElementById('agTelefone').value.trim();
-  const obs    =document.getElementById('agObs').value.trim();
-  const sid    =document.getElementById('agServico').value;
-  const pid    =document.getElementById('agProfissional').value;
-  const erro   =document.getElementById('erroAgendamento');
-  if (!cliente) { erro.textContent='Informe o nome do cliente'; erro.style.display='block'; return; }
-  if (!agSlotSelecionado) { erro.textContent='Selecione um horário'; erro.style.display='block'; return; }
-  erro.style.display='none';
-  document.getElementById('btnAgendar').style.display='none';
-  document.getElementById('spinnerAgendar').style.display='inline-block';
+  const titulo    = document.getElementById('agTitulo').value.trim();
+  const obs       = document.getElementById('agObs').value.trim();
+  const data      = document.getElementById('agData').value;
+  const diaTodo   = document.getElementById('chkDiaTodo').checked;
+  const horaIni   = document.getElementById('agHoraInicio').value;
+  const horaFim   = document.getElementById('agHoraFim').value;
+  const addPart   = document.getElementById('chkAddParticipante').checked;
+  const partId    = document.getElementById('agParticipante').value;
+  const erro      = document.getElementById('erroAgendamento');
+
+  if (!titulo) { erro.textContent = 'Informe o título do compromisso'; erro.style.display = 'block'; return; }
+  if (!data)   { erro.textContent = 'Informe a data'; erro.style.display = 'block'; return; }
+  if (!diaTodo && !horaIni) { erro.textContent = 'Informe o horário de início'; erro.style.display = 'block'; return; }
+  if (!diaTodo && !horaFim) { erro.textContent = 'Informe o horário de fim'; erro.style.display = 'block'; return; }
+
+  erro.style.display = 'none';
+  document.getElementById('btnAgendar').style.display = 'none';
+  document.getElementById('spinnerAgendar').style.display = 'inline-block';
+
   try {
-    const r = await fetch(`${API}/agendamentos`,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:pid,servico_id:sid,
-        cliente_nome:cliente,cliente_email:email||null,cliente_telefone:tel||null,
-        data_inicio:agSlotSelecionado.data_inicio,data_fim:agSlotSelecionado.data_fim,observacoes:obs||null})
+    let data_inicio, data_fim;
+    if (diaTodo) {
+      data_inicio = `${data}T00:00:00-03:00`;
+      data_fim    = `${data}T23:59:59-03:00`;
+    } else {
+      data_inicio = `${data}T${horaIni}:00-03:00`;
+      data_fim    = `${data}T${horaFim}:00-03:00`;
+    }
+
+    const r = await fetch(`${API}/agendamentos`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        empresa_id:     usuario.empresa_id,
+        profissional_id: usuario.id,
+        cliente_nome:   titulo,
+        data_inicio,
+        data_fim,
+        dia_todo:       diaTodo,
+        observacoes:    obs || null,
+      })
     });
-    const data=await r.json();
-    if (!r.ok) { erro.textContent=data.erro||'Erro ao agendar'; erro.style.display='block'; return; }
+    const dataResp = await r.json();
+    if (!r.ok) { erro.textContent = dataResp.erro || 'Erro ao salvar'; erro.style.display = 'block'; return; }
+
+    // Adiciona participante se marcado
+    if (addPart && partId) {
+      await fetch(`${API}/participantes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ agendamento_id: dataResp.id, profissional_id: parseInt(partId) })
+      });
+    }
+
     fecharModalAgendamento();
     carregarAgenda();
-  } catch { erro.textContent='Erro de conexão'; erro.style.display='block'; }
-  finally { document.getElementById('btnAgendar').style.display='inline'; document.getElementById('spinnerAgendar').style.display='none'; }
+  } catch { erro.textContent = 'Erro de conexão'; erro.style.display = 'block'; }
+  finally {
+    document.getElementById('btnAgendar').style.display = 'inline';
+    document.getElementById('spinnerAgendar').style.display = 'none';
+  }
 }
 
 // ── Ver Agendamento ───────────────────────────────────────
@@ -293,22 +317,27 @@ async function abrirVerAgendamento(id) {
     const ag  = ags.find(a=>a.id===id);
     if (!ag) return;
 
-    const dt = new Date(ag.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});
+    const ehDiaTodo = ag.dia_todo;
+    const dtInicio = new Date(ag.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});
+    const dtFim    = (!ehDiaTodo && ag.data_fim) ? new Date(ag.data_fim).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}) : '';
+
     document.getElementById('detalheAgendamento').innerHTML = `
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;">
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Cliente</span><strong>${ag.cliente_nome}</strong></div>
-        ${ag.cliente_telefone?`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Telefone</span><span>${ag.cliente_telefone}</span></div>`:''}
-        ${ag.cliente_email?`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">E-mail</span><span>${ag.cliente_email}</span></div>`:''}
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Serviço</span><span>${ag.servico_nome}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Profissional</span><span>${ag.profissional_nome}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:0.88rem;text-transform:capitalize"><span style="color:var(--muted)">Data/Hora</span><span>${dt}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Título</span><strong>${ag.cliente_nome}</strong></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Responsável</span><span>${ag.profissional_nome||'—'}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;${ag.observacoes?'border-bottom:1px solid var(--border);':''}font-size:0.88rem">
+          <span style="color:var(--muted)">Data/Hora</span>
+          <span>${ehDiaTodo ? dtInicio.split(',')[0]+' · Dia todo' : dtInicio + (dtFim ? ` até ${dtFim}` : '')}</span>
+        </div>
         ${ag.observacoes?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.82rem;color:var(--muted)">💬 ${ag.observacoes}</div>`:''}
       </div>`;
 
-    document.getElementById('editAgId').value=id;
-    document.getElementById('editStatus').value=ag.status;
-    document.getElementById('partProfissional').innerHTML=profissionais.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
-    document.getElementById('formParticipante').style.display='none';
+    document.getElementById('editAgId').value = id;
+    document.getElementById('editStatus').value = ag.status;
+    document.getElementById('partProfissional').innerHTML = profissionais
+      .filter(p => p.id !== ag.profissional_id)
+      .map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+    document.getElementById('formParticipante').style.display = 'none';
     setTipoParticipante('interno');
     await carregarParticipantes(id);
     document.getElementById('modalVerAgendamento').classList.add('active');
@@ -317,13 +346,14 @@ async function abrirVerAgendamento(id) {
 function fecharModalVer() { document.getElementById('modalVerAgendamento').classList.remove('active'); }
 
 async function atualizarStatus() {
-  const id=document.getElementById('editAgId').value;
-  const status=document.getElementById('editStatus').value;
+  const id     = document.getElementById('editAgId').value;
+  const status = document.getElementById('editStatus').value;
   try {
-    await fetch(`${API}/agendamentos/${id}`,{
+    const r = await fetch(`${API}/agendamentos/${id}`,{
       method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
       body:JSON.stringify({status})
     });
+    if (!r.ok) { const d = await r.json(); mostrarToast('❌ Erro', d.erro || 'Sem permissão'); return; }
     fecharModalVer();
     carregarAgenda();
     if (document.getElementById('abaLista').style.display!=='none') carregarLista();
@@ -382,7 +412,7 @@ async function adicionarParticipante() {
   let body={agendamento_id:parseInt(agId)};
   if (tipoParticipante==='interno') {
     const pid=document.getElementById('partProfissional').value;
-    if (!pid) { erro.textContent='Selecione um profissional'; erro.style.display='block'; return; }
+    if (!pid) { erro.textContent='Selecione um analista'; erro.style.display='block'; return; }
     body.profissional_id=parseInt(pid);
   } else {
     const nome  = document.getElementById('partNome').value.trim();
@@ -488,7 +518,7 @@ async function salvarServico() {
   } catch { erro.textContent='Erro de conexão'; erro.style.display='block'; }
 }
 
-// ── Profissionais ─────────────────────────────────────────
+// ── Profissionais / Analistas ─────────────────────────────
 async function carregarProfissionaisFiltro() {
   try {
     const r=await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}`,{headers:{Authorization:`Bearer ${token}`}});
@@ -508,19 +538,16 @@ async function carregarProfissionaisAba() {
         <div>
           <div style="font-weight:700;color:var(--text)">${p.nome}</div>
           <div style="font-size:0.78rem;color:var(--muted)">${p.email}</div>
-          <span class="badge ${p.perfil==='admin'?'badge-confirmado':'badge-pendente'}" style="margin-top:4px">${p.perfil==='admin'?'👑 Admin':'🔧 Profissional'}</span>
+          <span class="badge ${p.perfil==='admin'?'badge-confirmado':'badge-pendente'}" style="margin-top:4px">${p.perfil==='admin'?'👑 Admin':'🔍 Analista'}</span>
         </div>
       </div>
-    </div>`).join('')||'<p style="color:var(--muted)">Nenhum profissional cadastrado</p>';
+    </div>`).join('')||'<p style="color:var(--muted)">Nenhum analista cadastrado</p>';
 }
 
 function abrirNovoProfissional() {
   ['profNome','profEmail','profTelefone','profSenha'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('profPerfil').value='profissional';
-  document.getElementById('checkServicos').innerHTML=servicos.map(s=>
-    `<label style="display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:0.82rem;">
-      <input type="checkbox" value="${s.id}" style="accent-color:var(--accent);" /> ${s.nome}
-    </label>`).join('');
+  document.getElementById('checkServicos').innerHTML='';
   document.getElementById('erroProfissional').style.display='none';
   document.getElementById('modalProfissional').classList.add('active');
 }
@@ -532,14 +559,13 @@ async function salvarProfissional() {
   const tel   =document.getElementById('profTelefone').value.trim();
   const senha =document.getElementById('profSenha').value;
   const perf  =document.getElementById('profPerfil').value;
-  const servs =[...document.querySelectorAll('#checkServicos input:checked')].map(c=>parseInt(c.value));
   const erro  =document.getElementById('erroProfissional');
   if (!nome||!email||!senha) { erro.textContent='Nome, e-mail e senha são obrigatórios'; erro.style.display='block'; return; }
   erro.style.display='none';
   try {
     const r=await fetch(`${API}/profissionais`,{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-      body:JSON.stringify({nome,email,telefone:tel||null,senha,perfil:perf,servicos:servs})
+      body:JSON.stringify({nome,email,telefone:tel||null,senha,perfil:perf})
     });
     const data=await r.json();
     if (!r.ok) { erro.textContent=data.erro||'Erro ao cadastrar'; erro.style.display='block'; return; }
@@ -613,7 +639,7 @@ function copiarLink() {
 
 // ── Perfil ────────────────────────────────────────────────
 function abrirPerfil() {
-  document.getElementById('perfilInfo').innerHTML=`<div><strong>Nome:</strong> ${usuario.nome}</div><div><strong>E-mail:</strong> ${usuario.email}</div><div><strong>Perfil:</strong> ${usuario.perfil==='admin'?'👑 Administrador':usuario.perfil==='superadmin'?'⚡ Super Admin':'🔧 Profissional'}</div>`;
+  document.getElementById('perfilInfo').innerHTML=`<div><strong>Nome:</strong> ${usuario.nome}</div><div><strong>E-mail:</strong> ${usuario.email}</div><div><strong>Perfil:</strong> ${usuario.perfil==='admin'?'👑 Administrador':usuario.perfil==='superadmin'?'⚡ Super Admin':'🔍 Analista'}</div>`;
   document.getElementById('erroPerfil').style.display='none';
   document.getElementById('sucessoPerfil').style.display='none';
   document.getElementById('novaSenhaP').value='';
@@ -647,7 +673,7 @@ async function carregarEmpresas() {
     const emps=await r.json();
     const tbody=document.getElementById('tabelaEmpresas');
     if (!emps.length) {
-      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa cadastrada. Clique em "+ Nova Empresa" para começar.</td></tr>';
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa cadastrada.</td></tr>';
       return;
     }
     tbody.innerHTML=emps.map(e=>`
@@ -676,8 +702,6 @@ function abrirNovaEmpresa() {
   document.getElementById('slugPreview').textContent='slug';
   document.getElementById('erroEmpresa').style.display='none';
   document.getElementById('modalEmpresa').classList.add('active');
-
-  // Preview do slug em tempo real
   document.getElementById('empSlug').oninput=function(){
     document.getElementById('slugPreview').textContent=this.value||'slug';
   };
@@ -687,7 +711,6 @@ function fecharModalEmpresa() { document.getElementById('modalEmpresa').classLis
 function abrirVerEmpresa(id, status) {
   document.getElementById('editEmpresaId').value=id;
   document.getElementById('editEmpresaStatus').value=status;
-  const emp=document.querySelector(`#tabelaEmpresas tr td strong`);
   document.getElementById('detalheEmpresa').innerHTML=`<p style="color:var(--muted);font-size:0.88rem">Atualize o status da empresa abaixo.</p>`;
   document.getElementById('modalVerEmpresa').classList.add('active');
 }
@@ -716,15 +739,12 @@ async function salvarEmpresa() {
   const adminEmail =document.getElementById('empAdminEmail').value.trim();
   const adminSenha =document.getElementById('empAdminSenha').value;
   const erro       =document.getElementById('erroEmpresa');
-
   if (!nome||!cnpj||!slug) { erro.textContent='Nome, CNPJ e slug são obrigatórios'; erro.style.display='block'; return; }
   if (!adminNome||!adminEmail||!adminSenha) { erro.textContent='Preencha os dados do administrador'; erro.style.display='block'; return; }
   if (adminSenha.length<6) { erro.textContent='A senha deve ter no mínimo 6 caracteres'; erro.style.display='block'; return; }
   erro.style.display='none';
-
   document.getElementById('btnEmpresaText').style.display='none';
   document.getElementById('spinnerEmpresa').style.display='inline-block';
-
   try {
     const r=await fetch(`${API}/empresas`,{
       method:'POST',
@@ -741,7 +761,7 @@ async function salvarEmpresa() {
     if (!r.ok) { erro.textContent=data.erro||'Erro ao criar empresa'; erro.style.display='block'; return; }
     fecharModalEmpresa();
     carregarEmpresas();
-    mostrarToast('✅ Empresa criada!',`${nome} foi cadastrada. O admin pode logar com o CNPJ.`);
+    mostrarToast('✅ Empresa criada!',`${nome} foi cadastrada.`);
   } catch { erro.textContent='Erro de conexão'; erro.style.display='block'; }
   finally {
     document.getElementById('btnEmpresaText').style.display='inline';

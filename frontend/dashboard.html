@@ -244,40 +244,71 @@
   </main>
 </div>
 
-<!-- Modal Novo/Editar Agendamento -->
+<!-- Modal Novo Agendamento -->
 <div class="modal-overlay" id="modalAgendamento">
-  <div class="modal" style="max-width:540px">
-    <h3 id="modalAgTitle">📅 Novo Agendamento</h3>
+  <div class="modal" style="max-width:500px">
+    <h3>📅 Novo Compromisso</h3>
     <input type="hidden" id="agId" />
-    <div class="form-grid" style="grid-template-columns:1fr 1fr">
-      <div class="form-group"><label>Serviço <span style="color:var(--accent)">*</span></label>
-        <select id="agServico" onchange="carregarProfissionaisServico()"></select></div>
-      <div class="form-group"><label>Profissional <span style="color:var(--accent)">*</span></label>
-        <select id="agProfissional" onchange="carregarHorarios()"></select></div>
+
+    <div class="form-group">
+      <label>Título <span style="color:var(--accent)">*</span></label>
+      <input type="text" id="agTitulo" placeholder="Ex: Reunião com cliente, Consulta médica..." />
     </div>
-    <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label>
-      <input type="date" id="agData" onchange="carregarHorarios()" /></div>
-    <div class="form-group" id="slotsWrapper" style="display:none">
-      <label>Horário disponível <span style="color:var(--accent)">*</span></label>
-      <div class="slots-grid" id="slotsHorario"></div>
-      <input type="hidden" id="agDataInicio" />
-      <input type="hidden" id="agDataFim" />
+
+    <div class="form-group">
+      <label>Data <span style="color:var(--accent)">*</span></label>
+      <input type="date" id="agData" />
     </div>
-    <div class="form-grid" style="grid-template-columns:1fr 1fr;margin-top:0.5rem">
-      <div class="form-group"><label>Nome do Cliente <span style="color:var(--accent)">*</span></label>
-        <input type="text" id="agCliente" placeholder="Nome completo" /></div>
-      <div class="form-group"><label>Telefone</label>
-        <input type="tel" id="agTelefone" placeholder="(00) 00000-0000" /></div>
+
+    <!-- Checkbox Dia Todo -->
+    <div class="form-group" style="margin-bottom:0.5rem">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+        <input type="checkbox" id="chkDiaTodo" onchange="toggleDiaTodo(this)"
+          style="accent-color:var(--accent);width:16px;height:16px;" />
+        Dia todo
+      </label>
     </div>
-    <div class="form-group"><label>E-mail do Cliente</label>
-      <input type="email" id="agEmail" placeholder="cliente@email.com" /></div>
-    <div class="form-group"><label>Observações</label>
-      <textarea id="agObs" placeholder="Informações adicionais..." style="resize:none;height:70px;"></textarea></div>
+
+    <!-- Campos de hora (ocultados quando Dia Todo) -->
+    <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
+      <div class="form-group" style="margin:0;flex:1">
+        <label>Início <span style="color:var(--accent)">*</span></label>
+        <input type="time" id="agHoraInicio" />
+      </div>
+      <div class="form-group" style="margin:0;flex:1">
+        <label>Fim <span style="color:var(--accent)">*</span></label>
+        <input type="time" id="agHoraFim" />
+      </div>
+    </div>
+
+    <!-- Checkbox Adicionar Participante -->
+    <div class="form-group" style="margin-bottom:0.5rem">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+        <input type="checkbox" id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)"
+          style="accent-color:var(--accent);width:16px;height:16px;" />
+        Adicionar participante?
+      </label>
+    </div>
+
+    <!-- Select de participante (oculto por padrão) -->
+    <div id="campoParticipante" style="display:none;margin-bottom:1rem">
+      <div class="form-group" style="margin:0">
+        <label>Participante</label>
+        <select id="agParticipante"></select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Observações</label>
+      <textarea id="agObs" placeholder="Informações adicionais..."
+        style="resize:none;height:70px;"></textarea>
+    </div>
+
     <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarAgendamento()">
-        <span id="btnAgendar">Confirmar Agendamento</span>
+        <span id="btnAgendar">Confirmar</span>
         <div class="spinner" id="spinnerAgendar"></div>
       </button>
     </div>

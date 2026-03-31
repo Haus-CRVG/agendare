@@ -97,47 +97,40 @@ router.get('/horarios-disponiveis', async (req, res) => {
 });
 
 // ── POST /api/agendamentos — criar ────────────────────────
-router.post('/', async (req, res) => {
-  const { empresa_id, profissional_id, servico_id, cliente_nome, cliente_email,
-          cliente_telefone, data_inicio, data_fim, observacoes } = req.body;
-  if (!empresa_id || !profissional_id || !servico_id || !cliente_nome || !data_inicio || !data_fim)
+router.post('/', auth(), async (req, res) => {
+  const {
+    empresa_id, profissional_id, servico_id,
+    cliente_nome, cliente_email, cliente_telefone,
+    data_inicio, data_fim, observacoes, dia_todo
+  } = req.body;
+
+  if (!empresa_id || !profissional_id || !cliente_nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: 'Campos obrigatórios faltando' });
+
   try {
     const token_cancelamento = crypto.randomBytes(32).toString('hex');
     const result = await pool.query(`
-      INSERT INTO agendamentos (empresa_id, profissional_id, servico_id, cliente_nome,
-        cliente_email, cliente_telefone, data_inicio, data_fim, observacoes, token_cancelamento)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [empresa_id, profissional_id, servico_id, cliente_nome,
-       cliente_email||null, cliente_telefone||null, data_inicio, data_fim,
-       observacoes||null, token_cancelamento]
+      INSERT INTO agendamentos (
+        empresa_id, profissional_id, servico_id, cliente_nome,
+        cliente_email, cliente_telefone, data_inicio, data_fim,
+        observacoes, token_cancelamento, dia_todo
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+      [
+        empresa_id, profissional_id, servico_id || null, cliente_nome,
+        cliente_email || null, cliente_telefone || null,
+        data_inicio, data_fim, observacoes || null,
+        token_cancelamento, dia_todo || false
+      ]
     );
     const ag = result.rows[0];
 
-    const [prof, svc] = await Promise.all([
-      pool.query(`SELECT nome, email FROM usuarios WHERE id = $1`, [profissional_id]),
-      pool.query(`SELECT nome FROM servicos WHERE id = $1`, [servico_id]),
-    ]);
-
+    // Notificação interna
     await pool.query(
       `INSERT INTO notificacoes (usuario_id, titulo, mensagem) VALUES ($1,$2,$3)`,
       [profissional_id,
-       `Novo agendamento: ${cliente_nome}`,
-       `${svc.rows[0]?.nome} — ${new Date(data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}`]
-    );
-
-    if (cliente_email) {
-      enviarConfirmacao({ para: cliente_email, nomeCliente: cliente_nome,
-        servico: svc.rows[0]?.nome, profissional: prof.rows[0]?.nome,
-        dataInicio: data_inicio, tokenCancelamento: token_cancelamento })
-        .catch(e => console.error('❌ E-mail cliente:', e.message));
-    }
-    if (prof.rows[0]?.email) {
-      enviarNotificacaoProfissional({ para: prof.rows[0].email,
-        nomeProfissional: prof.rows[0].nome, cliente: cliente_nome,
-        servico: svc.rows[0]?.nome, dataInicio: data_inicio })
-        .catch(e => console.error('❌ E-mail profissional:', e.message));
-    }
+       `Novo compromisso: ${cliente_nome}`,
+       `${new Date(data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}`]
+    ).catch(() => {});
 
     res.status(201).json({ ...ag, token_cancelamento });
   } catch (err) { res.status(500).json({ erro: err.message }); }
@@ -146,14 +139,30 @@ router.post('/', async (req, res) => {
 // ── PATCH /api/agendamentos/:id — atualizar status ────────
 router.patch('/:id', auth(), async (req, res) => {
   const { status, observacoes } = req.body;
-  const eid = req.usuario.empresa_id;
+  const usuarioId = req.usuario.id;
+  const perfil    = req.usuario.perfil;
+  const eid       = req.usuario.empresa_id;
+
   try {
+    // Verifica se o agendamento existe e pertence à empresa
+    const check = await pool.query(
+      `SELECT profissional_id FROM agendamentos WHERE id = $1 AND empresa_id = $2`,
+      [req.params.id, eid]
+    );
+    if (!check.rows.length) return res.status(404).json({ erro: 'Agendamento não encontrado' });
+
+    // Analista só pode editar o próprio agendamento
+    if (perfil !== 'admin' && perfil !== 'superadmin') {
+      if (check.rows[0].profissional_id !== usuarioId) {
+        return res.status(403).json({ erro: 'Você só pode editar seus próprios compromissos' });
+      }
+    }
+
     const result = await pool.query(
       `UPDATE agendamentos SET status=$1, observacoes=COALESCE($2,observacoes)
        WHERE id=$3 AND empresa_id=$4 RETURNING *`,
       [status, observacoes, req.params.id, eid]
     );
-    if (!result.rows.length) return res.status(404).json({ erro: 'Agendamento não encontrado' });
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
