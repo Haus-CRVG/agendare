@@ -1,7 +1,12 @@
 {
   "name": "agendare-frontend",
   "version": "1.0.0",
+  "description": "Frontend do Agendare — Sistema de Agendamentos",
+  "main": "server.js",
   "scripts": {
-    "start": "serve ."
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
   }
 }
