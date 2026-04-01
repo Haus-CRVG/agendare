@@ -120,4 +120,22 @@ router.patch('/:id/senha', auth(), async (req, res) => {
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
+router.patch('/:id', auth(['admin']), async (req, res) => {
+  const { nome, email, telefone, perfil, cor_agenda } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE usuarios SET
+        nome = COALESCE($1, nome),
+        email = COALESCE($2, email),
+        telefone = COALESCE($3, telefone),
+        perfil = COALESCE($4, perfil),
+        cor_agenda = COALESCE($5, cor_agenda)
+       WHERE id = $6 AND empresa_id = $7 RETURNING id, nome, email, perfil, cor_agenda`,
+      [nome, email, telefone, perfil, cor_agenda, req.params.id, req.usuario.empresa_id]
+    );
+    if (!result.rows.length) return res.status(404).json({ erro: 'Usuário não encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) { res.status(500).json({ erro: err.message }); }
+});
+
 module.exports = router;
