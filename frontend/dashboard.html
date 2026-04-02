@@ -84,7 +84,7 @@
   <div class="topbar-user">
     Olá, <strong id="nomeUsuario">...</strong>
     <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
-    <button class="btn-icon" onclick="abrirNotificacoes()" title="Notificações" id="btnNotif">🔔</button>
+    <button class="btn-icon" onclick="abrirNotificacoes()" title="Notificações" id="btnNotif" style="position:relative;">🔔<span id="badgeNotif" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:0.6rem;font-weight:700;min-width:16px;height:16px;padding:0 3px;align-items:center;justify-content:center;line-height:16px;text-align:center;"></span></button>
     <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
     <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
     <button class="btn-logout" onclick="logoff()">Logoff</button>
@@ -107,7 +107,6 @@
     </div>
     <div class="sidebar-section" id="sidebarAdmin" style="display:none">
       <div class="sidebar-label">Gestão</div>
-
       <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
         <span class="icon">👥</span> Profissionais
       </button>
@@ -133,14 +132,26 @@
           <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos" onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
-          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisDia"     onclick="mudarVisualizacao('dia')">📅 Dia</button>
-          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisSemana"  onclick="mudarVisualizacao('semana')">📆 Semana</button>
-          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisMes"     onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
+          <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisDia"    onclick="mudarVisualizacao('dia')">📅 Dia</button>
+          <button class="btn btn-secondary btn-sm btn-vis"        id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆 Semana</button>
+          <button class="btn btn-secondary btn-sm btn-vis"        id="btnVisMes"    onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
           <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
         </div>
       </div>
       <div class="stats-grid" id="statsAgenda"></div>
+
+      <!-- Painel: Próximos compromissos (Kanban por colaborador) -->
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+          <div>
+            <span style="font-weight:700;font-size:0.9rem;color:var(--text)">📌 Próximos Compromissos</span>
+            <span style="font-size:0.75rem;color:var(--muted);margin-left:8px;">próximos 5 por colaborador · todas as datas</span>
+          </div>
+        </div>
+        <div class="kanban-board" id="proximosKanban" style="min-height:60px;">
+          <p style="color:var(--muted);padding:0.5rem;font-size:0.85rem;">Carregando...</p>
+        </div>
+      </div>
 
       <!-- Layout principal: calendário + painel direito -->
       <div style="display:grid;grid-template-columns:300px 1fr;gap:1.5rem;" id="agendaLayout">
@@ -166,19 +177,8 @@
 
         <!-- Painel direito (muda conforme visualização) -->
         <div id="painelDireito">
-          <!-- Próximos: Kanban padrão ao logar -->
-          <div id="painelProximos">
-            <div class="card" style="margin-bottom:1rem">
-              <div class="card-header">
-                <h2>⚡ Próximos Compromissos</h2>
-                <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
-              </div>
-            </div>
-            <div class="kanban-board" id="kanbanProximos"></div>
-          </div>
-
           <!-- Dia: timeline -->
-          <div id="painelDia" class="card" style="display:none">
+          <div id="painelDia" class="card">
             <div class="card-header">
               <h2 id="tituloTimeline">Hoje</h2>
               <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
@@ -260,6 +260,15 @@
           </table>
         </div>
       </div>
+    </div>
+
+    <!-- ABA: SERVIÇOS -->
+    <div id="abaServicos" style="display:none">
+      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+        <div><div class="page-title">Nossos <span>Serviços</span></div><div class="page-subtitle">Gerencie os serviços oferecidos</div></div>
+        <button class="btn btn-primary" onclick="abrirNovoServico()">+ Novo Serviço</button>
+      </div>
+      <div id="listaServicos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
     </div>
 
     <!-- ABA: PROFISSIONAIS -->
