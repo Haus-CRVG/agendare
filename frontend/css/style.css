@@ -25,11 +25,11 @@
 }
 
 .logo-top {
-  height: 180px;
+  height: 140px;
   transition: transform 0.2s ease;
   width: auto;
   object-fit: contain;
-  margin-left: -43px;
+  cursor: pointer;
 }
 
 .logo-top:hover {
@@ -54,9 +54,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  /* padding: 0 2rem 0 1rem;*/
-  padding-left: 0.5rem;
-  height: 90px;
+  padding: 0 1rem;
+  height: 56px;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -86,7 +85,7 @@ body {
 .topbar-user strong { color: var(--text); }
 
 /* ── SIDEBAR ───────────────────────────────────────────── */
-.layout { display: flex; min-height: calc(100vh - 64px); }
+.layout { display: flex; min-height: calc(100vh - 56px); }
 
 .sidebar {
   width: 220px;
@@ -95,8 +94,8 @@ body {
   padding: 1.5rem 0;
   flex-shrink: 0;
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: 56px;
+  height: calc(100vh - 56px);
   overflow-y: auto;
 }
 
@@ -550,3 +549,114 @@ tbody td { padding: 0.85rem 1rem; color: var(--text); }
   .stats-grid { grid-template-columns: 1fr; }
   .slots-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ── MOBILE EXTRA ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Topbar compacta */
+  .topbar-user { gap: 0.4rem; font-size: 0.8rem; }
+  .topbar-user > span:first-child { display: none; } /* esconde "Olá," */
+  .btn-logout { display: none; } /* esconde Logoff no mobile, mantém Sair */
+
+  /* Agenda layout: coluna única no mobile */
+  #agendaLayout {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Kanban: scroll horizontal no mobile */
+  .kanban-board {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+  }
+  .kanban-col {
+    min-width: 240px;
+    max-width: 260px;
+  }
+
+  /* Stats: 2 colunas no mobile */
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+
+  /* Botões de visualização menores */
+  .btn-vis { font-size: 0.72rem; padding: 0.3rem 0.5rem; }
+
+  /* Page header empilha */
+  .page-header { flex-direction: column !important; align-items: flex-start !important; }
+
+  /* Calendário mini fullwidth */
+  .card { overflow: hidden; }
+
+  /* Tabela com scroll horizontal */
+  .table-wrapper { overflow-x: auto; }
+
+  /* Modal fullscreen no mobile */
+  .modal {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+  }
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2,1fr); gap: 0.5rem; }
+  .kanban-col { min-width: 200px; }
+  .topbar { padding: 0 0.75rem; }
+}
+
+/* ── PAINEL NOTIFICAÇÕES ────────────────────────────────── */
+.notif-panel {
+  position: fixed;
+  top: 64px;
+  right: 1rem;
+  width: 340px;
+  max-width: calc(100vw - 2rem);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  overflow: hidden;
+  animation: slideUp 0.2s ease both;
+  display: none;
+}
+.notif-panel.active { display: block; }
+.notif-panel-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.notif-panel-body { max-height: 360px; overflow-y: auto; }
+.notif-item {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item-titulo { font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.notif-item-data { color: var(--muted); font-size: 0.75rem; }
+.notif-empty { padding: 2rem; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+/* ── BLOCO DE NOTAS ─────────────────────────────────────── */
+.notas-modal textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.notas-modal textarea:focus { border-color: var(--accent); }
