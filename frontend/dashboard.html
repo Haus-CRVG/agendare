@@ -80,12 +80,13 @@
 <div id="toastContainer"></div>
 
 <div class="topbar">
-  <img src="assets/logo-agendare.png" class="logo-top" />
+  <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
   <div class="topbar-user">
     Olá, <strong id="nomeUsuario">...</strong>
     <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
-    <button class="btn-icon" onclick="abrirNotificacoes()" title="Notificações" id="btnNotif">🔔</button>
+    <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif" style="position:relative">🔔</button>
     <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
+    <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
     <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
     <button class="btn-logout" onclick="logoff()">Logoff</button>
     <button class="btn-logout" onclick="sair()" style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
@@ -427,7 +428,7 @@
     <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
-      <button class="btn btn-primary" onclick="atualizarStatus()">Salvar status</button>
+      <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
     </div>
   </div>
 </div>
@@ -572,6 +573,47 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
       <button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Painel de Notificações -->
+<div class="notif-panel" id="painelNotificacoes">
+  <div class="notif-panel-header">
+    <span>⚠️ Compromissos em Atraso</span>
+    <button onclick="fecharPainelNotificacoes()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
+  </div>
+  <div class="notif-panel-body" id="painelNotifBody">
+    <div class="notif-empty">Carregando...</div>
+  </div>
+</div>
+
+<!-- Modal Bloco de Notas -->
+<div class="modal-overlay" id="modalNotas">
+  <div class="modal notas-modal" style="max-width:480px">
+    <h3>📝 Minhas Anotações</h3>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
+    <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Observação ao Concluir/Cancelar -->
+<div class="modal-overlay" id="modalObsStatus">
+  <div class="modal" style="max-width:420px">
+    <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação antes de salvar.</p>
+    <div class="form-group">
+      <label>Observação</label>
+      <textarea id="obsStatusTexto" placeholder="Descreva o que foi feito, motivo do cancelamento..." style="resize:none;height:100px;width:100%;"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button>
     </div>
   </div>
 </div>
