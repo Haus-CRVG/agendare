@@ -107,9 +107,7 @@
     </div>
     <div class="sidebar-section" id="sidebarAdmin" style="display:none">
       <div class="sidebar-label">Gestão</div>
-      <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
-        <span class="icon">🛠️</span> Serviços
-      </button>
+
       <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
         <span class="icon">👥</span> Profissionais
       </button>
@@ -135,9 +133,10 @@
           <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
         </div>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisDia"    onclick="mudarVisualizacao('dia')">📅 Dia</button>
-          <button class="btn btn-secondary btn-sm btn-vis"        id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆 Semana</button>
-          <button class="btn btn-secondary btn-sm btn-vis"        id="btnVisMes"    onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
+          <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos" onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
+          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisDia"     onclick="mudarVisualizacao('dia')">📅 Dia</button>
+          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisSemana"  onclick="mudarVisualizacao('semana')">📆 Semana</button>
+          <button class="btn btn-secondary btn-sm btn-vis"       id="btnVisMes"     onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
           <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
         </div>
       </div>
@@ -167,8 +166,19 @@
 
         <!-- Painel direito (muda conforme visualização) -->
         <div id="painelDireito">
+          <!-- Próximos: Kanban padrão ao logar -->
+          <div id="painelProximos">
+            <div class="card" style="margin-bottom:1rem">
+              <div class="card-header">
+                <h2>⚡ Próximos Compromissos</h2>
+                <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+              </div>
+            </div>
+            <div class="kanban-board" id="kanbanProximos"></div>
+          </div>
+
           <!-- Dia: timeline -->
-          <div id="painelDia" class="card">
+          <div id="painelDia" class="card" style="display:none">
             <div class="card-header">
               <h2 id="tituloTimeline">Hoje</h2>
               <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
@@ -250,15 +260,6 @@
           </table>
         </div>
       </div>
-    </div>
-
-    <!-- ABA: SERVIÇOS -->
-    <div id="abaServicos" style="display:none">
-      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div class="page-title">Nossos <span>Serviços</span></div><div class="page-subtitle">Gerencie os serviços oferecidos</div></div>
-        <button class="btn btn-primary" onclick="abrirNovoServico()">+ Novo Serviço</button>
-      </div>
-      <div id="listaServicos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;"></div>
     </div>
 
     <!-- ABA: PROFISSIONAIS -->
