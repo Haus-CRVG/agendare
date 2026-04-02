@@ -609,4 +609,129 @@ async function fecharToast(btn,id){const t=btn.closest('.toast');if(!t)return;t.
 function sair(){if(pollingInterval)clearInterval(pollingInterval);localStorage.clear();window.location.href='index.html';}
 function logoff(){if(pollingInterval)clearInterval(pollingInterval);const cnpj=localStorage.getItem('cnpj_salvo');localStorage.removeItem('token');localStorage.removeItem('usuario');if(cnpj)localStorage.setItem('cnpj_salvo',cnpj);window.location.href='index.html';}
 
+
+// ── Voltar ao início ──────────────────────────────────────
+function voltarInicio() {
+  mudarAba('agenda');
+  mudarVisualizacao('proximos');
+}
+
+// ── Painel de Notificações (Atrasados) ────────────────────
+let painelNotifAberto = false;
+
+function togglePainelNotificacoes() {
+  painelNotifAberto = !painelNotifAberto;
+  const painel = document.getElementById('painelNotificacoes');
+  if (painelNotifAberto) {
+    painel.classList.add('active');
+    carregarAtrasadosNoPanel();
+    // fecha ao clicar fora
+    setTimeout(() => document.addEventListener('click', fecharPainelFora, { once: true }), 100);
+  } else {
+    painel.classList.remove('active');
+  }
+}
+
+function fecharPainelFora(e) {
+  const painel = document.getElementById('painelNotificacoes');
+  const btn = document.getElementById('btnNotif');
+  if (!painel.contains(e.target) && !btn.contains(e.target)) {
+    painel.classList.remove('active');
+    painelNotifAberto = false;
+  }
+}
+
+function fecharPainelNotificacoes() {
+  document.getElementById('painelNotificacoes').classList.remove('active');
+  painelNotifAberto = false;
+}
+
+async function carregarAtrasadosNoPanel() {
+  const body = document.getElementById('painelNotifBody');
+  body.innerHTML = '<div class="notif-empty">Buscando...</div>';
+  try {
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+    const r = await fetch(`${API}/agendamentos?inicio=2020-01-01T00:00:00&fim=${hoje}T23:59:59`, { headers:{ Authorization:`Bearer ${token}` } });
+    const ags = await r.json();
+    const atrasados = ags.filter(a => !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora);
+    if (!atrasados.length) {
+      body.innerHTML = '<div class="notif-empty">✅ Você não tem compromissos em atraso!</div>';
+      return;
+    }
+    body.innerHTML = atrasados.map(a => {
+      const dt = a.dia_todo
+        ? new Date(a.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit'}) + ' · Dia todo'
+        : new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="notif-item" onclick="abrirVerAgendamentoKanban(${a.id});fecharPainelNotificacoes();" style="cursor:pointer">
+        <div class="notif-item-titulo">⚠️ ${a.cliente_nome}</div>
+        <div class="notif-item-data">👤 ${a.profissional_nome||'—'} · 📅 ${dt}</div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    body.innerHTML = '<div class="notif-empty">Erro ao carregar.</div>';
+  }
+}
+
+// ── Bloco de Notas ────────────────────────────────────────
+function abrirNotas() {
+  const chave = `notas_${usuario.id}`;
+  const salvo = localStorage.getItem(chave) || '';
+  document.getElementById('notasTexto').value = salvo;
+  document.getElementById('modalNotas').classList.add('active');
+}
+function fecharNotas() { document.getElementById('modalNotas').classList.remove('active'); }
+function salvarNotas() {
+  const chave = `notas_${usuario.id}`;
+  localStorage.setItem(chave, document.getElementById('notasTexto').value);
+  fecharNotas();
+  mostrarToast('📝 Anotações salvas!', 'Suas anotações foram salvas localmente.');
+}
+
+// ── Atualizar Status com Observação ──────────────────────
+let _statusPendente = null;
+
+function pedirObsStatus() {
+  const status = document.getElementById('editStatus').value;
+  _statusPendente = status;
+  const titulo = status === 'concluido' ? '🏁 Concluído — O que foi feito?' :
+                 status === 'cancelado' ? '🚫 Cancelado — Qual o motivo?' :
+                 '📝 Observação';
+  const subtitulo = status === 'concluido'
+    ? 'Descreva brevemente o que foi realizado.'
+    : status === 'cancelado'
+    ? 'Informe o motivo do cancelamento.'
+    : 'Adicione uma observação opcional.';
+  document.getElementById('tituloObsStatus').textContent = titulo;
+  document.getElementById('subtituloObsStatus').textContent = subtitulo;
+  document.getElementById('obsStatusTexto').value = '';
+  document.getElementById('modalVerAgendamento').classList.remove('active');
+  document.getElementById('modalObsStatus').classList.add('active');
+}
+function fecharObsStatus() {
+  document.getElementById('modalObsStatus').classList.remove('active');
+  document.getElementById('modalVerAgendamento').classList.add('active');
+  _statusPendente = null;
+}
+async function confirmarAtualizarStatus() {
+  const id = document.getElementById('editAgId').value;
+  const obs = document.getElementById('obsStatusTexto').value.trim();
+  const status = _statusPendente;
+  if (!status) return;
+  try {
+    const r = await fetch(`${API}/agendamentos/${id}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({ status, observacoes: obs || undefined })
+    });
+    if (!r.ok) { const d=await r.json(); mostrarToast('❌ Erro', d.erro||'Sem permissão'); return; }
+    document.getElementById('modalObsStatus').classList.remove('active');
+    _statusPendente = null;
+    carregarPainelAgenda();
+    if (document.getElementById('abaLista').style.display!=='none') carregarLista();
+    mostrarToast('✅ Status atualizado!', `Compromisso marcado como ${status}.`);
+  } catch(err) { console.error(err); }
+}
+
+
 init();
