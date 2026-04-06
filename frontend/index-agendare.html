@@ -42,42 +42,20 @@
     .doc-status { position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:0.8rem; }
     .input-wrap { position:relative; }
     .input-wrap input { width:100%; padding-right:40px; }
-
-    /* SSO loading overlay */
-    #ssoLoading {
-      display:none; position:fixed; inset:0;
-      background:var(--bg); z-index:9999;
-      flex-direction:column; align-items:center; justify-content:center; gap:1rem;
-    }
-    #ssoLoading.active { display:flex; }
-    .sso-spinner {
-      width:40px; height:40px;
-      border:3px solid var(--border);
-      border-top-color:var(--accent);
-      border-radius:50%;
-      animation:spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
   </style>
 </head>
 <body>
-
-<!-- Tela de loading SSO (aparece enquanto valida o token do Implanta) -->
-<div id="ssoLoading">
-  <img src="assets/logo-agendare.png" style="height:60px;margin-bottom:0.5rem;" />
-  <div class="sso-spinner"></div>
-  <p style="color:var(--muted);font-size:0.88rem;">Entrando via integração Implanta...</p>
-</div>
-
 <div class="login-wrap">
   <div class="login-card">
     <div class="login-logo">
+      <!--<div class="logo-text">Agenda<span>re</span></div>-->
       <img src="assets/logo-agendare.png" class="logo-img" />
       <p id="loginSubtitulo">Informe o CNPJ ou CPF da sua empresa</p>
     </div>
 
     <!-- MODO EMPRESA -->
     <div id="modoEmpresa">
+      <!-- Step 1: documento -->
       <div class="step active" id="step1">
         <div class="form-group">
           <label>CNPJ ou CPF</label>
@@ -133,7 +111,7 @@
 </div>
 
 <script>
-const API = 'https://agendare-backend-production.up.railway.app/api';
+const API = 'https://agendare-backend-production.up.railway.app/api'; 
 
 let empresaId = null, modoSA = false, docTimer = null;
 
@@ -228,60 +206,16 @@ async function fazerLoginSA() {
   finally { document.getElementById('btnSAText').style.display = 'inline'; document.getElementById('spinnerSA').style.display = 'none'; }
 }
 
-// ── INICIALIZAÇÃO: SSO ou login normal ───────────────────
-(async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const ssoToken  = urlParams.get('sso');
-
-  if (ssoToken) {
-    // ── Veio do Implanta via SSO ──────────────────────────
-    // Remove o token da URL imediatamente (segurança)
-    history.replaceState({}, '', window.location.pathname);
-
-    // Mostra tela de loading
-    document.getElementById('ssoLoading').classList.add('active');
-
-    try {
-      const r = await fetch(`${API}/sso/validar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sso_token: ssoToken })
-      });
-      const data = await r.json();
-
-      if (!r.ok) {
-        document.getElementById('ssoLoading').classList.remove('active');
-        alert('Erro no acesso via integração: ' + (data.erro || 'Token inválido ou expirado. Tente novamente.'));
-        return;
-      }
-
-      // Salva e redireciona para o dashboard
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('usuario', JSON.stringify(data.usuario));
-      window.location.href = 'dashboard.html';
-
-    } catch {
-      document.getElementById('ssoLoading').classList.remove('active');
-      alert('Erro de conexão ao validar acesso integrado. Tente novamente.');
-    }
-
-  } else {
-    // ── Login normal ──────────────────────────────────────
-    const u = JSON.parse(localStorage.getItem('usuario') || 'null');
-    if (u) { window.location.href = 'dashboard.html'; return; }
-
-    // Recarrega CNPJ salvo
-    const cnpjSalvo = localStorage.getItem('cnpj_salvo');
-    if (cnpjSalvo) {
-      const inp = document.getElementById('docInput');
-      if (inp) {
-        inp.value = cnpjSalvo;
-        const digits = cnpjSalvo.replace(/\D/g, '');
-        if (digits.length === 11 || digits.length === 14) buscarEmpresa(digits);
-      }
-    }
-  }
-})();
+// Carrega CNPJ salvo
+const u = JSON.parse(localStorage.getItem('usuario') || 'null');
+if (u) window.location.href = 'dashboard.html';
+const cnpjSalvo = localStorage.getItem('cnpj_salvo');
+if (cnpjSalvo) {
+  const inp = document.getElementById('docInput');
+  inp.value = cnpjSalvo;
+  const digits = cnpjSalvo.replace(/\D/g, '');
+  if (digits.length === 11 || digits.length === 14) buscarEmpresa(digits);
+}
 </script>
 </body>
 </html>

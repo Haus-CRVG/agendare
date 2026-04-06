@@ -18,6 +18,7 @@ app.use('/api/agendamentos',  require('./routes/agendamentos'));
 app.use('/api/notificacoes',  require('./routes/notificacoes'));
 app.use('/api/participantes', require('./routes/participantes'));
 app.use('/api/public',        require('./routes/public'));
+app.use('/api/sso',           require('./routes/sso'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true, sistema: 'Agendare' }));
 
