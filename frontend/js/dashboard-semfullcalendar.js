@@ -46,14 +46,6 @@ function init() {
 
   if (usuario.perfil === 'admin') document.getElementById('sidebarAdmin').style.display = 'block';
 
-  // Mostrar nome da empresa na topbar
-  const badge = document.getElementById('empresaBadge');
-  if (badge) {
-    const nomeEmp = usuario.empresa_nome || usuario.slug || '—';
-    badge.textContent = '🏢 ' + nomeEmp;
-    badge.title = nomeEmp;
-  }
-
   montarAbasMobile();
   carregarProfissionaisFiltro().then(() => {
     mudarAba('agenda');
@@ -88,97 +80,26 @@ function mudarAba(aba) {
 }
 
 // ── Visualização ──────────────────────────────────────────
-// ── FullCalendar instance ─────────────────────────────────
-let fcInstance = null;
-
 function mudarVisualizacao(vis) {
   visualizacaoAtual = vis;
   ['proximos','dia','semana','mes'].forEach(v => {
     const btn = document.getElementById(`btnVis${v.charAt(0).toUpperCase()+v.slice(1)}`);
     if (btn) btn.classList.toggle('ativo', v === vis);
   });
-  const ehKanban = vis === 'proximos';
-  document.getElementById('painelProximos').style.display  = ehKanban ? 'block' : 'none';
-  document.getElementById('painelCalendario').style.display = ehKanban ? 'none'  : 'block';
-
-  if (!ehKanban) {
-    const viewMap = { dia:'timeGridDay', semana:'timeGridWeek', mes:'dayGridMonth' };
-    iniciarOuAtualizarFC(viewMap[vis]);
-  }
+  document.getElementById('painelProximos').style.display = vis==='proximos' ? 'block' : 'none';
+  document.getElementById('painelDia').style.display      = vis==='dia'      ? 'block' : 'none';
+  document.getElementById('painelSemana').style.display   = vis==='semana'   ? 'block' : 'none';
+  document.getElementById('painelMes').style.display      = vis==='mes'      ? 'block' : 'none';
   carregarPainelAgenda();
-}
-
-function iniciarOuAtualizarFC(view) {
-  const el = document.getElementById('fcCalendario');
-  if (!el) return;
-  if (fcInstance) {
-    fcInstance.changeView(view);
-    fcInstance.refetchEvents();
-    return;
-  }
-  fcInstance = new FullCalendar.Calendar(el, {
-    locale: 'pt-br',
-    initialView: view,
-    headerToolbar: { left:'prev,next today', center:'title', right:'' },
-    height: 'auto',
-    firstDay: 0,
-    nowIndicator: true,
-    slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00',
-    allDayText: 'Dia todo',
-    buttonText: { today:'Hoje' },
-    eventClick: function(info) {
-      const id = parseInt(info.event.id);
-      dataSelecionada = info.event.startStr.split('T')[0];
-      abrirVerAgendamento(id);
-    },
-    dateClick: function(info) {
-      dataSelecionada = info.dateStr.split('T')[0];
-      abrirNovoAgendamento();
-    },
-    events: async function(fetchInfo, successCallback, failureCallback) {
-      try {
-        const profId = document.getElementById('filtroProfissional')?.value || '';
-        let url = `${API}/agendamentos?inicio=${fetchInfo.startStr.split('T')[0]}T00:00:00&fim=${fetchInfo.endStr.split('T')[0]}T23:59:59`;
-        if (profId) url += `&profissional_id=${profId}`;
-        const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
-        const ags = await r.json();
-        const agora = new Date();
-        const eventos = ags.map(a => {
-          const prof = profissionais.find(p => p.id === a.profissional_id);
-          const cor  = corProf(prof);
-          const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
-          return {
-            id:        a.id,
-            title:     a.cliente_nome,
-            start:     a.data_inicio,
-            end:       a.data_fim,
-            allDay:    a.dia_todo || false,
-            color:     atrasado ? '#ef4444' : cor,
-            textColor: '#fff',
-            extendedProps: { status: a.status, profissional: a.profissional_nome, obs: a.observacoes }
-          };
-        });
-        successCallback(eventos);
-      } catch(e) { failureCallback(e); }
-    },
-    eventDidMount: function(info) {
-      const p = info.event.extendedProps;
-      info.el.title = `${info.event.title}\n👤 ${p.profissional||'—'}\n📌 ${p.status}${p.obs?'\n💬 '+p.obs:''}`;
-    }
-  });
-  fcInstance.render();
-}
-
-function atualizarFullCalendar() {
-  if (fcInstance) fcInstance.refetchEvents();
 }
 
 async function carregarPainelAgenda() {
   await carregarStatsAgenda();
   await renderMiniCalendarioComBolinhas();
   if (visualizacaoAtual === 'proximos') await carregarKanbanProximos();
-  else if (fcInstance) fcInstance.refetchEvents();
+  if (visualizacaoAtual === 'dia')      await carregarAgenda();
+  if (visualizacaoAtual === 'semana')   await carregarKanbanSemana();
+  if (visualizacaoAtual === 'mes')      await carregarKanbanMes();
 }
 
 // ── Stats ─────────────────────────────────────────────────
