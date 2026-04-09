@@ -101,25 +101,17 @@
       </div>
       <!-- FullCalendar: Dia/Semana/Mês -->
       <div id="painelCalendario" style="display:none">
-        <div style="display:grid;grid-template-columns:260px 1fr;gap:1.5rem;" id="agendaLayout">
-          <div class="card">
-            <div class="card-body" style="padding:1rem">
-              <div class="calendario-nav">
-                <button class="btn-icon btn-sm" onclick="navegarMes(-1)">‹</button>
-                <span class="calendario-mes" id="calMes"></span>
-                <button class="btn-icon btn-sm" onclick="navegarMes(1)">›</button>
-              </div>
-              <div class="calendario-grid" id="calendarioGrid"></div>
-              <div style="margin-top:1rem">
-                <div class="form-group" style="margin-bottom:0">
-                  <label>Profissional</label>
-                  <select id="filtroProfissional" onchange="atualizarFullCalendar()"><option value="">Todos</option></select>
-                </div>
-              </div>
-            </div>
+        <!-- Filtro por profissional acima do calendário -->
+        <div class="card" style="margin-bottom:1rem;padding:0.75rem 1rem">
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+            <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
+            <select id="filtroProfissional" onchange="atualizarFullCalendar()" style="min-width:200px">
+              <option value="">Todos</option>
+            </select>
           </div>
-          <div id="fcCalendario"></div>
         </div>
+        <!-- FullCalendar ocupa toda a largura -->
+        <div id="fcCalendario"></div>
       </div>
     </div>
     <!-- ABA: LISTA -->

@@ -119,14 +119,31 @@ function iniciarOuAtualizarFC(view) {
   fcInstance = new FullCalendar.Calendar(el, {
     locale: 'pt-br',
     initialView: view,
-    headerToolbar: { left:'prev,next today', center:'title', right:'' },
+    headerToolbar: {
+      left:   'prev,next today',
+      center: 'title',
+      right:  'timeGridDay,timeGridWeek,dayGridMonth'
+    },
     height: 'auto',
+    expandRows: true,
     firstDay: 0,
     nowIndicator: true,
     slotMinTime: '06:00:00',
     slotMaxTime: '22:00:00',
     allDayText: 'Dia todo',
-    buttonText: { today:'Hoje' },
+    buttonText: { today:'Hoje', day:'Dia', week:'Semana', month:'Mês' },
+    // Sincroniza com os botões do painel quando muda de view dentro do FC
+    viewDidMount: function(info) {
+      const map = { timeGridDay:'dia', timeGridWeek:'semana', dayGridMonth:'mes' };
+      const vis = map[info.view.type];
+      if (vis && vis !== visualizacaoAtual) {
+        visualizacaoAtual = vis;
+        ['proximos','dia','semana','mes'].forEach(v => {
+          const btn = document.getElementById(`btnVis${v.charAt(0).toUpperCase()+v.slice(1)}`);
+          if (btn) btn.classList.toggle('ativo', v === vis);
+        });
+      }
+    },
     eventClick: function(info) {
       const id = parseInt(info.event.id);
       dataSelecionada = info.event.startStr.split('T')[0];
@@ -152,7 +169,7 @@ function iniciarOuAtualizarFC(view) {
             id:        a.id,
             title:     a.cliente_nome,
             start:     a.data_inicio,
-            end:       a.data_fim,
+            end:       a.data_fim || undefined,
             allDay:    a.dia_todo || false,
             color:     atrasado ? '#ef4444' : cor,
             textColor: '#fff',
@@ -640,7 +657,7 @@ async function carregarConfiguracoes(){
     const emp=await r.json();
     const linkEl=document.getElementById('linkPublico');
     // Usa sempre a URL do Railway, não o IP local
-    if(linkEl) linkEl.value=`${FRONTEND_URL}/frontend/agendar.html?empresa=${emp.slug}`;
+    if(linkEl) linkEl.value=`${FRONTEND_URL}/agendar.html?empresa=${emp.slug}`;
   }catch(err){console.error(err);}
 }
 function copiarLink(){const link=document.getElementById('linkPublico');if(!link)return;navigator.clipboard.writeText(link.value).then(()=>{const conf=document.getElementById('linkCopiado');if(conf){conf.style.display='block';setTimeout(()=>conf.style.display='none',2500);}mostrarToast('🔗 Link copiado!','Compartilhe com seus clientes.');});}
@@ -658,7 +675,7 @@ function abrirVerEmpresa(id,status){document.getElementById('editEmpresaId').val
 function fecharModalVerEmpresa(){document.getElementById('modalVerEmpresa').classList.remove('active');}
 async function atualizarEmpresa(){const id=document.getElementById('editEmpresaId').value,status=document.getElementById('editEmpresaStatus').value;try{const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({status})});if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro);return;}fecharModalVerEmpresa();carregarEmpresas();mostrarToast('✅ Empresa atualizada!','Status alterado com sucesso.');}catch{mostrarToast('❌ Erro de conexão','Tente novamente.');}}
 async function salvarEmpresa(){const nome=document.getElementById('empNome').value.trim(),cnpj=document.getElementById('empCnpj').value.trim(),slug=document.getElementById('empSlug').value.trim(),adminNome=document.getElementById('empAdminNome').value.trim(),adminEmail=document.getElementById('empAdminEmail').value.trim(),adminSenha=document.getElementById('empAdminSenha').value,erro=document.getElementById('erroEmpresa');if(!nome||!cnpj||!slug){erro.textContent='Nome, CNPJ e slug são obrigatórios';erro.style.display='block';return;}if(!adminNome||!adminEmail||!adminSenha){erro.textContent='Preencha os dados do administrador';erro.style.display='block';return;}if(adminSenha.length<6){erro.textContent='A senha deve ter no mínimo 6 caracteres';erro.style.display='block';return;}erro.style.display='none';document.getElementById('btnEmpresaText').style.display='none';document.getElementById('spinnerEmpresa').style.display='inline-block';try{const r=await fetch(`${API}/empresas`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({nome_fantasia:nome,cnpj,email:document.getElementById('empEmail').value,telefone:document.getElementById('empTelefone').value,slug,cor_primaria:document.getElementById('empCor').value,admin_nome:adminNome,admin_email:adminEmail,admin_senha:adminSenha})});const data=await r.json();if(!r.ok){erro.textContent=data.erro||'Erro ao criar empresa';erro.style.display='block';return;}fecharModalEmpresa();carregarEmpresas();mostrarToast('✅ Empresa criada!',`${nome} foi cadastrada.`);}catch{erro.textContent='Erro de conexão';erro.style.display='block';}finally{document.getElementById('btnEmpresaText').style.display='inline';document.getElementById('spinnerEmpresa').style.display='none';}}
-function copiarLinkEmpresa(slug){navigator.clipboard.writeText(`${FRONTEND_URL}/frontend/agendar.html?empresa=${slug}`).then(()=>mostrarToast('🔗 Link copiado!',`${FRONTEND_URL}/frontend/agendar.html?empresa=${slug}`));}
+function copiarLinkEmpresa(slug){navigator.clipboard.writeText(`${FRONTEND_URL}/agendar.html?empresa=${slug}`).then(()=>mostrarToast('🔗 Link copiado!',`${FRONTEND_URL}/agendar.html?empresa=${slug}`));}
 
 // ── Notificações ──────────────────────────────────────────
 function iniciarPolling(){verificarNotificacoes();pollingInterval=setInterval(verificarNotificacoes,30000);}
