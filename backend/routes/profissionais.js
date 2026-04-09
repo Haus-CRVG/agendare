@@ -3,6 +3,7 @@ const router = express.Router();
 const { pool } = require('../db'); // ← corrigido aqui
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const authInternal = require('../middleware/authInternal');
 
 // ── GET /api/profissionais — lista da empresa ─────────────
 router.get('/', async (req, res) => {
@@ -28,6 +29,7 @@ router.get('/', async (req, res) => {
 });
 
 // ── POST /api/profissionais — criar ──────────────────────
+const authInternal = require('../middleware/authInternal');
 router.post('/', auth(['admin']), async (req, res) => {
   const { nome, email, telefone, senha, perfil, servicos } = req.body;
   const eid = req.usuario.empresa_id;
