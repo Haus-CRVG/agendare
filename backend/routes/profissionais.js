@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../db'); // ← corrigido aqui
+const { pool } = require('../db');
 const auth = require('../middleware/auth');
+const authInternal = require('../middleware/authInternal'); // ← importado UMA vez aqui
 const bcrypt = require('bcryptjs');
-const authInternal = require('../middleware/authInternal');
 
 // ── GET /api/profissionais — lista da empresa ─────────────
 router.get('/', async (req, res) => {
@@ -14,14 +14,14 @@ router.get('/', async (req, res) => {
     let query, params;
     if (servico_id) {
       query = `
-        SELECT u.id, u.nome, u.email, u.telefone, u.avatar_url, u.perfil
+        SELECT u.id, u.nome, u.email, u.telefone, u.avatar_url, u.perfil, u.cor_agenda
         FROM usuarios u
         JOIN profissional_servicos ps ON ps.profissional_id = u.id
         WHERE u.empresa_id = $1 AND u.ativo = true AND ps.servico_id = $2
         ORDER BY u.nome ASC`;
       params = [eid, servico_id];
     } else {
-      query = `SELECT id, nome, email, telefone, avatar_url, perfil FROM usuarios WHERE empresa_id = $1 AND ativo = true ORDER BY nome ASC`;
+      query = `SELECT id, nome, email, telefone, avatar_url, perfil, cor_agenda FROM usuarios WHERE empresa_id = $1 AND ativo = true ORDER BY nome ASC`;
       params = [eid];
     }
     res.json((await pool.query(query, params)).rows);
@@ -29,11 +29,17 @@ router.get('/', async (req, res) => {
 });
 
 // ── POST /api/profissionais — criar ──────────────────────
-const authInternal = require('../middleware/authInternal');
-router.post('/', auth(['admin']), async (req, res) => {
-  const { nome, email, telefone, senha, perfil, servicos } = req.body;
-  const eid = req.usuario.empresa_id;
+// authInternal permite chamadas do backend do Implanta (sem token JWT)
+// auth(['admin']) permite chamadas normais de admins logados
+router.post('/', authInternal, auth(['admin']), async (req, res) => {
+  const { nome, email, telefone, senha, perfil, servicos, empresa_id: eid_body } = req.body;
+
+  // Se veio via authInternal (Implanta), usa empresa_id do body ou do header
+  const eid = req.usuario?.empresa_id || eid_body;
+
+  if (!eid) return res.status(400).json({ erro: 'empresa_id obrigatório' });
   if (!nome || !email || !senha) return res.status(400).json({ erro: 'Nome, e-mail e senha obrigatórios' });
+
   try {
     const hash = await bcrypt.hash(senha, 10);
     const result = await pool.query(
@@ -41,17 +47,24 @@ router.post('/', auth(['admin']), async (req, res) => {
       [eid, nome, email, telefone || null, hash, perfil || 'profissional']
     );
     const u = result.rows[0];
+
     if (servicos?.length) {
       for (const sid of servicos) {
-        await pool.query(`INSERT INTO profissional_servicos (profissional_id, servico_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [u.id, sid]);
+        await pool.query(
+          `INSERT INTO profissional_servicos (profissional_id, servico_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [u.id, sid]
+        );
       }
     }
+
+    // Disponibilidade padrão seg-sex 08:00-18:00
     for (let dia = 1; dia <= 5; dia++) {
       await pool.query(
         `INSERT INTO disponibilidade (profissional_id, dia_semana, hora_inicio, hora_fim) VALUES ($1,$2,'08:00','18:00')`,
         [u.id, dia]
       );
     }
+
     res.json(u);
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ erro: 'E-mail já cadastrado' });
@@ -103,36 +116,28 @@ router.patch('/:id/senha', auth(), async (req, res) => {
 
   try {
     const hash = await bcrypt.hash(senha, 10);
-
-    // ── Super admin: atualiza em super_admins ──────────────
     if (req.usuario.perfil === 'superadmin') {
-      await pool.query(
-        `UPDATE super_admins SET senha = $1 WHERE id = $2`,
-        [hash, profId]
-      );
+      await pool.query(`UPDATE super_admins SET senha = $1 WHERE id = $2`, [hash, profId]);
     } else {
-      // ── Demais usuários: atualiza em usuarios ──────────────
-      await pool.query(
-        `UPDATE usuarios SET senha = $1 WHERE id = $2`,
-        [hash, profId]
-      );
+      await pool.query(`UPDATE usuarios SET senha = $1 WHERE id = $2`, [hash, profId]);
     }
-
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ erro: err.message }); }
 });
 
+// ── PATCH /api/profissionais/:id — editar dados ───────────
 router.patch('/:id', auth(['admin']), async (req, res) => {
   const { nome, email, telefone, perfil, cor_agenda } = req.body;
   try {
     const result = await pool.query(
       `UPDATE usuarios SET
-        nome = COALESCE($1, nome),
-        email = COALESCE($2, email),
-        telefone = COALESCE($3, telefone),
-        perfil = COALESCE($4, perfil),
+        nome       = COALESCE($1, nome),
+        email      = COALESCE($2, email),
+        telefone   = COALESCE($3, telefone),
+        perfil     = COALESCE($4, perfil),
         cor_agenda = COALESCE($5, cor_agenda)
-       WHERE id = $6 AND empresa_id = $7 RETURNING id, nome, email, perfil, cor_agenda`,
+       WHERE id = $6 AND empresa_id = $7
+       RETURNING id, nome, email, perfil, cor_agenda`,
       [nome, email, telefone, perfil, cor_agenda, req.params.id, req.usuario.empresa_id]
     );
     if (!result.rows.length) return res.status(404).json({ erro: 'Usuário não encontrado' });
