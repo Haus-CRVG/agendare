@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Agendare — Super Admin</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+<div class="dashboard">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <h2 style="color:var(--accent)">📅 Agendare</h2>
+    </div>
+    <div class="topbar-user">
+      <span style="color:var(--accent)">👑 Super Admin</span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+
+    <div class="main-content">
+      <div class="page-title">Gestão de <span>Empresas</span></div>
+
+      <div class="table-card">
+
+        <!-- BUSCA -->
+        <div class="table-header" style="flex-direction:column;align-items:flex-start;gap:1rem;">
+          <h2>Empresas</h2>
+
+          <div style="display:flex;gap:0.75rem;width:100%;max-width:500px;">
+            <input type="text" id="busca" placeholder="🔍 Buscar empresa..."
+              oninput="filtrarEmpresas()" />
+            <button class="btn-sm" onclick="limparBusca()">✕</button>
+          </div>
+        </div>
+
+        <!-- TABELA -->
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>CNPJ</th>
+                <th>Usuários</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaEmpresas"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = 'https://agendare-backend-production.up.railway.app/api';
+let token = localStorage.getItem('token');
+
+let todasEmpresas = [];
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'index.html';
+}
+
+async function api(path) {
+  const r = await fetch(API + path, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  return r.json();
+}
+
+async function carregarEmpresas() {
+  const data = await api('/empresas');
+  todasEmpresas = data || [];
+  renderEmpresas(todasEmpresas);
+}
+
+function limparBusca() {
+  document.getElementById('busca').value = '';
+  renderEmpresas(todasEmpresas);
+}
+
+function filtrarEmpresas() {
+  const q = document.getElementById('busca').value.toLowerCase();
+
+  const filtradas = todasEmpresas.filter(e =>
+    e.nome_fantasia.toLowerCase().includes(q) ||
+    e.cnpj.includes(q)
+  );
+
+  renderEmpresas(filtradas);
+}
+
+function renderEmpresas(lista) {
+  const tbody = document.getElementById('tabelaEmpresas');
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="3">Nenhuma empresa</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(e => `
+    <tr onclick="toggleUsuarios(${e.id})" style="cursor:pointer">
+      <td><strong>${e.nome_fantasia}</strong></td>
+      <td>${e.cnpj}</td>
+      <td>${e.total_usuarios || '-'}</td>
+    </tr>
+
+    <tr id="usuarios-${e.id}" style="display:none;">
+      <td colspan="3">
+        <div id="lista-${e.id}" style="padding:10px">Carregando...</div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function toggleUsuarios(id) {
+  const row = document.getElementById(`usuarios-${id}`);
+  const lista = document.getElementById(`lista-${id}`);
+
+  if (row.style.display === 'table-row') {
+    row.style.display = 'none';
+    return;
+  }
+
+  row.style.display = 'table-row';
+
+  if (lista.dataset.loaded) return;
+
+  const usuarios = await api(`/empresas/${id}/usuarios`);
+
+  if (!usuarios.length) {
+    lista.innerHTML = `<p style="color:var(--muted)">Nenhum usuário</p>`;
+    return;
+  }
+
+  lista.innerHTML = usuarios.map(u => {
+
+    const perfilBadge = u.perfil === 'admin'
+      ? '<span class="status-badge status-concluido">👑 Admin</span>'
+      : '<span class="status-badge status-aguardando-implantacao">🔧 Profissional</span>';
+
+    // MOCK sincronização (depois vem do backend)
+    const syncBadge = `<span style="color:var(--success);margin-right:6px;">🟢</span>`;
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+        <div>
+          ${syncBadge}
+          <strong>${u.nome}</strong>
+          <span style="font-size:0.8rem;color:var(--muted)">(${u.email})</span>
+        </div>
+        <div>${perfilBadge}</div>
+      </div>
+    `;
+  }).join('');
+
+  lista.dataset.loaded = true;
+}
+
+carregarEmpresas();
+</script>
+
+</body>
+</html>
