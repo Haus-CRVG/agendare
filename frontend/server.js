@@ -3,15 +3,15 @@ const path    = require('path');
 const app     = express();
 const PORT    = process.env.PORT || 8080;
 
-// Serve todos os arquivos estáticos da pasta frontend
+// Serve todos os arquivos estáticos da pasta (index.html, dashboard.html, css/, js/, assets/)
 app.use(express.static(path.join(__dirname)));
 
-// Rota raiz → dashboard (se já logado) ou index
+// Rota raiz → index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Fallback para qualquer rota não encontrada → index
+// Fallback: tenta servir o arquivo pedido, se não achar vai pro index
 app.get('*', (req, res) => {
   const file = req.path.replace('/', '');
   const fullPath = path.join(__dirname, file);

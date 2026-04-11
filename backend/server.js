@@ -10,10 +10,6 @@ const PORT = process.env.PORT || 3002;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// ── Serve os arquivos do frontend sem o prefixo /frontend/ ─
-// Ex: /agendar.html, /dashboard.html, /css/style.css, etc.
-app.use(express.static(path.join(__dirname, '../frontend')));
-
 // ── Rotas da API ──────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/empresas',      require('./routes/empresas'));
@@ -28,18 +24,16 @@ app.use('/api/sso',           require('./routes/sso'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true, sistema: 'Agendare' }));
 
-// ── Fallback: qualquer rota não-API retorna o index.html ──
-app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-  }
+// ── Qualquer rota não-API retorna 404 JSON (frontend é separado) ──
+app.use((req, res) => {
+  res.status(404).json({ erro: 'Rota não encontrada' });
 });
 
 pool.connect()
   .then(async (client) => {
     client.release();
     await initDB();
-    app.listen(PORT, () => console.log(`✅ Agendare rodando na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`✅ Agendare Backend rodando na porta ${PORT}`));
   })
   .catch(err => {
     console.error('❌ Erro ao conectar ao banco:', err.message);
