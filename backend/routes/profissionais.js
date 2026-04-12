@@ -31,11 +31,23 @@ router.get('/', async (req, res) => {
 // ── POST /api/profissionais — criar ──────────────────────
 // authInternal permite chamadas do backend do Implanta (sem token JWT)
 // auth(['admin']) permite chamadas normais de admins logados
-router.post('/', authInternal, auth(['admin']), async (req, res) => {
+router.post('/', async (req, res, next) => {
+  // Se tem x-internal-secret válido, passa direto (chamada do Implanta)
+  const secret = req.headers['x-internal-secret'];
+  if (secret && secret === (process.env.AGENDARE_INTERNAL_SECRET || 'implanta_agendare_secret_2025')) {
+    // Pega empresa_id do header x-empresa-id enviado pelo Implanta
+    const eid = req.headers['x-empresa-id'];
+    req.interno = true;
+    req.empresaIdInterno = eid ? parseInt(eid) : null;
+    return next();
+  }
+  // Senão, exige auth normal de admin
+  return auth(['admin'])(req, res, next);
+}, async (req, res) => {
   const { nome, email, telefone, senha, perfil, servicos, empresa_id: eid_body } = req.body;
 
-  // Se veio via authInternal (Implanta), usa empresa_id do body ou do header
-  const eid = req.usuario?.empresa_id || eid_body;
+  // Se veio via chamada interna, usa empresa_id do header; senão, do usuário logado
+  const eid = req.interno ? req.empresaIdInterno : (req.usuario?.empresa_id || eid_body);
 
   if (!eid) return res.status(400).json({ erro: 'empresa_id obrigatório' });
   if (!nome || !email || !senha) return res.status(400).json({ erro: 'Nome, e-mail e senha obrigatórios' });
