@@ -282,28 +282,37 @@ function selecionarDia(data) {
 async function carregarKanbanProximos() {
   const agora = new Date().toISOString().split('T')[0];
   const fimFuturo = `${new Date().getFullYear()+2}-12-31T23:59:59`;
-  document.getElementById('subtituloAgenda').textContent = 'Próximos compromissos — todos os colaboradores';
+  const subtitulo = document.getElementById('subtituloAgenda');
+  if (subtitulo) subtitulo.textContent = 'Próximos compromissos — todos os colaboradores';
   const container = document.getElementById('kanbanProximos');
   if (container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Carregando...</p>';
   try {
-    // Garante que profissionais esteja carregado
+    // Garante que profissionais esteja carregado antes de renderizar
     if (!profissionais.length) await carregarProfissionaisFiltro();
+
     const r = await fetch(`${API}/agendamentos?inicio=${agora}T00:00:00&fim=${fimFuturo}`, { headers:{ Authorization:`Bearer ${token}` } });
+    if (r.status === 401) { sair(); return; }
     const ags = await r.json();
+
     if (!Array.isArray(ags) || !ags.length) {
-      if (container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Nenhum compromisso futuro agendado.</p>';
+      if (container) container.innerHTML = '<p style="color:var(--muted);padding:1.5rem;text-align:center">Nenhum compromisso futuro agendado 🎉</p>';
       return;
     }
+
+    // Agrupa por profissional — usa nome do agendamento como fallback
     const grupos = {};
     ags.forEach(a => {
-      const pid = a.profissional_id || 0;
-      const profLocal = profissionais.find(p => p.id === parseInt(pid));
+      const pid = String(a.profissional_id || 0);
+      const profLocal = profissionais.find(p => String(p.id) === pid);
       const nomeProf = profLocal?.nome || a.profissional_nome || 'Sem responsável';
       if (!grupos[pid]) grupos[pid] = { nome: nomeProf, items: [] };
       if (grupos[pid].items.length < 5) grupos[pid].items.push(a);
     });
     renderKanban('kanbanProximos', grupos);
-  } catch(err) { console.error(err); if(container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Erro ao carregar.</p>'; }
+  } catch(err) {
+    console.error('Erro carregarKanbanProximos:', err);
+    if (container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Erro ao carregar compromissos.</p>';
+  }
 }
 
 // ── Kanban: Semana ────────────────────────────────────────
@@ -354,6 +363,7 @@ async function carregarKanbanMes() {
 // ── Render Kanban genérico ────────────────────────────────
 function renderKanban(containerId, grupos) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   if (!Object.keys(grupos).length) {
     container.innerHTML = `<p style="color:var(--muted);padding:1rem;">Nenhum compromisso neste período.</p>`;
     return;

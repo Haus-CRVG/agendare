@@ -1,20 +1,10 @@
-/* const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
-  tls: { rejectUnauthorized: false }
-});
-
-const APP_URL = process.env.APP_URL || 'https://agendare.up.railway.app';*/
-
 const USE_RESEND = !!process.env.RESEND_API_KEY;
 let resend = null, transporter = null;
+
 if (USE_RESEND) {
   const { Resend } = require('resend');
   resend = new Resend(process.env.RESEND_API_KEY);
+  console.log('✅ Mailer: usando Resend');
 } else {
   const nodemailer = require('nodemailer');
   transporter = nodemailer.createTransport({
@@ -22,10 +12,33 @@ if (USE_RESEND) {
     auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
     tls: { rejectUnauthorized: false }
   });
+  console.log('✅ Mailer: usando Nodemailer/Gmail');
 }
-const MAIL_FROM = process.env.MAIL_FROM || process.env.MAIL_USER || 'noreply@agendare.app';
-const APP_URL = process.env.APP_URL || 'https://agendare-frontend-production.up.railway.app';
 
+const MAIL_FROM = process.env.MAIL_FROM || process.env.MAIL_USER || 'noreply@agendare.app';
+const APP_URL   = process.env.APP_URL   || 'https://agendare-backend-production.up.railway.app';
+
+// ── Função unificada de envio ─────────────────────────────
+async function enviar({ para, assunto, html }) {
+  if (USE_RESEND) {
+    const { error } = await resend.emails.send({
+      from:    MAIL_FROM,
+      to:      para,
+      subject: assunto,
+      html
+    });
+    if (error) throw new Error(error.message || JSON.stringify(error));
+  } else {
+    await transporter.sendMail({
+      from:    `"Agendare" <${MAIL_FROM}>`,
+      to:      para,
+      subject: assunto,
+      html
+    });
+  }
+}
+
+// ── Template base ─────────────────────────────────────────
 function formatarData(iso) {
   return new Date(iso).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
@@ -58,6 +71,7 @@ function baseTemplate(conteudo) {
 </html>`;
 }
 
+// ── Confirmação de agendamento ────────────────────────────
 async function enviarConfirmacao({ para, nomeCliente, servico, profissional, dataInicio, tokenCancelamento }) {
   const html = baseTemplate(`
     <div class="header">
@@ -76,14 +90,10 @@ async function enviarConfirmacao({ para, nomeCliente, servico, profissional, dat
     </div>
     <div class="footer">Agendare — Sistema de Agendamentos</div>
   `);
-  await transporter.sendMail({
-    from: `"Agendare" <${process.env.MAIL_USER}>`,
-    to: para,
-    subject: `✅ Agendamento confirmado — ${servico}`,
-    html
-  });
+  await enviar({ para, assunto: `✅ Agendamento confirmado — ${servico}`, html });
 }
 
+// ── Cancelamento ──────────────────────────────────────────
 async function enviarCancelamento({ para, nomeCliente, servico, dataInicio }) {
   const html = baseTemplate(`
     <div class="header" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
@@ -100,14 +110,10 @@ async function enviarCancelamento({ para, nomeCliente, servico, dataInicio }) {
     </div>
     <div class="footer">Agendare — Sistema de Agendamentos</div>
   `);
-  await transporter.sendMail({
-    from: `"Agendare" <${process.env.MAIL_USER}>`,
-    to: para,
-    subject: `❌ Agendamento cancelado — ${servico}`,
-    html
-  });
+  await enviar({ para, assunto: `❌ Agendamento cancelado — ${servico}`, html });
 }
 
+// ── Notificação para profissional ─────────────────────────
 async function enviarNotificacaoProfissional({ para, nomeProfissional, cliente, servico, dataInicio }) {
   const html = baseTemplate(`
     <div class="header">
@@ -124,24 +130,15 @@ async function enviarNotificacaoProfissional({ para, nomeProfissional, cliente, 
     </div>
     <div class="footer">Agendare — Sistema de Agendamentos</div>
   `);
-  await transporter.sendMail({
-    from: `"Agendare" <${process.env.MAIL_USER}>`,
-    to: para,
-    subject: `🔔 Novo agendamento — ${cliente}`,
-    html
-  });
+  await enviar({ para, assunto: `🔔 Novo agendamento — ${cliente}`, html });
 }
 
-async function enviarConviteParticipante({ nome, email, agendamento, token }) {
-  const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:3002';
-  const urlConfirmar = `${BASE_URL}/responder-convite.html?token=${token}&status=confirmado`;
-  const urlCancelar = `${BASE_URL}/responder-convite.html?token=${token}&status=cancelado`;
-
-  const dt = new Date(agendamento.data_inicio).toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo',
-    weekday: 'long', day: '2-digit', month: 'long',
-    year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+// ── Convite para participante interno ─────────────────────
+async function enviarConviteParticipante({ nome, email, agendamento, token: tk }) {
+  const BASE_URL = process.env.FRONTEND_URL || APP_URL;
+  const urlConfirmar = `${BASE_URL}/responder-convite.html?token=${tk}&status=confirmado`;
+  const urlCancelar  = `${BASE_URL}/responder-convite.html?token=${tk}&status=cancelado`;
+  const dt = formatarData(agendamento.data_inicio);
 
   const html = `
   <div style="font-family:'Segoe UI',sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
@@ -155,16 +152,8 @@ async function enviarConviteParticipante({ nome, email, agendamento, token }) {
       </p>
       <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:24px">
         <div style="margin-bottom:12px">
-          <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700">Empresa</div>
-          <div style="font-weight:600;color:#0f172a">${agendamento.empresa_nome}</div>
-        </div>
-        <div style="margin-bottom:12px">
-          <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700">Serviço</div>
-          <div style="font-weight:600;color:#0f172a">${agendamento.servico_nome}</div>
-        </div>
-        <div style="margin-bottom:12px">
-          <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700">Cliente</div>
-          <div style="font-weight:600;color:#0f172a">${agendamento.cliente_nome}</div>
+          <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700">Compromisso</div>
+          <div style="font-weight:600;color:#0f172a">${agendamento.cliente_nome || agendamento.servico_nome || '—'}</div>
         </div>
         <div>
           <div style="font-size:0.72rem;color:#94a3b8;text-transform:uppercase;font-weight:700">Data e Horário</div>
@@ -172,17 +161,8 @@ async function enviarConviteParticipante({ nome, email, agendamento, token }) {
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <a href="${urlConfirmar}"
-           style="flex:1;min-width:140px;text-align:center;background:#0d9488;color:#fff;
-                  padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.88rem">
-          ✅ Confirmar presença
-        </a>
-        <a href="${urlCancelar}"
-           style="flex:1;min-width:140px;text-align:center;background:#fff;color:#ef4444;
-                  border:1.5px solid #ef4444;padding:12px 20px;border-radius:8px;
-                  text-decoration:none;font-weight:600;font-size:0.88rem">
-          ❌ Não poderei participar
-        </a>
+        <a href="${urlConfirmar}" style="flex:1;min-width:140px;text-align:center;background:#0d9488;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.88rem">✅ Confirmar presença</a>
+        <a href="${urlCancelar}"  style="flex:1;min-width:140px;text-align:center;background:#fff;color:#ef4444;border:1.5px solid #ef4444;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.88rem">❌ Não poderei participar</a>
       </div>
     </div>
     <div style="background:#f1f5f9;padding:16px 32px;text-align:center;font-size:0.78rem;color:#94a3b8">
@@ -190,25 +170,13 @@ async function enviarConviteParticipante({ nome, email, agendamento, token }) {
     </div>
   </div>`;
 
-  try {
-    await transporter.sendMail({
-      from: `"Agendare" <${process.env.MAIL_USER}>`,
-      to: email,
-      subject: `📅 Você foi convidado — ${agendamento.servico_nome}`,
-      html
-    });
-    console.log(`✅ Convite enviado para ${email}`);
-  } catch (err) {
-    console.error(`❌ Erro ao enviar convite: ${err.message}`);
-  }
+  await enviar({ para: email, assunto: `📅 Você foi convidado — ${agendamento.cliente_nome || 'Compromisso'}`, html });
+  console.log(`✅ Convite enviado para ${email}`);
 }
 
-// ── Convite para pessoa externa (sem conta no sistema) ────
+// ── Convite para pessoa externa ───────────────────────────
 async function enviarConviteExterno({ para, titulo, organizador, dataInicio, dataFim, observacoes }) {
-  const dtIni = new Date(dataInicio).toLocaleString('pt-BR', {
-    timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit',
-    month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
-  });
+  const dtIni = formatarData(dataInicio);
   const dtFim = dataFim ? new Date(dataFim).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
   }) : null;
@@ -234,12 +202,7 @@ async function enviarConviteExterno({ para, titulo, organizador, dataInicio, dat
     <div class="footer">Agendare — Sistema de Agendamentos</div>
   `);
 
-  await transporter.sendMail({
-    from: `"Agendare" <${process.env.MAIL_USER}>`,
-    to: para,
-    subject: `📅 Convite: ${titulo}`,
-    html
-  });
+  await enviar({ para, assunto: `📅 Convite: ${titulo}`, html });
   console.log(`✅ Convite externo enviado para ${para}`);
 }
 
