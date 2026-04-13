@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+/* const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -8,7 +8,23 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false }
 });
 
-const APP_URL = process.env.APP_URL || 'https://agendare.up.railway.app';
+const APP_URL = process.env.APP_URL || 'https://agendare.up.railway.app';*/
+
+const USE_RESEND = !!process.env.RESEND_API_KEY;
+let resend = null, transporter = null;
+if (USE_RESEND) {
+  const { Resend } = require('resend');
+  resend = new Resend(process.env.RESEND_API_KEY);
+} else {
+  const nodemailer = require('nodemailer');
+  transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com', port: 587, secure: false,
+    auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    tls: { rejectUnauthorized: false }
+  });
+}
+const MAIL_FROM = process.env.MAIL_FROM || process.env.MAIL_USER || 'noreply@agendare.app';
+const APP_URL = process.env.APP_URL || 'https://agendare-frontend-production.up.railway.app';
 
 function formatarData(iso) {
   return new Date(iso).toLocaleString('pt-BR', {
@@ -119,7 +135,7 @@ async function enviarNotificacaoProfissional({ para, nomeProfissional, cliente, 
 async function enviarConviteParticipante({ nome, email, agendamento, token }) {
   const BASE_URL = process.env.FRONTEND_URL || 'http://localhost:3002';
   const urlConfirmar = `${BASE_URL}/responder-convite.html?token=${token}&status=confirmado`;
-  const urlCancelar  = `${BASE_URL}/responder-convite.html?token=${token}&status=cancelado`;
+  const urlCancelar = `${BASE_URL}/responder-convite.html?token=${token}&status=cancelado`;
 
   const dt = new Date(agendamento.data_inicio).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
