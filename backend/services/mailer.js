@@ -1,6 +1,8 @@
 const USE_RESEND = !!process.env.RESEND_API_KEY;
 let resend = null, transporter = null;
 
+console.log('Enviando email para:', para);
+
 if (USE_RESEND) {
   const { Resend } = require('resend');
   resend = new Resend(process.env.RESEND_API_KEY);
