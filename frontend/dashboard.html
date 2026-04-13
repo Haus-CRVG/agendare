@@ -237,22 +237,15 @@
       </div>
       <div class="sidebar-section" id="sidebarAdmin" style="display:none">
         <div class="sidebar-label">Gestão</div>
-        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais"><span
-            class="icon">👥</span> Profissionais</button>
-        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes"><span
-            class="icon">⚙️</span> Configurações</button>
-        <div class="sidebar-section" id="sidebarAdmin" style="display:none">
-          <div class="sidebar-label">Gestão</div>
-          <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
-            <span class="icon">🛠️</span> Serviços ← ADICIONAR ESTA LINHA
-          </button>
-          <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
-            <span class="icon">👥</span> Profissionais
-          </button>
-          <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
-            <span class="icon">⚙️</span> Configurações
-          </button>
-        </div>
+        <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+          <span class="icon">🛠️</span> Serviços
+        </button>
+        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+          <span class="icon">👥</span> Profissionais
+        </button>
+        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+          <span class="icon">⚙️</span> Configurações
+        </button>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Minha conta</div>
@@ -784,6 +777,18 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="js/dashboard.js"></script>
+
+  <!-- Modal Dashboard Stats -->
+  <div class="modal-overlay" id="modalDashboardStats">
+    <div class="modal" style="max-width:680px">
+      <h3 id="dashboardStatsTitle">Compromissos</h3>
+      <div id="dashboardStatsBody" style="margin:1rem 0;max-height:400px;overflow-y:auto"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

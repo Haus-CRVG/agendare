@@ -193,6 +193,9 @@ function atualizarFullCalendar() {
 }
 
 async function carregarPainelAgenda() {
+  // Limpa o "Carregando..." do subtítulo
+  const sub = document.getElementById('subtituloAgenda');
+  if (sub && sub.textContent === 'Carregando...') sub.textContent = '';
   await carregarStatsAgenda();
   await renderMiniCalendarioComBolinhas();
   if (visualizacaoAtual === 'proximos') await carregarKanbanProximos();
@@ -223,11 +226,15 @@ async function carregarStatsAgenda() {
       btnNotif.style.position = 'relative';
     }
     document.getElementById('statsAgenda').innerHTML = `
-      <div class="stat-card"><div class="stat-label">Total hoje</div><div class="stat-value">${ags.length}</div></div>
-      <div class="stat-card" style="--accent:#10b981"><div class="stat-label">Confirmados</div><div class="stat-value" style="color:#10b981">${ags.filter(a=>a.status==='confirmado').length}</div></div>
-      <div class="stat-card" style="--accent:#ef4444"><div class="stat-label">Cancelados</div><div class="stat-value" style="color:#ef4444">${ags.filter(a=>a.status==='cancelado').length}</div></div>
-      <div class="stat-card" style="--accent:#0891b2"><div class="stat-label">Concluídos</div><div class="stat-value" style="color:#0891b2">${ags.filter(a=>a.status==='concluido').length}</div></div>
-      ${atrasados>0?`<div class="stat-card" style="--accent:#f59e0b"><div class="stat-label">⚠️ Atrasados</div><div class="stat-value" style="color:#f59e0b">${atrasados}</div></div>`:''}`;
+      <div class="stat-card" style="cursor:pointer" onclick="abrirDashboardStats('todos',${JSON.stringify(ags)})">
+        <div class="stat-label">Total hoje</div><div class="stat-value">${ags.length}</div></div>
+      <div class="stat-card" style="--accent:#10b981;cursor:pointer" onclick="abrirDashboardStats('confirmado',${JSON.stringify(ags)})">
+        <div class="stat-label">Confirmados</div><div class="stat-value" style="color:#10b981">${ags.filter(a=>a.status==='confirmado').length}</div></div>
+      <div class="stat-card" style="--accent:#ef4444;cursor:pointer" onclick="abrirDashboardStats('cancelado',${JSON.stringify(ags)})">
+        <div class="stat-label">Cancelados</div><div class="stat-value" style="color:#ef4444">${ags.filter(a=>a.status==='cancelado').length}</div></div>
+      <div class="stat-card" style="--accent:#0891b2;cursor:pointer" onclick="abrirDashboardStats('concluido',${JSON.stringify(ags)})">
+        <div class="stat-label">Concluídos</div><div class="stat-value" style="color:#0891b2">${ags.filter(a=>a.status==='concluido').length}</div></div>
+      ${atrasados>0?`<div class="stat-card" style="--accent:#f59e0b;cursor:pointer" onclick="abrirDashboardStats('atrasado',null)"><div class="stat-label">⚠️ Atrasados</div><div class="stat-value" style="color:#f59e0b">${atrasados}</div></div>`:''}`;
   } catch(err) { console.error(err); }
 }
 
@@ -278,11 +285,13 @@ async function carregarKanbanProximos() {
   const agora = new Date().toISOString().split('T')[0];
   const fimFuturo = `${new Date().getFullYear()+2}-12-31T23:59:59`;
   document.getElementById('subtituloAgenda').textContent = 'Próximos compromissos — todos os colaboradores';
+  const container = document.getElementById('kanbanProximos');
+  container.innerHTML = '<p style="color:var(--muted);padding:1rem">Carregando...</p>';
   try {
     const r = await fetch(`${API}/agendamentos?inicio=${agora}T00:00:00&fim=${fimFuturo}`, { headers:{ Authorization:`Bearer ${token}` } });
     const ags = await r.json();
-    if (!ags.length) {
-      document.getElementById('kanbanProximos').innerHTML = '<p style="color:var(--muted);padding:1rem;">Nenhum compromisso futuro agendado.</p>';
+    if (!Array.isArray(ags) || !ags.length) {
+      container.innerHTML = '<p style="color:var(--muted);padding:1rem">Nenhum compromisso futuro agendado.</p>';
       return;
     }
     const grupos = {};
@@ -294,7 +303,7 @@ async function carregarKanbanProximos() {
       if (grupos[pid].items.length < 5) grupos[pid].items.push(a);
     });
     renderKanban('kanbanProximos', grupos);
-  } catch(err) { console.error(err); }
+  } catch(err) { console.error(err); container.innerHTML = '<p style="color:var(--muted);padding:1rem">Erro ao carregar.</p>'; }
 }
 
 // ── Kanban: Semana ────────────────────────────────────────
@@ -481,10 +490,13 @@ async function abrirVerAgendamentoKanban(id) {
 // ── Ver Compromisso ───────────────────────────────────────
 async function abrirVerAgendamento(id) {
   try {
-    const r=await fetch(`${API}/agendamentos?inicio=${dataSelecionada}T00:00:00&fim=${dataSelecionada}T23:59:59`,{headers:{Authorization:`Bearer ${token}`}});
+    // Busca o agendamento diretamente por ID para não depender do dia selecionado
+    const hoje = new Date().toISOString().split('T')[0];
+    const fimFuturo = `${new Date().getFullYear()+2}-12-31T23:59:59`;
+    const r=await fetch(`${API}/agendamentos?inicio=2020-01-01T00:00:00&fim=${fimFuturo}`,{headers:{Authorization:`Bearer ${token}`}});
     const ags=await r.json();
     const ag=ags.find(a=>a.id===id);
-    if(!ag) return;
+    if(!ag){ console.error('Agendamento não encontrado:', id); return; }
     const prof=profissionais.find(p=>p.id===ag.profissional_id);
     const cor=corProf(prof);
     const ehDiaTodo=ag.dia_todo;
@@ -541,12 +553,6 @@ function abrirNovoAgendamento() {
   document.getElementById('campoParticipante').style.display='none';
   document.getElementById('agParticipante').innerHTML=profissionais.filter(p=>p.id!==usuario.id).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('erroAgendamento').style.display='none';
-  const chkExt = document.getElementById('chkConvidarExterno');
-  const campoExt = document.getElementById('campoConvidarExterno');
-  if (chkExt) chkExt.checked = false;
-  if (campoExt) campoExt.style.display = 'none';
-  const emailExt = document.getElementById('emailConvidado');
-  if (emailExt) emailExt.value = '';
   document.getElementById('modalAgendamento').classList.add('active');
 }
 function fecharModalAgendamento(){document.getElementById('modalAgendamento').classList.remove('active');}
@@ -573,10 +579,8 @@ async function salvarAgendamento() {
   try {
     const data_inicio=diaTodo?`${data}T00:00:00-03:00`:`${data}T${horaIni}:00-03:00`;
     const data_fim=diaTodo?`${data}T23:59:59-03:00`:`${data}T${horaFim}:00-03:00`;
-    const emailConvidado = document.getElementById('chkConvidarExterno')?.checked
-      ? (document.getElementById('emailConvidado')?.value?.trim() || null) : null;
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:usuario.id,cliente_nome:titulo,data_inicio,data_fim,dia_todo:diaTodo,observacoes:obs||null,email_convidado:emailConvidado})});
+      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:usuario.id,cliente_nome:titulo,data_inicio,data_fim,dia_todo:diaTodo,observacoes:obs||null})});
     const dataResp=await r.json();
     if(!r.ok){erro.textContent=dataResp.erro||'Erro ao salvar';erro.style.display='block';return;}
     if(addPart&&partId) await fetch(`${API}/participantes`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({agendamento_id:dataResp.id,profissional_id:parseInt(partId)})});
@@ -848,82 +852,67 @@ async function confirmarAtualizarStatus() {
   } catch(err) { console.error(err); }
 }
 
+// ── Dashboard Stats — modal ao clicar nos cards ───────────
+async function abrirDashboardStats(filtro, agsHoje) {
+  // Se atrasado, busca todos
+  let lista = agsHoje;
+  if (filtro === 'atrasado' || !lista) {
+    const hoje = new Date().toISOString().split('T')[0];
+    try {
+      const r = await fetch(`${API}/agendamentos?inicio=2020-01-01T00:00:00&fim=${hoje}T23:59:59`, { headers:{ Authorization:`Bearer ${token}` }});
+      const all = await r.json();
+      const agora = new Date();
+      lista = all.filter(a => !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora);
+    } catch { lista = []; }
+  } else if (filtro !== 'todos') {
+    lista = agsHoje.filter(a => a.status === filtro);
+  }
 
-init();
+  const titulos = {
+    todos: '📋 Todos os compromissos de hoje',
+    confirmado: '✅ Confirmados hoje',
+    cancelado: '❌ Cancelados hoje',
+    concluido: '🏁 Concluídos hoje',
+    atrasado: '⚠️ Compromissos atrasados'
+  };
 
-// ── Aba Serviços ──────────────────────────────────────────
-async function carregarServicosAba() {
-  const tbody = document.getElementById('tabelaServicos');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
-  try {
-    const r = await fetch(`${API}/servicos?empresa_id=${usuario.empresa_id}`, { headers:{ Authorization:`Bearer ${token}` } });
-    const servs = await r.json();
-    if (!Array.isArray(servs) || !servs.length) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum serviço cadastrado. Adicione o primeiro acima!</td></tr>';
-      return;
-    }
-    tbody.innerHTML = servs.map(s => `
-      <tr>
-        <td><strong>${s.nome}</strong></td>
-        <td style="color:var(--muted)">${s.descricao||'—'}</td>
-        <td>${s.duracao_minutos ? s.duracao_minutos + ' min' : (s.duracao_min ? s.duracao_min + ' min' : '—')}</td>
-        <td>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-secondary btn-sm" onclick="editarServico(${s.id},'${(s.nome||'').replace(/'/g,"\'")}','${(s.descricao||'').replace(/'/g,"\'")}',${s.duracao_minutos||s.duracao_min||0})">✏️ Editar</button>
-            <button class="btn btn-secondary btn-sm" style="color:var(--error);border-color:rgba(239,68,68,0.3)" onclick="excluirServico(${s.id})">🗑️</button>
-          </div>
-        </td>
-      </tr>`).join('');
-  } catch(err) { console.error(err); tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar serviços.</td></tr>'; }
+  const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente', cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
+
+  const linhas = lista.map(a => {
+    const dt = new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<tr>
+      <td>${dt}</td>
+      <td><strong>${a.cliente_nome}</strong></td>
+      <td>${a.profissional_nome||'—'}</td>
+      <td><span class="badge ${statusBadge[a.status]||''}">${a.status}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="fecharDashboardStats();abrirVerAgendamento(${a.id})">Ver</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('dashboardStatsTitle').textContent = titulos[filtro] || 'Compromissos';
+  document.getElementById('dashboardStatsBody').innerHTML = lista.length
+    ? `<table style="width:100%;border-collapse:collapse">
+        <thead><tr style="font-size:0.75rem;color:var(--muted);text-transform:uppercase">
+          <th style="text-align:left;padding:6px 8px">Data/Hora</th>
+          <th style="text-align:left;padding:6px 8px">Título</th>
+          <th style="text-align:left;padding:6px 8px">Responsável</th>
+          <th style="text-align:left;padding:6px 8px">Status</th>
+          <th></th>
+        </tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>`
+    : '<p style="color:var(--muted);text-align:center;padding:2rem">Nenhum compromisso nesta categoria.</p>';
+
+  document.getElementById('modalDashboardStats').classList.add('active');
 }
-
-async function salvarServico() {
-  const id = document.getElementById('servicoId')?.value;
-  const nome = document.getElementById('servicoNome').value.trim();
-  const descricao = document.getElementById('servicoDescricao').value.trim();
-  const duracao = parseInt(document.getElementById('servicoDuracao').value) || null;
-  const erro = document.getElementById('erroServico');
-  if (!nome) { erro.textContent='Nome é obrigatório'; erro.style.display='block'; return; }
-  erro.style.display='none';
-  const method = id ? 'PATCH' : 'POST';
-  const url = id ? `${API}/servicos/${id}` : `${API}/servicos`;
-  try {
-    const r = await fetch(url, {
-      method,
-      headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id })
-    });
-    if (!r.ok) { const d=await r.json(); erro.textContent=d.erro||'Erro ao salvar'; erro.style.display='block'; return; }
-    document.getElementById('servicoNome').value='';
-    document.getElementById('servicoDescricao').value='';
-    document.getElementById('servicoDuracao').value='';
-    if(document.getElementById('servicoId')) document.getElementById('servicoId').value='';
-    document.getElementById('btnSalvarServico').textContent='Salvar Serviço';
-    carregarServicosAba();
-  } catch(err) { erro.textContent='Erro de conexão'; erro.style.display='block'; }
-}
-
-function editarServico(id, nome, descricao, duracao) {
-  document.getElementById('servicoId').value = id;
-  document.getElementById('servicoNome').value = nome;
-  document.getElementById('servicoDescricao').value = descricao;
-  document.getElementById('servicoDuracao').value = duracao||'';
-  document.getElementById('btnSalvarServico').textContent = 'Atualizar Serviço';
-  document.getElementById('erroServico').style.display='none';
-  document.getElementById('servicoNome').focus();
-}
-
-async function excluirServico(id) {
-  if (!confirm('Excluir este serviço? Esta ação não pode ser desfeita.')) return;
-  try {
-    const r = await fetch(`${API}/servicos/${id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
-    if (!r.ok) { const d=await r.json(); alert(d.erro||'Erro ao excluir'); return; }
-    carregarServicosAba();
-  } catch(err) { alert('Erro de conexão'); }
+function fecharDashboardStats() {
+  document.getElementById('modalDashboardStats').classList.remove('active');
 }
 
 function toggleConvidarExterno(chk) {
   const campo = document.getElementById('campoConvidarExterno');
   if (campo) campo.style.display = chk.checked ? 'block' : 'none';
 }
+
+
+init();
