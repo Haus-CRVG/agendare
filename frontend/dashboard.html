@@ -1,386 +1,789 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agendare — Painel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="assets/favicon.png" />
   <link rel="shortcut icon" href="assets/favicon.png" />
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
   <style>
-    .kanban-board{display:flex;gap:1rem;overflow-x:auto;padding-bottom:0.5rem;align-items:flex-start}
-    .kanban-col{min-width:220px;max-width:260px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-    .kanban-col-header{padding:0.75rem 1rem;font-weight:700;font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;border-bottom:1px solid var(--border)}
-    .kanban-col-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.75rem;flex-shrink:0}
-    .kanban-col-body{padding:0.75rem;display:flex;flex-direction:column;gap:0.5rem;min-height:60px}
-    .kanban-card{background:var(--surface2);border:1px solid var(--border);border-left:4px solid #0d9488;border-radius:8px;padding:0.6rem 0.75rem;font-size:0.8rem;cursor:pointer;transition:box-shadow 0.15s}
-    .kanban-card:hover{box-shadow:0 2px 8px rgba(0,0,0,0.12)}
-    .kanban-card-titulo{font-weight:600;color:var(--text);margin-bottom:3px}
-    .kanban-card-data{color:var(--muted);font-size:0.72rem}
-    .kanban-empty{color:var(--muted);font-size:0.78rem;text-align:center;padding:1rem 0.5rem}
-    .cal-dia{position:relative}
-    .cal-dots{display:flex;justify-content:center;gap:2px;position:absolute;bottom:2px;left:50%;transform:translateX(-50%)}
-    .cal-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-    .btn-vis{transition:all 0.15s}
-    .btn-vis.ativo{background:var(--accent);color:#fff;border-color:var(--accent)}
-    #fcCalendario{background:var(--surface);border-radius:var(--radius);padding:1rem;border:1px solid var(--border)}
-    .fc .fc-toolbar-title{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--text)}
-    .fc .fc-button{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.78rem;padding:0.3rem 0.6rem;border-radius:8px;font-family:'Inter',sans-serif}
-    .fc .fc-button:hover,.fc .fc-button-primary:not(:disabled).fc-button-active,.fc .fc-button-primary:not(:disabled):active{background:var(--accent);color:#fff;border-color:var(--accent)}
-    .fc .fc-daygrid-day.fc-day-today{background:rgba(13,148,136,0.06)}
-    .fc .fc-daygrid-day-number{color:var(--text);font-size:0.82rem}
-    .fc .fc-col-header-cell-cushion{color:var(--muted);font-size:0.78rem;font-weight:600;text-decoration:none}
-    .fc-event{border-radius:6px!important;border:none!important;font-size:0.75rem;padding:2px 4px;cursor:pointer}
-    .fc .fc-timegrid-slot{height:40px}
-    .fc .fc-timegrid-axis-cushion{font-size:0.72rem;color:var(--muted)}
-    .empresa-badge{background:rgba(13,148,136,0.1);border:1px solid rgba(13,148,136,0.25);border-radius:8px;padding:3px 10px;font-size:0.75rem;color:var(--accent);font-weight:600;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+    .kanban-board {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      align-items: flex-start
+    }
+
+    .kanban-col {
+      min-width: 220px;
+      max-width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden
+    }
+
+    .kanban-col-header {
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .kanban-col-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.75rem;
+      flex-shrink: 0
+    }
+
+    .kanban-col-body {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 60px
+    }
+
+    .kanban-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 4px solid #0d9488;
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: box-shadow 0.15s
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12)
+    }
+
+    .kanban-card-titulo {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px
+    }
+
+    .kanban-card-data {
+      color: var(--muted);
+      font-size: 0.72rem
+    }
+
+    .kanban-empty {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 1rem 0.5rem
+    }
+
+    .cal-dia {
+      position: relative
+    }
+
+    .cal-dots {
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%)
+    }
+
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .btn-vis {
+      transition: all 0.15s
+    }
+
+    .btn-vis.ativo {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent)
+    }
+
+    #fcCalendario {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border)
+    }
+
+    .fc .fc-toolbar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .fc .fc-button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif
+    }
+
+    .fc .fc-button:hover,
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent)
+    }
+
+    .fc .fc-daygrid-day.fc-day-today {
+      background: rgba(13, 148, 136, 0.06)
+    }
+
+    .fc .fc-daygrid-day-number {
+      color: var(--text);
+      font-size: 0.82rem
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none
+    }
+
+    .fc-event {
+      border-radius: 6px !important;
+      border: none !important;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      cursor: pointer
+    }
+
+    .fc .fc-timegrid-slot {
+      height: 40px
+    }
+
+    .fc .fc-timegrid-axis-cushion {
+      font-size: 0.72rem;
+      color: var(--muted)
+    }
+
+    .empresa-badge {
+      background: rgba(13, 148, 136, 0.1);
+      border: 1px solid rgba(13, 148, 136, 0.25);
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
   </style>
 </head>
+
 <body>
-<div id="toastContainer"></div>
-<div class="topbar">
-  <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
-  <div class="topbar-user">
-    <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
-    Olá, <strong id="nomeUsuario">...</strong>
-    <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
-    <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif" style="position:relative">🔔</button>
-    <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
-    <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
-    <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
-    <button class="btn-logout" onclick="logoff()">Logoff</button>
-    <button class="btn-logout" onclick="sair()" style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
+  <div id="toastContainer"></div>
+  <div class="topbar">
+    <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
+    <div class="topbar-user">
+      <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
+      Olá, <strong id="nomeUsuario">...</strong>
+      <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
+      <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif"
+        style="position:relative">🔔</button>
+      <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
+      <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
+      <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
+      <button class="btn-logout" onclick="logoff()">Logoff</button>
+      <button class="btn-logout" onclick="sair()"
+        style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
+    </div>
   </div>
-</div>
-<div class="mobile-tabs" id="mobileTabs"></div>
-<div class="layout">
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-label">Principal</div>
-      <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda"><span class="icon">📅</span> Agenda</button>
-      <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista"><span class="icon">📋</span> Agendamentos</button>
-    </div>
-    <div class="sidebar-section" id="sidebarAdmin" style="display:none">
-      <div class="sidebar-label">Gestão</div>
-      <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais"><span class="icon">👥</span> Profissionais</button>
-      <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes"><span class="icon">⚙️</span> Configurações</button>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Minha conta</div>
-      <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade"><span class="icon">🕐</span> Disponibilidade</button>
-    </div>
-  </nav>
-  <main class="content">
-    <!-- ABA: AGENDA -->
-    <div id="abaAgenda">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-        <div>
-          <div class="page-title" id="tituloAgendaPagina">Agenda <span>do Dia</span></div>
-          <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
-        </div>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos" onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
-          <button class="btn btn-secondary btn-sm btn-vis" id="btnVisDia" onclick="mudarVisualizacao('dia')">📅 Dia</button>
-          <button class="btn btn-secondary btn-sm btn-vis" id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆 Semana</button>
-          <button class="btn btn-secondary btn-sm btn-vis" id="btnVisMes" onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
-          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+  <div class="mobile-tabs" id="mobileTabs"></div>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Principal</div>
+        <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda"><span class="icon">📅</span>
+          Agenda</button>
+        <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista"><span class="icon">📋</span>
+          Agendamentos</button>
+      </div>
+      <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+        <div class="sidebar-label">Gestão</div>
+        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais"><span
+            class="icon">👥</span> Profissionais</button>
+        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes"><span
+            class="icon">⚙️</span> Configurações</button>
+        <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+          <div class="sidebar-label">Gestão</div>
+          <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+            <span class="icon">🛠️</span> Serviços ← ADICIONAR ESTA LINHA
+          </button>
+          <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+            <span class="icon">👥</span> Profissionais
+          </button>
+          <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+            <span class="icon">⚙️</span> Configurações
+          </button>
         </div>
       </div>
-      <div class="stats-grid" id="statsAgenda"></div>
-      <!-- Próximos: Kanban -->
-      <div id="painelProximos">
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-header">
-            <h2>⚡ Próximos Compromissos</h2>
-            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Minha conta</div>
+        <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade"><span
+            class="icon">🕐</span> Disponibilidade</button>
+      </div>
+    </nav>
+    <main class="content">
+      <!-- ABA: AGENDA -->
+      <div id="abaAgenda">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title" id="tituloAgendaPagina">Agenda <span>do Dia</span></div>
+            <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos"
+              onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisDia" onclick="mudarVisualizacao('dia')">📅
+              Dia</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆
+              Semana</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisMes" onclick="mudarVisualizacao('mes')">🗓️
+              Mês</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
           </div>
         </div>
-        <div class="kanban-board" id="kanbanProximos"></div>
-      </div>
-      <!-- FullCalendar: Dia/Semana/Mês -->
-      <div id="painelCalendario" style="display:none">
-        <!-- Filtro por profissional acima do calendário -->
-        <div class="card" style="margin-bottom:1rem;padding:0.75rem 1rem">
-          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-            <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
-            <select id="filtroProfissional" onchange="atualizarFullCalendar()" style="min-width:200px">
-              <option value="">Todos</option>
-            </select>
+        <div class="stats-grid" id="statsAgenda"></div>
+        <!-- Próximos: Kanban -->
+        <div id="painelProximos">
+          <div class="card" style="margin-bottom:1rem">
+            <div class="card-header">
+              <h2>⚡ Próximos Compromissos</h2>
+              <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+            </div>
           </div>
+          <div class="kanban-board" id="kanbanProximos"></div>
         </div>
-        <!-- FullCalendar ocupa toda a largura -->
-        <div id="fcCalendario"></div>
-      </div>
-    </div>
-    <!-- ABA: LISTA -->
-    <div id="abaLista" style="display:none">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-        <div><div class="page-title">Todos os <span>Compromissos</span></div><div class="page-subtitle">Busque, filtre e gerencie</div></div>
-        <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
-      </div>
-      <div class="card" style="margin-bottom:1rem">
-        <div class="card-body" style="padding:1rem">
-          <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
-            <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>De</label><input type="date" id="filtroInicio" /></div>
-            <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Até</label><input type="date" id="filtroFim" /></div>
-            <div class="form-group" style="margin:0;flex:1;min-width:160px">
-              <label>Status</label>
-              <select id="filtroStatus">
-                <option value="">Todos</option><option value="confirmado">Confirmado</option>
-                <option value="pendente">Pendente</option><option value="cancelado">Cancelado</option>
-                <option value="concluido">Concluído</option><option value="faltou">Faltou</option>
+        <!-- FullCalendar: Dia/Semana/Mês -->
+        <div id="painelCalendario" style="display:none">
+          <!-- Filtro por profissional acima do calendário -->
+          <div class="card" style="margin-bottom:1rem;padding:0.75rem 1rem">
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
+              <select id="filtroProfissional" onchange="atualizarFullCalendar()" style="min-width:200px">
+                <option value="">Todos</option>
               </select>
             </div>
-            <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Profissional</label><select id="filtroProf2"><option value="">Todos</option></select></div>
-            <button class="btn btn-primary" onclick="carregarLista()">Buscar</button>
+          </div>
+          <!-- FullCalendar ocupa toda a largura -->
+          <div id="fcCalendario"></div>
+        </div>
+      </div>
+      <!-- ABA: LISTA -->
+      <div id="abaLista" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Todos os <span>Compromissos</span></div>
+            <div class="page-subtitle">Busque, filtre e gerencie</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-body" style="padding:1rem">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>De</label><input type="date"
+                  id="filtroInicio" /></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Até</label><input type="date"
+                  id="filtroFim" /></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px">
+                <label>Status</label>
+                <select id="filtroStatus">
+                  <option value="">Todos</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="cancelado">Cancelado</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="faltou">Faltou</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Profissional</label><select
+                  id="filtroProf2">
+                  <option value="">Todos</option>
+                </select></div>
+              <button class="btn btn-primary" onclick="carregarLista()">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Título</th>
+                  <th>Responsável</th>
+                  <th>Obs.</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaAgendamentos">
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Data/Hora</th><th>Título</th><th>Responsável</th><th>Obs.</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="tabelaAgendamentos"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr></tbody>
-          </table>
+      <!-- ABA: PROFISSIONAIS -->
+      <div id="abaProfissionais" style="display:none">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div class="page-title">Nossa <span>Equipe</span></div>
+            <div class="page-subtitle">Gerencie analistas e permissões</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovoProfissional()">+ Novo Analista</button>
         </div>
+        <div id="listaProfissionais"
+          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
       </div>
-    </div>
-    <!-- ABA: PROFISSIONAIS -->
-    <div id="abaProfissionais" style="display:none">
-      <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
-        <div><div class="page-title">Nossa <span>Equipe</span></div><div class="page-subtitle">Gerencie analistas e permissões</div></div>
-        <button class="btn btn-primary" onclick="abrirNovoProfissional()">+ Novo Analista</button>
-      </div>
-      <div id="listaProfissionais" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
-    </div>
-    <!-- ABA: DISPONIBILIDADE -->
-    <div id="abaDisponibilidade" style="display:none">
-      <div class="page-header"><div class="page-title">Minha <span>Disponibilidade</span></div><div class="page-subtitle">Configure seus dias e horários de atendimento</div></div>
-      <div class="card"><div class="card-body"><div id="formDisponibilidade"></div><button class="btn btn-primary" style="margin-top:1.5rem" onclick="salvarDisponibilidade()">Salvar Disponibilidade</button></div></div>
-    </div>
-    <!-- ABA: CONFIGURAÇÕES -->
-    <div id="abaConfiguracoes" style="display:none">
-      <div class="page-header"><div class="page-title">⚙️ <span>Configurações</span></div><div class="page-subtitle">Configurações gerais da empresa</div></div>
-      <div class="card" style="max-width:600px">
-        <div class="card-header"><h2>Link de Agendamento Público</h2></div>
-        <div class="card-body">
-          <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Compartilhe este link com seus clientes:</p>
-          <div style="display:flex;gap:0.5rem;"><input type="text" id="linkPublico" readonly style="flex:1;background:var(--surface2);font-family:monospace;font-size:0.82rem;" /><button class="btn btn-primary" onclick="copiarLink()">Copiar</button></div>
-          <div id="linkCopiado" style="display:none;margin-top:0.5rem;" class="alert alert-success">✅ Link copiado!</div>
-        </div>
-      </div>
-    </div>
-    <!-- ABA: EMPRESAS (superadmin) -->
-    <div id="abaEmpresas" style="display:none">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-        <div>
-          <div class="page-title">Gestão de <span>Empresas</span></div>
-          <div class="page-subtitle">Gerencie as empresas cadastradas no Agendare</div>
-        </div>
-        <button class="btn btn-primary" onclick="abrirNovaEmpresa()">+ Nova Empresa</button>
-      </div>
-      <div class="card">
-        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
-          <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-            <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar por nome ou CNPJ..."
-              oninput="filtrarEmpresasSA()"
-              style="flex:1;min-width:200px;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.88rem;padding:0.5rem 1rem;outline:none;" />
-            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresasSA()">✕ Limpar</button>
+      <!-- ② ABA SERVIÇOS  -->
+      <div id="abaServicos" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Nossos <span>Serviços</span></div>
+            <div class="page-subtitle">Cadastre os serviços oferecidos pela empresa</div>
           </div>
         </div>
-        <div class="table-wrapper">
-          <table>
-            <thead><tr><th>Empresa</th><th>CNPJ</th><th>E-mail</th><th>Slug</th><th>Status</th><th>Ações</th></tr></thead>
-            <tbody id="tabelaEmpresas"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr></tbody>
-          </table>
+
+        <!-- Formulário -->
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <h2>➕ Novo Serviço</h2>
+          </div>
+          <div class="card-body" style="padding:1rem">
+            <input type="hidden" id="servicoId" />
+            <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:0.75rem;margin-bottom:0.75rem">
+              <div class="form-group" style="margin:0">
+                <label>Nome <span style="color:var(--accent)">*</span></label>
+                <input type="text" id="servicoNome" placeholder="Ex: Consulta, Reunião..." />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Descrição</label>
+                <input type="text" id="servicoDescricao" placeholder="Descrição opcional" />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Duração (min)</label>
+                <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" />
+              </div>
+            </div>
+            <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
+            <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
+          </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th>Duração</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaServicos">
+                <tr>
+                  <td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-  </main>
-</div>
-
-<!-- Modais -->
-<div class="modal-overlay" id="modalAgendamento">
-  <div class="modal" style="max-width:500px">
-    <h3>📅 Novo Compromisso</h3>
-    <input type="hidden" id="agId" />
-    <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text" id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
-    <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label><input type="date" id="agData" /></div>
-    <div class="form-group" style="margin-bottom:0.5rem"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox" id="chkDiaTodo" onchange="toggleDiaTodo(this)" style="accent-color:var(--accent);width:16px;height:16px;" />Dia todo</label></div>
-    <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
-      <div class="form-group" style="margin:0;flex:1"><label>Início <span style="color:var(--accent)">*</span></label><input type="time" id="agHoraInicio" /></div>
-      <div class="form-group" style="margin:0;flex:1"><label>Fim <span style="color:var(--accent)">*</span></label><input type="time" id="agHoraFim" /></div>
-    </div>
-    <div class="form-group" style="margin-bottom:0.5rem"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox" id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)" style="accent-color:var(--accent);width:16px;height:16px;" />Adicionar participante?</label></div>
-    <div id="campoParticipante" style="display:none;margin-bottom:1rem"><div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div></div>
-    <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..." style="resize:none;height:70px;"></textarea></div>
-    <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarAgendamento()"><span id="btnAgendar">Confirmar</span><div class="spinner" id="spinnerAgendar"></div></button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalVerAgendamento">
-  <div class="modal" style="max-width:520px">
-    <h3>📋 Detalhes do Compromisso</h3>
-    <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
-    <div class="form-group"><label>Status</label>
-      <select id="editStatus">
-        <option value="confirmado">✅ Confirmado</option><option value="concluido">🏁 Concluído</option>
-        <option value="faltou">❌ Faltou</option><option value="cancelado">🚫 Cancelado</option>
-      </select>
-    </div>
-    <input type="hidden" id="editAgId"/>
-    <hr style="border-color:var(--border);margin:1.25rem 0"/>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <strong style="font-size:0.88rem">👥 Participantes</strong>
-      <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
-    </div>
-    <div id="formParticipante" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-        <button class="btn btn-secondary btn-sm" id="btnTipoInterno" onclick="setTipoParticipante('interno')" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">👤 Interno</button>
-        <button class="btn btn-secondary btn-sm" id="btnTipoExterno" onclick="setTipoParticipante('externo')" style="flex:1">🌐 Externo</button>
+      <!-- ABA: DISPONIBILIDADE -->
+      <div id="abaDisponibilidade" style="display:none">
+        <div class="page-header">
+          <div class="page-title">Minha <span>Disponibilidade</span></div>
+          <div class="page-subtitle">Configure seus dias e horários de atendimento</div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div id="formDisponibilidade"></div><button class="btn btn-primary" style="margin-top:1.5rem"
+              onclick="salvarDisponibilidade()">Salvar Disponibilidade</button>
+          </div>
+        </div>
       </div>
-      <div id="campoInterno"><div class="form-group" style="margin-bottom:0.5rem"><label>Analista</label><select id="partProfissional"></select></div></div>
-      <div id="campoExterno" style="display:none">
-        <div class="form-group" style="margin-bottom:0.5rem"><label>Nome *</label><input type="text" id="partNome" placeholder="Nome completo"/></div>
-        <div class="form-group" style="margin-bottom:0.5rem"><label>E-mail *</label><input type="email" id="partEmail" placeholder="email@exemplo.com"/></div>
+      <!-- ABA: CONFIGURAÇÕES -->
+      <div id="abaConfiguracoes" style="display:none">
+        <div class="page-header">
+          <div class="page-title">⚙️ <span>Configurações</span></div>
+          <div class="page-subtitle">Configurações gerais da empresa</div>
+        </div>
+        <div class="card" style="max-width:600px">
+          <div class="card-header">
+            <h2>Link de Agendamento Público</h2>
+          </div>
+          <div class="card-body">
+            <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Compartilhe este link com seus clientes:
+            </p>
+            <div style="display:flex;gap:0.5rem;"><input type="text" id="linkPublico" readonly
+                style="flex:1;background:var(--surface2);font-family:monospace;font-size:0.82rem;" /><button
+                class="btn btn-primary" onclick="copiarLink()">Copiar</button></div>
+            <div id="linkCopiado" style="display:none;margin-top:0.5rem;" class="alert alert-success">✅ Link copiado!
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:0.5rem"></div>
-      <button class="btn btn-primary btn-sm" style="width:100%;margin-top:0.75rem" onclick="adicionarParticipante()">Enviar convite</button>
-    </div>
-    <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
-      <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
+      <!-- ABA: EMPRESAS (superadmin) -->
+      <div id="abaEmpresas" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Gestão de <span>Empresas</span></div>
+            <div class="page-subtitle">Gerencie as empresas cadastradas no Agendare</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovaEmpresa()">+ Nova Empresa</button>
+        </div>
+        <div class="card">
+          <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar por nome ou CNPJ..."
+                oninput="filtrarEmpresasSA()"
+                style="flex:1;min-width:200px;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.88rem;padding:0.5rem 1rem;outline:none;" />
+              <button class="btn btn-secondary btn-sm"
+                onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresasSA()">✕ Limpar</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>CNPJ</th>
+                  <th>E-mail</th>
+                  <th>Slug</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaEmpresas">
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modais -->
+  <div class="modal-overlay" id="modalAgendamento">
+    <div class="modal" style="max-width:500px">
+      <h3>📅 Novo Compromisso</h3>
+      <input type="hidden" id="agId" />
+      <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
+          id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
+      <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label><input type="date"
+          id="agData" /></div>
+      <div class="form-group" style="margin-bottom:0.5rem"><label
+          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
+            id="chkDiaTodo" onchange="toggleDiaTodo(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />Dia todo</label></div>
+      <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
+        <div class="form-group" style="margin:0;flex:1"><label>Início <span
+              style="color:var(--accent)">*</span></label><input type="time" id="agHoraInicio" /></div>
+        <div class="form-group" style="margin:0;flex:1"><label>Fim <span
+              style="color:var(--accent)">*</span></label><input type="time" id="agHoraFim" /></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0.5rem"><label
+          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
+            id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />Adicionar participante?</label></div>
+      <div id="campoParticipante" style="display:none;margin-bottom:1rem">
+        <div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..."
+          style="resize:none;height:70px;"></textarea></div>
+      <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div style="margin-bottom:1rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.88rem">
+          <input type="checkbox" id="chkConvidarExterno" onchange="toggleConvidarExterno(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />
+          ✉️ Convidar alguém externo por e-mail
+        </label>
+        <div id="campoConvidarExterno" style="display:none;margin-top:0.75rem">
+          <div class="form-group" style="margin:0">
+            <label>E-mail do convidado</label>
+            <input type="email" id="emailConvidado" placeholder="pessoa@email.com" />
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarAgendamento()"><span id="btnAgendar">Confirmar</span>
+          <div class="spinner" id="spinnerAgendar"></div>
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="modal-overlay" id="modalProfissional">
-  <div class="modal" style="max-width:480px">
-    <h3 id="tituloProfissionalModal">👤 Novo Analista</h3>
-    <input type="hidden" id="profId" />
-    <div class="form-grid">
-      <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text" id="profNome" /></div>
-      <div class="form-group"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email" id="profEmail" /></div>
-      <div class="form-group"><label>Telefone</label><input type="text" id="profTelefone" /></div>
-      <div class="form-group"><label id="labelSenhaProf">Senha <span style="color:var(--accent)">*</span></label><input type="password" id="profSenha" /></div>
-    </div>
-    <div class="form-grid">
-      <div class="form-group"><label>Perfil</label><select id="profPerfil"><option value="profissional">🔍 Analista</option><option value="admin">👑 Administrador</option></select></div>
-      <div class="form-group"><label>Cor na agenda</label><input type="color" id="profCor" value="#0d9488" style="height:42px;padding:4px;cursor:pointer;width:100%;" /></div>
-    </div>
-    <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarProfissional()"><span id="btnProfText">Cadastrar</span></button>
+  <div class="modal-overlay" id="modalVerAgendamento">
+    <div class="modal" style="max-width:520px">
+      <h3>📋 Detalhes do Compromisso</h3>
+      <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="editStatus">
+          <option value="confirmado">✅ Confirmado</option>
+          <option value="concluido">🏁 Concluído</option>
+          <option value="faltou">❌ Faltou</option>
+          <option value="cancelado">🚫 Cancelado</option>
+        </select>
+      </div>
+      <input type="hidden" id="editAgId" />
+      <hr style="border-color:var(--border);margin:1.25rem 0" />
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <strong style="font-size:0.88rem">👥 Participantes</strong>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
+      </div>
+      <div id="formParticipante"
+        style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+          <button class="btn btn-secondary btn-sm" id="btnTipoInterno" onclick="setTipoParticipante('interno')"
+            style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">👤 Interno</button>
+          <button class="btn btn-secondary btn-sm" id="btnTipoExterno" onclick="setTipoParticipante('externo')"
+            style="flex:1">🌐 Externo</button>
+        </div>
+        <div id="campoInterno">
+          <div class="form-group" style="margin-bottom:0.5rem"><label>Analista</label><select
+              id="partProfissional"></select></div>
+        </div>
+        <div id="campoExterno" style="display:none">
+          <div class="form-group" style="margin-bottom:0.5rem"><label>Nome *</label><input type="text" id="partNome"
+              placeholder="Nome completo" /></div>
+          <div class="form-group" style="margin-bottom:0.5rem"><label>E-mail *</label><input type="email" id="partEmail"
+              placeholder="email@exemplo.com" /></div>
+        </div>
+        <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:0.5rem"></div>
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:0.75rem"
+          onclick="adicionarParticipante()">Enviar convite</button>
+      </div>
+      <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
+        <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
+      </div>
     </div>
   </div>
-</div>
 
-<div class="modal-overlay" id="modalPerfil">
-  <div class="modal" style="max-width:420px">
-    <h3>⚙️ Meu Perfil</h3>
-    <div id="perfilInfo" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;"></div>
-    <hr style="border-color:var(--border);margin-bottom:1.5rem" />
-    <h4 style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">ALTERAR SENHA</h4>
-    <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••" /></div>
-    <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP" placeholder="••••••••" /></div>
-    <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
-    <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:1rem"></div>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button><button class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button></div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="modalEmpresa">
-  <div class="modal" style="max-width:580px">
-    <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
-    <input type="hidden" id="empId"/>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
-      <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">Dados da Empresa</p>
+  <div class="modal-overlay" id="modalProfissional">
+    <div class="modal" style="max-width:480px">
+      <h3 id="tituloProfissionalModal">👤 Novo Analista</h3>
+      <input type="hidden" id="profId" />
       <div class="form-grid">
-        <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span style="color:var(--accent)">*</span></label><input type="text" id="empNome" placeholder="Ex: Salão da Maria"/></div>
-        <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label><input type="text" id="empCnpj" placeholder="00.000.000/0001-00"/></div>
+        <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text"
+            id="profNome" /></div>
+        <div class="form-group"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email"
+            id="profEmail" /></div>
+        <div class="form-group"><label>Telefone</label><input type="text" id="profTelefone" /></div>
+        <div class="form-group"><label id="labelSenhaProf">Senha <span
+              style="color:var(--accent)">*</span></label><input type="password" id="profSenha" /></div>
       </div>
       <div class="form-grid">
-        <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail" placeholder="contato@empresa.com"/></div>
-        <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text" id="empTelefone" placeholder="(00) 00000-0000"/></div>
+        <div class="form-group"><label>Perfil</label><select id="profPerfil">
+            <option value="profissional">🔍 Analista</option>
+            <option value="admin">👑 Administrador</option>
+          </select></div>
+        <div class="form-group"><label>Cor na agenda</label><input type="color" id="profCor" value="#0d9488"
+            style="height:42px;padding:4px;cursor:pointer;width:100%;" /></div>
       </div>
-      <div class="form-grid">
-        <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria" oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')"/><span style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong id="slugPreview">slug</strong></span></div>
-        <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor" value="#0d9488" style="height:42px;padding:4px;cursor:pointer;"/></div>
+      <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarProfissional()"><span id="btnProfText">Cadastrar</span></button>
       </div>
     </div>
-    <div id="secaoAdmin">
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
-        <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">👑 Administrador da Empresa</p>
+  </div>
+
+  <div class="modal-overlay" id="modalPerfil">
+    <div class="modal" style="max-width:420px">
+      <h3>⚙️ Meu Perfil</h3>
+      <div id="perfilInfo"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;">
+      </div>
+      <hr style="border-color:var(--border);margin-bottom:1.5rem" />
+      <h4 style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">ALTERAR SENHA</h4>
+      <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••" />
+      </div>
+      <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP"
+          placeholder="••••••••" /></div>
+      <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+      <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:1rem"></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button><button
+          class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalEmpresa">
+    <div class="modal" style="max-width:580px">
+      <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
+      <input type="hidden" id="empId" />
+      <div
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+        <p
+          style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+          Dados da Empresa</p>
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome" placeholder="Nome completo"/></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail" placeholder="admin@empresa.com"/></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empNome"
+              placeholder="Ex: Salão da Maria" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empCnpj"
+              placeholder="00.000.000/0001-00" /></div>
         </div>
-        <div class="form-group" style="margin-bottom:0"><label>Senha <span style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha" placeholder="Mínimo 6 caracteres"/></div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail"
+              placeholder="contato@empresa.com" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
+              id="empTelefone" placeholder="(00) 00000-0000" /></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
+              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
+              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
+                id="slugPreview">slug</strong></span></div>
+          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
+              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
+        </div>
+      </div>
+      <div id="secaoAdmin">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+          <p
+            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+            👑 Administrador da Empresa</p>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
+                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
+                placeholder="Nome completo" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
+                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
+                placeholder="admin@empresa.com" /></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label>Senha <span
+                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
+              placeholder="Mínimo 6 caracteres" /></div>
+        </div>
+      </div>
+      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
+          <div class="spinner" id="spinnerEmpresa"></div>
+        </button>
       </div>
     </div>
-    <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span><div class="spinner" id="spinnerEmpresa"></div></button>
+  </div>
+
+  <div class="modal-overlay" id="modalVerEmpresa">
+    <div class="modal" style="max-width:480px">
+      <h3>🏢 Detalhes da Empresa</h3>
+      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
+          <option value="ativo">✅ Ativo</option>
+          <option value="suspenso">⚠️ Suspenso</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select></div>
+      <input type="hidden" id="editEmpresaId" />
+      <div class="modal-actions"><button class="btn btn-secondary"
+          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
+          onclick="atualizarEmpresa()">Salvar</button></div>
     </div>
   </div>
-</div>
 
-<div class="modal-overlay" id="modalVerEmpresa">
-  <div class="modal" style="max-width:480px">
-    <h3>🏢 Detalhes da Empresa</h3>
-    <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
-    <div class="form-group"><label>Status</label><select id="editEmpresaStatus"><option value="ativo">✅ Ativo</option><option value="suspenso">⚠️ Suspenso</option><option value="cancelado">❌ Cancelado</option></select></div>
-    <input type="hidden" id="editEmpresaId"/>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar</button></div>
-  </div>
-</div>
-
-<div class="notif-panel" id="painelNotificacoes">
-  <div class="notif-panel-header">
-    <span>⚠️ Compromissos em Atraso</span>
-    <button onclick="fecharPainelNotificacoes()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
-  </div>
-  <div class="notif-panel-body" id="painelNotifBody"><div class="notif-empty">Carregando...</div></div>
-</div>
-
-<div class="modal-overlay" id="modalUsuariosSA">
-  <div class="modal" style="max-width:640px">
-    <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
-    <div id="listaUsuariosSA" style="margin:1rem 0"></div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
+  <div class="notif-panel" id="painelNotificacoes">
+    <div class="notif-panel-header">
+      <span>⚠️ Compromissos em Atraso</span>
+      <button onclick="fecharPainelNotificacoes()"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
+    </div>
+    <div class="notif-panel-body" id="painelNotifBody">
+      <div class="notif-empty">Carregando...</div>
     </div>
   </div>
-</div>
 
-<div class="modal-overlay" id="modalNotas">
-  <div class="modal notas-modal" style="max-width:480px">
-    <h3>📝 Minhas Anotações</h3>
-    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
-    <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
+  <div class="modal-overlay" id="modalUsuariosSA">
+    <div class="modal" style="max-width:640px">
+      <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
+      <div id="listaUsuariosSA" style="margin:1rem 0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
+      </div>
+    </div>
   </div>
-</div>
 
-<div class="modal-overlay" id="modalObsStatus">
-  <div class="modal" style="max-width:420px">
-    <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação antes de salvar.</p>
-    <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto" placeholder="Descreva o que foi feito, motivo do cancelamento..." style="resize:none;height:100px;width:100%;"></textarea></div>
-    <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+  <div class="modal-overlay" id="modalNotas">
+    <div class="modal notas-modal" style="max-width:480px">
+      <h3>📝 Minhas Anotações</h3>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
+      <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button
+          class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
+    </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-<script src="js/dashboard.js"></script>
+  <div class="modal-overlay" id="modalObsStatus">
+    <div class="modal" style="max-width:420px">
+      <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação
+        antes de salvar.</p>
+      <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
+          placeholder="Descreva o que foi feito, motivo do cancelamento..."
+          style="resize:none;height:100px;width:100%;"></textarea></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button
+          class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="js/dashboard.js"></script>
 </body>
+
 </html>
