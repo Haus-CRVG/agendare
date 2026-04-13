@@ -101,7 +101,7 @@ router.post('/', auth(), async (req, res) => {
   const {
     empresa_id, profissional_id, servico_id,
     cliente_nome, cliente_email, cliente_telefone,
-    data_inicio, data_fim, observacoes, dia_todo
+    data_inicio, data_fim, observacoes, dia_todo, email_convidado
   } = req.body;
 
   if (!empresa_id || !profissional_id || !cliente_nome || !data_inicio || !data_fim)
@@ -131,6 +131,21 @@ router.post('/', auth(), async (req, res) => {
        `Novo compromisso: ${cliente_nome}`,
        `${new Date(data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}`]
     ).catch(() => {});
+
+    // E-mail para convidado externo
+    if (email_convidado) {
+      const profResult = await pool.query(`SELECT nome FROM usuarios WHERE id = $1`, [profissional_id]).catch(() => ({ rows: [] }));
+      const nomeProf = profResult.rows[0]?.nome || 'Equipe';
+      const { enviarConviteExterno } = require('../services/mailer');
+      enviarConviteExterno({
+        para: email_convidado,
+        titulo: cliente_nome,
+        organizador: nomeProf,
+        dataInicio: data_inicio,
+        dataFim: data_fim,
+        observacoes: observacoes || null
+      }).catch(e => console.error('❌ E-mail convidado:', e.message));
+    }
 
     res.status(201).json({ ...ag, token_cancelamento });
   } catch (err) { res.status(500).json({ erro: err.message }); }

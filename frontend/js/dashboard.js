@@ -81,6 +81,7 @@ function mudarAba(aba) {
 
   if (aba==='agenda')          { renderMiniCalendarioComBolinhas(); carregarPainelAgenda(); }
   if (aba==='lista')           carregarLista();
+  if (aba==='servicos')        carregarServicosAba();
   if (aba==='profissionais')   carregarProfissionaisAba();
   if (aba==='disponibilidade') carregarDisponibilidade();
   if (aba==='configuracoes')   carregarConfiguracoes();
@@ -280,11 +281,16 @@ async function carregarKanbanProximos() {
   try {
     const r = await fetch(`${API}/agendamentos?inicio=${agora}T00:00:00&fim=${fimFuturo}`, { headers:{ Authorization:`Bearer ${token}` } });
     const ags = await r.json();
-    // Agrupa por profissional e pega os 5 próximos de cada um
+    if (!ags.length) {
+      document.getElementById('kanbanProximos').innerHTML = '<p style="color:var(--muted);padding:1rem;">Nenhum compromisso futuro agendado.</p>';
+      return;
+    }
     const grupos = {};
     ags.forEach(a => {
       const pid = a.profissional_id || 0;
-      if (!grupos[pid]) grupos[pid] = { nome: a.profissional_nome||'Sem responsável', items: [] };
+      const profLocal = profissionais.find(p => p.id === parseInt(pid));
+      const nomeProf = profLocal?.nome || a.profissional_nome || 'Sem responsável';
+      if (!grupos[pid]) grupos[pid] = { nome: nomeProf, items: [] };
       if (grupos[pid].items.length < 5) grupos[pid].items.push(a);
     });
     renderKanban('kanbanProximos', grupos);
@@ -535,6 +541,12 @@ function abrirNovoAgendamento() {
   document.getElementById('campoParticipante').style.display='none';
   document.getElementById('agParticipante').innerHTML=profissionais.filter(p=>p.id!==usuario.id).map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
   document.getElementById('erroAgendamento').style.display='none';
+  const chkExt = document.getElementById('chkConvidarExterno');
+  const campoExt = document.getElementById('campoConvidarExterno');
+  if (chkExt) chkExt.checked = false;
+  if (campoExt) campoExt.style.display = 'none';
+  const emailExt = document.getElementById('emailConvidado');
+  if (emailExt) emailExt.value = '';
   document.getElementById('modalAgendamento').classList.add('active');
 }
 function fecharModalAgendamento(){document.getElementById('modalAgendamento').classList.remove('active');}
@@ -561,8 +573,10 @@ async function salvarAgendamento() {
   try {
     const data_inicio=diaTodo?`${data}T00:00:00-03:00`:`${data}T${horaIni}:00-03:00`;
     const data_fim=diaTodo?`${data}T23:59:59-03:00`:`${data}T${horaFim}:00-03:00`;
+    const emailConvidado = document.getElementById('chkConvidarExterno')?.checked
+      ? (document.getElementById('emailConvidado')?.value?.trim() || null) : null;
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:usuario.id,cliente_nome:titulo,data_inicio,data_fim,dia_todo:diaTodo,observacoes:obs||null})});
+      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:usuario.id,cliente_nome:titulo,data_inicio,data_fim,dia_todo:diaTodo,observacoes:obs||null,email_convidado:emailConvidado})});
     const dataResp=await r.json();
     if(!r.ok){erro.textContent=dataResp.erro||'Erro ao salvar';erro.style.display='block';return;}
     if(addPart&&partId) await fetch(`${API}/participantes`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({agendamento_id:dataResp.id,profissional_id:parseInt(partId)})});
@@ -836,3 +850,80 @@ async function confirmarAtualizarStatus() {
 
 
 init();
+
+// ── Aba Serviços ──────────────────────────────────────────
+async function carregarServicosAba() {
+  const tbody = document.getElementById('tabelaServicos');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
+  try {
+    const r = await fetch(`${API}/servicos?empresa_id=${usuario.empresa_id}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const servs = await r.json();
+    if (!Array.isArray(servs) || !servs.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum serviço cadastrado. Adicione o primeiro acima!</td></tr>';
+      return;
+    }
+    tbody.innerHTML = servs.map(s => `
+      <tr>
+        <td><strong>${s.nome}</strong></td>
+        <td style="color:var(--muted)">${s.descricao||'—'}</td>
+        <td>${s.duracao_minutos ? s.duracao_minutos + ' min' : (s.duracao_min ? s.duracao_min + ' min' : '—')}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="editarServico(${s.id},'${(s.nome||'').replace(/'/g,"\'")}','${(s.descricao||'').replace(/'/g,"\'")}',${s.duracao_minutos||s.duracao_min||0})">✏️ Editar</button>
+            <button class="btn btn-secondary btn-sm" style="color:var(--error);border-color:rgba(239,68,68,0.3)" onclick="excluirServico(${s.id})">🗑️</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(err) { console.error(err); tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar serviços.</td></tr>'; }
+}
+
+async function salvarServico() {
+  const id = document.getElementById('servicoId')?.value;
+  const nome = document.getElementById('servicoNome').value.trim();
+  const descricao = document.getElementById('servicoDescricao').value.trim();
+  const duracao = parseInt(document.getElementById('servicoDuracao').value) || null;
+  const erro = document.getElementById('erroServico');
+  if (!nome) { erro.textContent='Nome é obrigatório'; erro.style.display='block'; return; }
+  erro.style.display='none';
+  const method = id ? 'PATCH' : 'POST';
+  const url = id ? `${API}/servicos/${id}` : `${API}/servicos`;
+  try {
+    const r = await fetch(url, {
+      method,
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id })
+    });
+    if (!r.ok) { const d=await r.json(); erro.textContent=d.erro||'Erro ao salvar'; erro.style.display='block'; return; }
+    document.getElementById('servicoNome').value='';
+    document.getElementById('servicoDescricao').value='';
+    document.getElementById('servicoDuracao').value='';
+    if(document.getElementById('servicoId')) document.getElementById('servicoId').value='';
+    document.getElementById('btnSalvarServico').textContent='Salvar Serviço';
+    carregarServicosAba();
+  } catch(err) { erro.textContent='Erro de conexão'; erro.style.display='block'; }
+}
+
+function editarServico(id, nome, descricao, duracao) {
+  document.getElementById('servicoId').value = id;
+  document.getElementById('servicoNome').value = nome;
+  document.getElementById('servicoDescricao').value = descricao;
+  document.getElementById('servicoDuracao').value = duracao||'';
+  document.getElementById('btnSalvarServico').textContent = 'Atualizar Serviço';
+  document.getElementById('erroServico').style.display='none';
+  document.getElementById('servicoNome').focus();
+}
+
+async function excluirServico(id) {
+  if (!confirm('Excluir este serviço? Esta ação não pode ser desfeita.')) return;
+  try {
+    const r = await fetch(`${API}/servicos/${id}`, { method:'DELETE', headers:{ Authorization:`Bearer ${token}` } });
+    if (!r.ok) { const d=await r.json(); alert(d.erro||'Erro ao excluir'); return; }
+    carregarServicosAba();
+  } catch(err) { alert('Erro de conexão'); }
+}
+
+function toggleConvidarExterno(chk) {
+  const campo = document.getElementById('campoConvidarExterno');
+  if (campo) campo.style.display = chk.checked ? 'block' : 'none';
+}

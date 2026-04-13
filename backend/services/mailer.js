@@ -187,4 +187,50 @@ async function enviarConviteParticipante({ nome, email, agendamento, token }) {
   }
 }
 
-module.exports = { enviarConfirmacao, enviarCancelamento, enviarNotificacaoProfissional, enviarConviteParticipante };
+// ── Convite para pessoa externa (sem conta no sistema) ────
+async function enviarConviteExterno({ para, titulo, organizador, dataInicio, dataFim, observacoes }) {
+  const dtIni = new Date(dataInicio).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit',
+    month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  const dtFim = dataFim ? new Date(dataFim).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit'
+  }) : null;
+
+  const html = baseTemplate(`
+    <div class="header">
+      <h1>📅 Você foi convidado!</h1>
+      <p>Um compromisso foi agendado com você</p>
+    </div>
+    <div class="body">
+      <p style="color:#1e293b;margin-bottom:20px;">Você recebeu um convite de <strong>${organizador}</strong>:</p>
+      <div class="card">
+        <div class="label">Compromisso</div><div class="value">${titulo}</div>
+        <div class="label">Organizado por</div><div class="value">${organizador}</div>
+        <div class="label">Data e Horário</div>
+        <div class="value">${dtIni}${dtFim ? ' até ' + dtFim : ''}</div>
+        ${observacoes ? `<div class="label">Observações</div><div class="value">${observacoes}</div>` : ''}
+      </div>
+      <p style="color:#64748b;font-size:0.85rem;margin-top:1rem;">
+        Este é um convite informativo enviado pelo sistema Agendare.
+      </p>
+    </div>
+    <div class="footer">Agendare — Sistema de Agendamentos</div>
+  `);
+
+  await transporter.sendMail({
+    from: `"Agendare" <${process.env.MAIL_USER}>`,
+    to: para,
+    subject: `📅 Convite: ${titulo}`,
+    html
+  });
+  console.log(`✅ Convite externo enviado para ${para}`);
+}
+
+module.exports = {
+  enviarConfirmacao,
+  enviarCancelamento,
+  enviarNotificacaoProfissional,
+  enviarConviteParticipante,
+  enviarConviteExterno
+};
