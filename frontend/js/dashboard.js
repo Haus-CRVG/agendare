@@ -130,7 +130,7 @@ function iniciarOuAtualizarFC(view) {
     firstDay: 0,
     nowIndicator: true,
     slotMinTime: '06:00:00',
-    slotMaxTime: '22:00:00',
+    slotMaxTime: '24:00:00',
     allDayText: 'Dia todo',
     buttonText: { today:'Hoje', day:'Dia', week:'Semana', month:'Mês' },
     // Sincroniza com os botões do painel quando muda de view dentro do FC
