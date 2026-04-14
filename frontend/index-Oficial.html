@@ -144,7 +144,21 @@
       padding-right: 40px;
     }
 
-    /* SSO loading overlay */
+    /* SSO loading overlay 
+    #ssoLoading {
+      display:none; position:fixed; inset:0;
+      background:var(--bg); z-index:9999;
+      flex-direction:column; align-items:center; justify-content:center; gap:1rem;
+    }
+    #ssoLoading.active { display:flex; }
+    .sso-spinner {
+      width:40px; height:40px;
+      border:3px solid var(--border);
+      border-top-color:var(--accent);
+      border-radius:50%;
+      animation:spin 0.7s linear infinite;
+    } */
+    /* DEPOIS */
     #ssoLoading {
       visibility: hidden;
       opacity: 0;
@@ -163,16 +177,6 @@
     #ssoLoading.active {
       visibility: visible;
       opacity: 1;
-    }
-
-    /* ✅ spinner restaurado */
-    .sso-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
     }
 
     @keyframes spin {
@@ -356,9 +360,12 @@
       const urlParams = new URLSearchParams(window.location.search);
       const ssoToken = urlParams.get('sso');
 
-      if (ssoToken && ssoToken.length >= 10) {
+      if (ssoToken) {
         // ── Veio do Implanta via SSO ──────────────────────────
+        // Remove o token da URL imediatamente (segurança)
         history.replaceState({}, '', window.location.pathname);
+
+        // Mostra tela de loading
         document.getElementById('ssoLoading').classList.add('active');
 
         try {
@@ -370,19 +377,19 @@
           const data = await r.json();
 
           if (!r.ok) {
+            document.getElementById('ssoLoading').classList.remove('active');
             alert('Erro no acesso via integração: ' + (data.erro || 'Token inválido ou expirado. Tente novamente.'));
             return;
           }
 
+          // Salva e redireciona para o dashboard
           localStorage.setItem('token', data.token);
           localStorage.setItem('usuario', JSON.stringify(data.usuario));
           window.location.href = 'dashboard.html';
 
         } catch {
-          alert('Erro de conexão ao validar acesso integrado. Tente novamente.');
-        } finally {
-          // ✅ garante que o overlay SEMPRE some, mesmo em caso de erro
           document.getElementById('ssoLoading').classList.remove('active');
+          alert('Erro de conexão ao validar acesso integrado. Tente novamente.');
         }
 
       } else {
@@ -390,6 +397,7 @@
         const u = JSON.parse(localStorage.getItem('usuario') || 'null');
         if (u) { window.location.href = 'dashboard.html'; return; }
 
+        // Recarrega CNPJ salvo
         const cnpjSalvo = localStorage.getItem('cnpj_salvo');
         if (cnpjSalvo) {
           const inp = document.getElementById('docInput');
