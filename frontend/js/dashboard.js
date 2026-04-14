@@ -238,6 +238,10 @@ async function carregarStatsAgenda() {
 
 // ── Calendário com bolinhas ───────────────────────────────
 async function renderMiniCalendarioComBolinhas() {
+  const elMes = document.getElementById('calMes');
+  const elGrid = document.getElementById('calendarioGrid');
+  if (!elMes || !elGrid) return;
+
   const ano = calAtual.getFullYear(), mes = calAtual.getMonth();
   const hoje = new Date().toISOString().split('T')[0];
   const primeiroDia = new Date(ano, mes, 1).getDay();
@@ -256,7 +260,7 @@ async function renderMiniCalendarioComBolinhas() {
     const prof = profissionais.find(p => p.id === ag.profissional_id);
     diaParaCores[dia].add(corProf(prof));
   });
-  document.getElementById('calMes').textContent = `${MESES[mes]} ${ano}`;
+  elMes.textContent = `${MESES[mes]} ${ano}`;
   let html = DIAS.map(d => `<div class="cal-header">${d}</div>`).join('');
   html += Array(primeiroDia).fill('<div></div>').join('');
   for (let d = 1; d <= ultimoDia; d++) {
@@ -267,7 +271,7 @@ async function renderMiniCalendarioComBolinhas() {
       <span class="num">${d}</span>${bolinhas?`<div class="cal-dots">${bolinhas}</div>`:''}
     </div>`;
   }
-  document.getElementById('calendarioGrid').innerHTML = html;
+  elGrid.innerHTML = html;
 }
 
 function renderMiniCalendario() { renderMiniCalendarioComBolinhas(); }
