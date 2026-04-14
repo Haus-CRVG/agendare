@@ -938,7 +938,7 @@ async function salvarServico() {
     const r = await fetch(url, {
       method,
       headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id, profissionais_ids: profissionaisIds })
+      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id, profissionais: profissionaisIds, profissionais_ids: profissionaisIds })
     });
     if (!r.ok) { const d=await r.json(); erro.textContent=d.erro||'Erro ao salvar'; erro.style.display='block'; return; }
     const servicoSalvo = await r.json();
@@ -960,7 +960,7 @@ async function sincronizarProfissionaisServico(servicoId, profissionaisIds) {
     const r = await fetch(`${API}/servicos/${servicoId}/profissionais`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ profissionais_ids: profissionaisIds })
+      body: JSON.stringify({ profissionais: profissionaisIds, profissionais_ids: profissionaisIds })
     });
     if (r.ok) return;
   } catch {}
@@ -1078,3 +1078,4 @@ function toggleConvidarExterno(chk) {
 }
 
 init();
+
