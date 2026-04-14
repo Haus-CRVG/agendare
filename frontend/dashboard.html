@@ -237,15 +237,22 @@
       </div>
       <div class="sidebar-section" id="sidebarAdmin" style="display:none">
         <div class="sidebar-label">Gestão</div>
-        <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
-          <span class="icon">🛠️</span> Serviços
-        </button>
-        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
-          <span class="icon">👥</span> Profissionais
-        </button>
-        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
-          <span class="icon">⚙️</span> Configurações
-        </button>
+        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais"><span
+            class="icon">👥</span> Profissionais</button>
+        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes"><span
+            class="icon">⚙️</span> Configurações</button>
+        <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+          <div class="sidebar-label">Gestão</div>
+          <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+            <span class="icon">🛠️</span> Serviços ← ADICIONAR ESTA LINHA
+          </button>
+          <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+            <span class="icon">👥</span> Profissionais
+          </button>
+          <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+            <span class="icon">⚙️</span> Configurações
+          </button>
+        </div>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Minha conta</div>
@@ -401,19 +408,16 @@
                 <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" />
               </div>
             </div>
-            <!-- Profissionais vinculados -->
-            <div style="margin-bottom:0.75rem">
-              <label style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
-                👥 Profissionais habilitados para este serviço
+            <div style="margin-top:0.75rem">
+              <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem">
+                Profissionais habilitados para este serviço
               </label>
-              <div id="servicoProfissionaisCheck"
-                style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
-                <span style="color:var(--muted);font-size:0.82rem">Carregando...</span>
+              <div id="servicoProfissionaisCheck" style="display:flex;flex-wrap:wrap;gap:0.5rem;min-height:36px">
+                <span style="color:var(--muted);font-size:0.82rem">Carregando profissionais...</span>
               </div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar este serviço. Só eles aparecerão no link público.</div>
             </div>
-            <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
-            <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
+            <div id="erroServico" class="alert alert-error" style="display:none;margin:0.75rem 0 0"></div>
+            <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()" style="margin-top:1rem">Salvar Serviço</button>
           </div>
         </div>
 
@@ -788,17 +792,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="js/dashboard.js"></script>
-
-  <!-- Modal Dashboard Stats -->
-  <div class="modal-overlay" id="modalDashboardStats">
-    <div class="modal" style="max-width:700px">
-      <h3 id="dashboardStatsTitle">Compromissos</h3>
-      <div id="dashboardStatsBody" style="margin:1rem 0;max-height:420px;overflow-y:auto"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
-      </div>
-    </div>
-  </div>
 </body>
 
 </html>

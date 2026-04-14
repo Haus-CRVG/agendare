@@ -9,25 +9,41 @@ function normalizarProfissionais(body = {}) {
   return [];
 }
 
-router.get('/', auth(), async (req, res) => {
+router.get('/', async (req, res) => {
+  // Rota pública: aceita empresa_id via query (link público) ou via token logado
   const eid = req.query.empresa_id || req.usuario?.empresa_id;
-  if (!eid) return res.status(400).json({ erro: 'empresa_id obrigatorio' });
+  if (!eid) {
+    // Tenta extrair do token se presente
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.replace('Bearer ',''), process.env.JWT_SECRET);
+        const rUser = await pool.query('SELECT empresa_id FROM usuarios WHERE id=$1', [decoded.id]);
+        if (rUser.rows[0]?.empresa_id) {
+          const result = await pool.query(
+            `SELECT * FROM servicos WHERE empresa_id = $1 AND ativo = true ORDER BY nome ASC`,
+            [rUser.rows[0].empresa_id]
+          );
+          return res.json(result.rows);
+        }
+      } catch {}
+    }
+    return res.status(400).json({ erro: 'empresa_id obrigatorio' });
+  }
 
   try {
     const result = await pool.query(
-      `SELECT * FROM servicos
-       WHERE empresa_id = $1 AND ativo = true
-       ORDER BY nome ASC`,
+      `SELECT * FROM servicos WHERE empresa_id = $1 AND ativo = true ORDER BY nome ASC`,
       [eid]
     );
-
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ erro: err.message });
   }
 });
 
-router.get('/:id', auth(['admin']), async (req, res) => {
+router.get('/:id', auth(), async (req, res) => {
   const eid = req.usuario.empresa_id;
   const sid = req.params.id;
 
@@ -63,8 +79,8 @@ router.post('/', auth(['admin']), async (req, res) => {
   const profissionais = normalizarProfissionais(req.body);
   const eid = req.usuario.empresa_id;
 
-  if (!nome || !duracao_minutos) {
-    return res.status(400).json({ erro: 'Nome e duracao obrigatorios' });
+  if (!nome) {
+    return res.status(400).json({ erro: 'Nome obrigatorio' });
   }
 
   try {
