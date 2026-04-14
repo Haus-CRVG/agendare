@@ -248,31 +248,43 @@ async function renderMiniCalendarioComBolinhas() {
   const ultimoDia  = new Date(ano, mes+1, 0).getDate();
   const ini = `${ano}-${String(mes+1).padStart(2,'0')}-01T00:00:00`;
   const fim = `${ano}-${String(mes+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}T23:59:59`;
+
   let agendaMes = [];
   try {
-    const r = await fetch(`${API}/agendamentos?inicio=${ini}&fim=${fim}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const r = await fetch(`${API}/agendamentos?inicio=${ini}&fim=${fim}`, {
+      headers:{ Authorization:`Bearer ${token}` }
+    });
     if (r.ok) agendaMes = await r.json();
   } catch {}
+
   const diaParaCores = {};
   agendaMes.forEach(ag => {
-    const dia = new Date(ag.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+    const dia = new Date(ag.data_inicio).toLocaleDateString('en-CA', {
+      timeZone:'America/Sao_Paulo'
+    });
     if (!diaParaCores[dia]) diaParaCores[dia] = new Set();
     const prof = profissionais.find(p => p.id === ag.profissional_id);
     diaParaCores[dia].add(corProf(prof));
   });
+
   elMes.textContent = `${MESES[mes]} ${ano}`;
+
   let html = DIAS.map(d => `<div class="cal-header">${d}</div>`).join('');
   html += Array(primeiroDia).fill('<div></div>').join('');
+
   for (let d = 1; d <= ultimoDia; d++) {
     const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const cores = diaParaCores[ds] ? [...diaParaCores[ds]].slice(0,3) : [];
     const bolinhas = cores.map(c => `<span class="cal-dot" style="background:${c}"></span>`).join('');
+
     html += `<div class="cal-dia ${ds===dataSelecionada?'selecionado':''} ${ds===hoje?'hoje':''}" onclick="selecionarDia('${ds}')">
-      <span class="num">${d}</span>${bolinhas?`<div class="cal-dots">${bolinhas}</div>`:''}
+      <span class="num">${d}</span>${bolinhas ? `<div class="cal-dots">${bolinhas}</div>` : ''}
     </div>`;
   }
+
   elGrid.innerHTML = html;
 }
+
 
 function renderMiniCalendario() { renderMiniCalendarioComBolinhas(); }
 function navegarMes(dir) { calAtual.setMonth(calAtual.getMonth()+dir); renderMiniCalendarioComBolinhas(); }
