@@ -10,7 +10,7 @@ function normalizarProfissionais(body = {}) {
 }
 
 // GET /api/servicos
-router.get('/', auth(), async (req, res) => {
+router.get('/', async (req, res) => {
   const eid = req.query.empresa_id || req.usuario?.empresa_id;
   if (!eid) return res.status(400).json({ erro: 'empresa_id obrigatorio' });
   try {
