@@ -873,6 +873,7 @@ async function carregarServicosAba() {
   const tbody = document.getElementById('tabelaServicos');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
+  await carregarCheckboxesProfissionais();
   try {
     const r = await fetch(`${API}/servicos?empresa_id=${usuario.empresa_id}`, { headers:{ Authorization:`Bearer ${token}` } });
     const servs = await r.json();
@@ -887,7 +888,7 @@ async function carregarServicosAba() {
         <td>${s.duracao_minutos ? s.duracao_minutos+' min' : '—'}</td>
         <td>
           <div style="display:flex;gap:6px">
-            <button class="btn btn-secondary btn-sm" onclick="editarServico(${s.id},'${(s.nome||'').replace(/'/g,"\\'").replace(/"/g,'\"')}','${(s.descricao||'').replace(/'/g,"\\'").replace(/"/g,'\"')}',${s.duracao_minutos||0})">✏️ Editar</button>
+            <button class="btn btn-secondary btn-sm" onclick="editarServico(${s.id})">✏️ Editar</button>
             <button class="btn btn-secondary btn-sm" style="color:var(--error)" onclick="excluirServico(${s.id})">🗑️</button>
           </div>
         </td>
@@ -895,11 +896,39 @@ async function carregarServicosAba() {
   } catch(err) { console.error(err); tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar.</td></tr>'; }
 }
 
+async function carregarCheckboxesProfissionais(profsSelecionados = []) {
+  const container = document.getElementById('servicoProfissionaisCheck');
+  if (!container) return;
+  try {
+    const r = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const profs = await r.json();
+    if (!Array.isArray(profs) || !profs.length) {
+      container.innerHTML = '<span style="color:var(--muted);font-size:0.82rem">Nenhum profissional cadastrado.</span>';
+      return;
+    }
+    container.innerHTML = profs.map(p => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.88rem;transition:background 0.15s"
+        onmouseover="this.style.background='rgba(13,148,136,0.06)'" onmouseout="this.style.background=''">
+        <input type="checkbox" id="profCheck_${p.id}" value="${p.id}"
+          style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer"
+          ${profsSelecionados.includes(p.id) ? 'checked' : ''} />
+        <span style="font-weight:500">${p.nome}</span>
+        <span style="color:var(--muted);font-size:0.75rem;margin-left:auto">${p.perfil === 'admin' ? '👑 Admin' : '👤 Prof.'}</span>
+      </label>`).join('');
+  } catch(err) { container.innerHTML = '<span style="color:var(--muted);font-size:0.82rem">Erro ao carregar profissionais.</span>'; }
+}
+
+function getProfissionaisSelecionados() {
+  const checks = document.querySelectorAll('#servicoProfissionaisCheck input[type=checkbox]:checked');
+  return Array.from(checks).map(c => parseInt(c.value));
+}
+
 async function salvarServico() {
   const id = document.getElementById('servicoId')?.value;
   const nome = document.getElementById('servicoNome').value.trim();
   const descricao = document.getElementById('servicoDescricao').value.trim();
   const duracao = parseInt(document.getElementById('servicoDuracao').value) || null;
+  const profissionaisIds = getProfissionaisSelecionados();
   const erro = document.getElementById('erroServico');
   if (!nome) { erro.textContent='Nome obrigatório'; erro.style.display='block'; return; }
   erro.style.display='none';
@@ -909,27 +938,79 @@ async function salvarServico() {
     const r = await fetch(url, {
       method,
       headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id })
+      body: JSON.stringify({ nome, descricao: descricao||null, duracao_minutos: duracao, empresa_id: usuario.empresa_id, profissionais_ids: profissionaisIds })
     });
     if (!r.ok) { const d=await r.json(); erro.textContent=d.erro||'Erro ao salvar'; erro.style.display='block'; return; }
+    const servicoSalvo = await r.json();
+    const sid = servicoSalvo?.id || parseInt(id);
+    if (sid) await sincronizarProfissionaisServico(sid, profissionaisIds);
     document.getElementById('servicoNome').value='';
     document.getElementById('servicoDescricao').value='';
     document.getElementById('servicoDuracao').value='';
     if(document.getElementById('servicoId')) document.getElementById('servicoId').value='';
     document.getElementById('btnSalvarServico').textContent='Salvar Serviço';
+    document.querySelectorAll('#servicoProfissionaisCheck input[type=checkbox]').forEach(c => c.checked = false);
     carregarServicosAba();
     mostrarToast('✅ Serviço salvo!', nome);
-  } catch(err) { erro.textContent='Erro de conexão'; erro.style.display='block'; }
+  } catch(err) { console.error(err); erro.textContent='Erro de conexão'; erro.style.display='block'; }
 }
 
-function editarServico(id, nome, descricao, duracao) {
-  document.getElementById('servicoId').value = id;
-  document.getElementById('servicoNome').value = nome;
-  document.getElementById('servicoDescricao').value = descricao;
-  document.getElementById('servicoDuracao').value = duracao||'';
-  document.getElementById('btnSalvarServico').textContent = 'Atualizar Serviço';
-  document.getElementById('erroServico').style.display='none';
-  document.getElementById('servicoNome').focus();
+async function sincronizarProfissionaisServico(servicoId, profissionaisIds) {
+  try {
+    const r = await fetch(`${API}/servicos/${servicoId}/profissionais`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ profissionais_ids: profissionaisIds })
+    });
+    if (r.ok) return;
+  } catch {}
+  // Fallback: insere/remove individualmente
+  try {
+    const rAtual = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${servicoId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const atuais = rAtual.ok ? await rAtual.json() : [];
+    const idsAtuais = Array.isArray(atuais) ? atuais.map(p => p.id) : [];
+    for (const pid of profissionaisIds) {
+      if (!idsAtuais.includes(pid)) {
+        await fetch(`${API}/profissional-servicos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ profissional_id: pid, servico_id: servicoId })
+        });
+      }
+    }
+    for (const pid of idsAtuais) {
+      if (!profissionaisIds.includes(pid)) {
+        await fetch(`${API}/profissional-servicos?profissional_id=${pid}&servico_id=${servicoId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    }
+  } catch(err) { console.warn('Não foi possível sincronizar profissionais:', err); }
+}
+
+async function editarServico(id) {
+  try {
+    const r = await fetch(`${API}/servicos/${id}`, { headers:{ Authorization:`Bearer ${token}` } });
+    let s = r.ok ? await r.json() : null;
+    if (!s) { mostrarToast('⚠️', 'Não foi possível carregar serviço'); return; }
+    document.getElementById('servicoId').value = s.id;
+    document.getElementById('servicoNome').value = s.nome || '';
+    document.getElementById('servicoDescricao').value = s.descricao || '';
+    document.getElementById('servicoDuracao').value = s.duracao_minutos || '';
+    document.getElementById('btnSalvarServico').textContent = 'Atualizar Serviço';
+    document.getElementById('erroServico').style.display='none';
+    const rProfs = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${id}`, {
+      headers:{ Authorization:`Bearer ${token}` }
+    });
+    const profsVinculados = rProfs.ok ? await rProfs.json() : [];
+    const idsVinculados = Array.isArray(profsVinculados) ? profsVinculados.map(p => p.id) : [];
+    await carregarCheckboxesProfissionais(idsVinculados);
+    document.getElementById('servicoNome').focus();
+    document.getElementById('servicoNome').scrollIntoView({ behavior:'smooth', block:'center' });
+  } catch(err) { console.error(err); mostrarToast('❌ Erro', 'Erro ao carregar serviço'); }
 }
 
 async function excluirServico(id) {
@@ -995,6 +1076,5 @@ function toggleConvidarExterno(chk) {
   const campo = document.getElementById('campoConvidarExterno');
   if (campo) campo.style.display = chk.checked ? 'block' : 'none';
 }
-
 
 init();

@@ -401,6 +401,17 @@
                 <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" />
               </div>
             </div>
+            <!-- Profissionais vinculados -->
+            <div style="margin-bottom:0.75rem">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
+                👥 Profissionais habilitados para este serviço
+              </label>
+              <div id="servicoProfissionaisCheck"
+                style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+                <span style="color:var(--muted);font-size:0.82rem">Carregando...</span>
+              </div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar este serviço. Só eles aparecerão no link público.</div>
+            </div>
             <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
             <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
           </div>

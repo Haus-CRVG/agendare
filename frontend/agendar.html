@@ -312,21 +312,36 @@ async function confirmarAgendamento() {
   erro.style.display = 'none';
   document.getElementById('btnConfText').style.display = 'none';
   document.getElementById('spinnerConf').style.display = 'inline-block';
+
+  const payload = {
+    empresa_id: empresaId,
+    profissional_id: selecionado.profissional.id,
+    servico_id: selecionado.servico.id,
+    cliente_nome: nome,
+    cliente_email: email || null,
+    cliente_telefone: tel || null,
+    data_inicio: selecionado.horario.data_inicio,
+    data_fim: selecionado.horario.data_fim,
+    observacoes: obs || null,
+  };
+
   try {
-    const r = await fetch(`${API}/agendamentos`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        empresa_id: empresaId,
-        profissional_id: selecionado.profissional.id,
-        servico_id: selecionado.servico.id,
-        cliente_nome: nome,
-        cliente_email: email || null,
-        cliente_telefone: tel || null,
-        data_inicio: selecionado.horario.data_inicio,
-        data_fim: selecionado.horario.data_fim,
-        observacoes: obs || null,
-      })
+    // 1ª tentativa: rota pública dedicada (sem autenticação)
+    let r = await fetch(`${API}/agendamentos/publico`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-public-booking': 'true' },
+      body: JSON.stringify(payload)
     });
+
+    // Se rota pública não existir, usa rota normal sem token
+    if (r.status === 404 || r.status === 405) {
+      r = await fetch(`${API}/agendamentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-public-booking': 'true' },
+        body: JSON.stringify(payload)
+      });
+    }
+
     const data = await r.json();
     if (!r.ok) { erro.textContent = data.erro || 'Erro ao agendar'; erro.style.display = 'block'; return; }
     mostrarSucesso(nome, email);
