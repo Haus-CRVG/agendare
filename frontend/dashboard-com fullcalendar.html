@@ -11,258 +11,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="assets/favicon.png" />
   <link rel="shortcut icon" href="assets/favicon.png" />
-  <style>
-    /* ══════════════════════════════════════════════
-       SCHEDULER CUSTOMIZADO — estilo DHTMLX
-    ══════════════════════════════════════════════ */
-
-    /* Toolbar */
-    .sch-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius) var(--radius) 0 0;
-      margin-bottom: 0;
-    }
-    .sch-toolbar-titulo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--text);
-    }
-
-    /* Wrapper principal */
-    .sch-wrapper {
-      display: flex;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-      overflow: hidden;
-    }
-
-    /* Coluna de horas (esquerda) */
-    .sch-coluna-horas {
-      flex-shrink: 0;
-      border-right: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    .sch-hora-spacer {
-      height: 0px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sch-linha-hora {
-      position: absolute;
-      left: 0; right: 0;
-      display: flex;
-      align-items: flex-start;
-    }
-    .sch-hora-label {
-      font-size: 0.68rem;
-      color: var(--muted);
-      padding: 2px 6px 0 6px;
-      white-space: nowrap;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    .sch-linha-meio {
-      position: absolute;
-      left: 0; right: 0;
-      border-top: 1px dashed rgba(0,0,0,0.05);
-    }
-
-    /* Indicador de agora */
-    .sch-agora {
-      position: absolute;
-      left: 0; right: 0;
-      height: 2px;
-      background: #ef4444;
-      z-index: 10;
-      border-radius: 1px;
-    }
-    .sch-agora::before {
-      content: '';
-      position: absolute;
-      left: -4px; top: -4px;
-      width: 10px; height: 10px;
-      background: #ef4444;
-      border-radius: 50%;
-    }
-
-    /* Grade de dias */
-    .sch-grade {
-      overflow-x: auto;
-      overflow-y: auto;
-      max-height: 640px;
-    }
-    .sch-header-dias {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .sch-col-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0.5rem 0.25rem;
-      cursor: pointer;
-      border-right: 1px solid var(--border);
-      transition: background 0.15s;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    .sch-col-header:hover { background: rgba(13,148,136,0.05); }
-    .sch-col-header.sch-hoje { color: var(--accent); }
-    .sch-col-dianum {
-      font-size: 1.1rem;
-      font-weight: 700;
-      line-height: 1.2;
-      width: 32px; height: 32px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-    }
-    .sch-col-dianum.sch-hoje-num {
-      background: var(--accent);
-      color: #fff;
-    }
-    .sch-col-diasem { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
-
-    /* Colunas de dias */
-    .sch-col-dia {
-      border-right: 1px solid var(--border);
-      min-width: 100px;
-    }
-    .sch-col-hoje { background: rgba(13,148,136,0.02); }
-    .sch-col-dia:last-child { border-right: none; }
-
-    /* Slots clicáveis */
-    .sch-slot {
-      position: absolute;
-      left: 0; right: 0;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    .sch-slot:hover { background: rgba(13,148,136,0.07); }
-
-    /* Eventos */
-    .sch-evento {
-      position: absolute;
-      border-radius: 6px;
-      padding: 4px 7px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: filter 0.15s, transform 0.1s;
-      z-index: 2;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-    .sch-evento:hover { filter: brightness(0.94); transform: translateY(-1px); }
-    .sch-ev-hora {
-      font-size: 0.65rem;
-      font-weight: 700;
-      opacity: 0.8;
-      margin-bottom: 1px;
-    }
-    .sch-ev-titulo {
-      font-size: 0.78rem;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .sch-ev-prof {
-      font-size: 0.68rem;
-      opacity: 0.75;
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* Scheduler Mês */
-    .sch-mes-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-      overflow: hidden;
-    }
-    .sch-mes-cabecalho {
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    .sch-mes-cabecalho:last-child { border-right: none; }
-    .sch-mes-celula {
-      min-height: 110px;
-      padding: 6px;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.15s;
-      vertical-align: top;
-    }
-    .sch-mes-celula:last-child, .sch-mes-celula:nth-child(7n) { border-right: none; }
-    .sch-mes-celula:hover { background: rgba(13,148,136,0.04); }
-    .sch-mes-fora { background: var(--surface2); cursor: default; }
-    .sch-mes-hoje { background: rgba(13,148,136,0.05); }
-    .sch-mes-selecionado { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .sch-mes-num {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 4px;
-      width: 26px; height: 26px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-    }
-    .sch-mes-hoje .sch-mes-num {
-      background: var(--accent);
-      color: #fff;
-    }
-    .sch-mes-ev {
-      font-size: 0.72rem;
-      font-weight: 600;
-      border-radius: 4px;
-      padding: 2px 5px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
-      transition: filter 0.1s;
-    }
-    .sch-mes-ev:hover { filter: brightness(0.9); }
-    .sch-mes-ev-hora {
-      font-weight: 800;
-      margin-right: 3px;
-      opacity: 0.85;
-    }
-    .sch-mes-mais {
-      font-size: 0.7rem;
-      color: var(--accent);
-      font-weight: 700;
-      cursor: pointer;
-      padding: 1px 4px;
-    }
-    .sch-mes-mais:hover { text-decoration: underline; }
-  </style>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
   <style>
     .kanban-board {
       display: flex;
@@ -377,7 +126,70 @@
       border-color: var(--accent)
     }
 
-    #fcCalendario { display: none; } /* removido — usando scheduler customizado */
+    #fcCalendario {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border)
+    }
+
+    .fc .fc-toolbar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .fc .fc-button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif
+    }
+
+    .fc .fc-button:hover,
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent)
+    }
+
+    .fc .fc-daygrid-day.fc-day-today {
+      background: rgba(13, 148, 136, 0.06)
+    }
+
+    .fc .fc-daygrid-day-number {
+      color: var(--text);
+      font-size: 0.82rem
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none
+    }
+
+    .fc-event {
+      border-radius: 6px !important;
+      border: none !important;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      cursor: pointer
+    }
+
+    .fc .fc-timegrid-slot {
+      height: 40px
+    }
+
+    .fc .fc-timegrid-axis-cushion {
+      font-size: 0.72rem;
+      color: var(--muted)
+    }
 
     .empresa-badge {
       background: rgba(13, 148, 136, 0.1);
@@ -473,9 +285,19 @@
           </div>
           <div class="kanban-board" id="kanbanProximos"></div>
         </div>
-        <!-- Scheduler customizado: Dia/Semana/Mês -->
+        <!-- FullCalendar: Dia/Semana/Mês -->
         <div id="painelCalendario" style="display:none">
-          <!-- O scheduler renderiza aqui com toolbar integrada -->
+          <!-- Filtro por profissional acima do calendário -->
+          <div class="card" style="margin-bottom:1rem;padding:0.75rem 1rem">
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
+              <select id="filtroProfissional" onchange="atualizarFullCalendar()" style="min-width:200px">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <!-- FullCalendar ocupa toda a largura -->
+          <div id="fcCalendario"></div>
         </div>
       </div>
       <!-- ABA: LISTA -->
@@ -964,6 +786,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
   <script src="js/dashboard.js"></script>
 
   <!-- Modal Dashboard Stats -->

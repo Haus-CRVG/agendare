@@ -7,12 +7,7 @@ let dataSelecionada = new Date().toISOString().split('T')[0];
 let calAtual = new Date();
 let profissionais = [], servicos = [];
 let tipoParticipante = 'interno';
-let visualizacaoAtual = 'proximos';
-
-// Scheduler state
-let schedulerData = [];
-let schedulerView = 'dia'; // 'dia' | 'semana'
-let schedulerDate = new Date();
+let visualizacaoAtual = 'proximos'; // padrão ao logar
 
 const DIAS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const DIAS_COMPLETO = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
@@ -51,6 +46,7 @@ function init() {
 
   if (usuario.perfil === 'admin') document.getElementById('sidebarAdmin').style.display = 'block';
 
+  // Mostrar nome da empresa na topbar
   const badge = document.getElementById('empresaBadge');
   if (badge) {
     const nomeEmp = usuario.empresa_nome || usuario.slug || '—';
@@ -93,439 +89,116 @@ function mudarAba(aba) {
 }
 
 // ── Visualização ──────────────────────────────────────────
+// ── FullCalendar instance ─────────────────────────────────
+let fcInstance = null;
+
 function mudarVisualizacao(vis) {
   visualizacaoAtual = vis;
   ['proximos','dia','semana','mes'].forEach(v => {
     const btn = document.getElementById(`btnVis${v.charAt(0).toUpperCase()+v.slice(1)}`);
     if (btn) btn.classList.toggle('ativo', v === vis);
   });
-
   const ehKanban = vis === 'proximos';
-  const ehMes    = vis === 'mes';
-  document.getElementById('painelProximos').style.display   = ehKanban ? 'block' : 'none';
+  document.getElementById('painelProximos').style.display  = ehKanban ? 'block' : 'none';
   document.getElementById('painelCalendario').style.display = ehKanban ? 'none'  : 'block';
 
   if (!ehKanban) {
-    schedulerView = ehMes ? 'mes' : (vis === 'semana' ? 'semana' : 'dia');
-    schedulerDate = new Date(dataSelecionada + 'T12:00:00');
-    renderScheduler();
+    const viewMap = { dia:'timeGridDay', semana:'timeGridWeek', mes:'dayGridMonth' };
+    iniciarOuAtualizarFC(viewMap[vis]);
   }
   carregarPainelAgenda();
+}
+
+function iniciarOuAtualizarFC(view) {
+  const el = document.getElementById('fcCalendario');
+  if (!el) return;
+  if (fcInstance) {
+    fcInstance.changeView(view);
+    fcInstance.refetchEvents();
+    return;
+  }
+  fcInstance = new FullCalendar.Calendar(el, {
+    locale: 'pt-br',
+    initialView: view,
+    headerToolbar: {
+      left:   'prev,next today',
+      center: 'title',
+      right:  'timeGridDay,timeGridWeek,dayGridMonth'
+    },
+    height: 'auto',
+    expandRows: true,
+    firstDay: 0,
+    nowIndicator: true,
+    slotMinTime: '06:00:00',
+    slotMaxTime: '24:00:00',
+    allDayText: 'Dia todo',
+    buttonText: { today:'Hoje', day:'Dia', week:'Semana', month:'Mês' },
+    // Sincroniza com os botões do painel quando muda de view dentro do FC
+    viewDidMount: function(info) {
+      const map = { timeGridDay:'dia', timeGridWeek:'semana', dayGridMonth:'mes' };
+      const vis = map[info.view.type];
+      if (vis && vis !== visualizacaoAtual) {
+        visualizacaoAtual = vis;
+        ['proximos','dia','semana','mes'].forEach(v => {
+          const btn = document.getElementById(`btnVis${v.charAt(0).toUpperCase()+v.slice(1)}`);
+          if (btn) btn.classList.toggle('ativo', v === vis);
+        });
+      }
+    },
+    eventClick: function(info) {
+      const id = parseInt(info.event.id);
+      dataSelecionada = info.event.startStr.split('T')[0];
+      abrirVerAgendamento(id);
+    },
+    dateClick: function(info) {
+      dataSelecionada = info.dateStr.split('T')[0];
+      abrirNovoAgendamento();
+    },
+    events: async function(fetchInfo, successCallback, failureCallback) {
+      try {
+        const profId = document.getElementById('filtroProfissional')?.value || '';
+        let url = `${API}/agendamentos?inicio=${fetchInfo.startStr.split('T')[0]}T00:00:00&fim=${fetchInfo.endStr.split('T')[0]}T23:59:59`;
+        if (profId) url += `&profissional_id=${profId}`;
+        const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
+        const ags = await r.json();
+        const agora = new Date();
+        const eventos = ags.map(a => {
+          const prof = profissionais.find(p => p.id === a.profissional_id);
+          const cor  = corProf(prof);
+          const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
+          return {
+            id:        a.id,
+            title:     a.cliente_nome,
+            start:     a.data_inicio,
+            end:       a.data_fim || undefined,
+            allDay:    a.dia_todo || false,
+            color:     atrasado ? '#ef4444' : cor,
+            textColor: '#fff',
+            extendedProps: { status: a.status, profissional: a.profissional_nome, obs: a.observacoes }
+          };
+        });
+        successCallback(eventos);
+      } catch(e) { failureCallback(e); }
+    },
+    eventDidMount: function(info) {
+      const p = info.event.extendedProps;
+      info.el.title = `${info.event.title}\n👤 ${p.profissional||'—'}\n📌 ${p.status}${p.obs?'\n💬 '+p.obs:''}`;
+    }
+  });
+  fcInstance.render();
+}
+
+function atualizarFullCalendar() {
+  if (fcInstance) fcInstance.refetchEvents();
 }
 
 async function carregarPainelAgenda() {
   await carregarStatsAgenda();
   await renderMiniCalendarioComBolinhas();
   if (visualizacaoAtual === 'proximos') await carregarKanbanProximos();
-  else await carregarSchedulerDados();
+  else if (fcInstance) fcInstance.refetchEvents();
 }
 
-// ══════════════════════════════════════════════════════════
-// ── SCHEDULER CUSTOMIZADO (sem dependência externa) ───────
-// ══════════════════════════════════════════════════════════
-
-const SCHED_HORA_INI = 6;   // 06:00
-const SCHED_HORA_FIM = 24;  // 24:00
-const SCHED_SLOT_MIN = 30;  // altura de cada slot em px
-
-function schedulerGetRange() {
-  if (schedulerView === 'semana') {
-    const d = new Date(schedulerDate);
-    const ds = d.getDay();
-    const ini = new Date(d); ini.setDate(d.getDate() - ds);
-    const fim = new Date(d); fim.setDate(d.getDate() + (6 - ds));
-    ini.setHours(0,0,0,0); fim.setHours(23,59,59,999);
-    return { ini, fim };
-  }
-  if (schedulerView === 'mes') {
-    const ano = schedulerDate.getFullYear(), mes = schedulerDate.getMonth();
-    const ini = new Date(ano, mes, 1, 0, 0, 0);
-    const fim = new Date(ano, mes+1, 0, 23, 59, 59);
-    return { ini, fim };
-  }
-  // dia
-  const d = new Date(schedulerDate);
-  d.setHours(0,0,0,0);
-  const f = new Date(schedulerDate);
-  f.setHours(23,59,59,999);
-  return { ini: d, fim: f };
-}
-
-async function carregarSchedulerDados() {
-  const { ini, fim } = schedulerGetRange();
-  const isoIni = ini.toISOString().split('T')[0] + 'T00:00:00';
-  const isoFim = fim.toISOString().split('T')[0] + 'T23:59:59';
-  const profId = document.getElementById('filtroProfissional')?.value || '';
-  let url = `${API}/agendamentos?inicio=${isoIni}&fim=${isoFim}`;
-  if (profId) url += `&profissional_id=${profId}`;
-  try {
-    const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
-    if (r.status === 401) { sair(); return; }
-    schedulerData = await r.json();
-    renderScheduler();
-  } catch(e) { console.error(e); }
-}
-
-function renderScheduler() {
-  const el = document.getElementById('painelCalendario');
-  if (!el) return;
-  if (schedulerView === 'mes') {
-    renderSchedulerMes(el);
-  } else {
-    renderSchedulerGrade(el);
-  }
-}
-
-// ── Scheduler Grade (Dia / Semana) ────────────────────────
-function renderSchedulerGrade(container) {
-  const isDia    = schedulerView === 'dia';
-  const ehSemana = schedulerView === 'semana';
-
-  // Monta lista de dias a exibir
-  let dias = [];
-  if (isDia) {
-    dias = [new Date(schedulerDate)];
-    dias[0].setHours(12,0,0,0);
-  } else {
-    const d  = new Date(schedulerDate);
-    const ds = d.getDay();
-    for (let i = 0; i < 7; i++) {
-      const x = new Date(d);
-      x.setDate(d.getDate() - ds + i);
-      x.setHours(12,0,0,0);
-      dias.push(x);
-    }
-  }
-
-  // Monta label do título
-  let titulo = '';
-  if (isDia) {
-    titulo = schedulerDate.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-    titulo = titulo.charAt(0).toUpperCase() + titulo.slice(1);
-  } else {
-    const ini = dias[0].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
-    const fim = dias[6].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
-    titulo = `Semana: ${ini} – ${fim}`;
-  }
-  document.getElementById('tituloAgendaPagina').innerHTML = `Agenda <span>${isDia ? 'do Dia' : 'da Semana'}</span>`;
-  document.getElementById('subtituloAgenda').textContent = titulo;
-
-  // Horas a exibir
-  const totalHoras = SCHED_HORA_FIM - SCHED_HORA_INI;
-  const totalSlots = totalHoras * 2; // 30min cada
-  const totalAltura = totalSlots * SCHED_SLOT_MIN;
-
-  // Cabeçalho de dias (para semana)
-  const hoje = new Date().toLocaleDateString('en-CA');
-
-  let headerCols = '';
-  dias.forEach(d => {
-    const ds = d.toLocaleDateString('en-CA');
-    const ehHoje = ds === hoje;
-    const label = isDia ? '' : `<div class="sch-col-header ${ehHoje ? 'sch-hoje' : ''}" onclick="selecionarDiaScheduler('${ds}')">
-      <span class="sch-col-dianum ${ehHoje ? 'sch-hoje-num' : ''}">${d.getDate()}</span>
-      <span class="sch-col-diasem">${DIAS[d.getDay()]}</span>
-    </div>`;
-    headerCols += label;
-  });
-
-  // Grade de linhas de horário
-  let linhasHora = '';
-  for (let h = SCHED_HORA_INI; h < SCHED_HORA_FIM; h++) {
-    const top1 = (h - SCHED_HORA_INI) * 2 * SCHED_SLOT_MIN;
-    const top2 = top1 + SCHED_SLOT_MIN;
-    linhasHora += `
-      <div class="sch-linha-hora" style="top:${top1}px">
-        <span class="sch-hora-label">${String(h).padStart(2,'0')}:00</span>
-      </div>
-      <div class="sch-linha-meio" style="top:${top2}px"></div>`;
-  }
-
-  // Indicador de agora
-  const agora = new Date();
-  let indicadorAgora = '';
-  const hAgora = agora.getHours() + agora.getMinutes() / 60;
-  if (hAgora >= SCHED_HORA_INI && hAgora < SCHED_HORA_FIM) {
-    const topAgora = (hAgora - SCHED_HORA_INI) * 2 * SCHED_SLOT_MIN;
-    indicadorAgora = `<div class="sch-agora" style="top:${topAgora}px"></div>`;
-  }
-
-  // Eventos por dia
-  let colsDias = '';
-  dias.forEach(d => {
-    const ds = d.toLocaleDateString('en-CA');
-    const ehHoje = ds === hoje;
-    const evsDia = schedulerData.filter(a => {
-      const dd = new Date(a.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
-      return dd === ds;
-    });
-
-    // Detecta sobreposições e atribui colunas
-    const grupos = resolverSobreposicoes(evsDia);
-
-    const eventosHtml = grupos.map(({ ag, col, totalCols }) => {
-      const ini = new Date(ag.data_inicio);
-      const fim = ag.data_fim ? new Date(ag.data_fim) : new Date(ini.getTime() + 30*60000);
-      const hIni = ini.getHours() + ini.getMinutes() / 60;
-      const hFim = fim.getHours() + fim.getMinutes() / 60;
-      const topPx     = Math.max(0, (hIni - SCHED_HORA_INI) * 2 * SCHED_SLOT_MIN);
-      const alturaPx  = Math.max(SCHED_SLOT_MIN, (hFim - hIni) * 2 * SCHED_SLOT_MIN - 2);
-      const prof      = profissionais.find(p => p.id === ag.profissional_id);
-      const cor       = corProf(prof);
-      const atrasado  = !['concluido','cancelado'].includes(ag.status) && fim < agora;
-      const corFundo  = atrasado ? '#fef2f2' : hexToRgba(cor, 0.12);
-      const corBorda  = atrasado ? '#ef4444' : cor;
-      const largPct   = (100 / totalCols);
-      const leftPct   = col * largPct;
-      const podeEditar = usuario.perfil === 'admin' || ag.profissional_id === usuario.id;
-
-      const horaIniStr = ini.toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
-      const horaFimStr = fim.toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
-      const statusEmoji = { confirmado:'✅', pendente:'⏳', cancelado:'🚫', concluido:'🏁', faltou:'❌' };
-
-      return `<div class="sch-evento"
-        style="top:${topPx}px;height:${alturaPx}px;left:${leftPct}%;width:calc(${largPct}% - 4px);
-               background:${corFundo};border-left:3px solid ${corBorda};color:${corBorda}"
-        title="${ag.cliente_nome} | ${horaIniStr}–${horaFimStr} | ${ag.profissional_nome||'—'}"
-        onclick="${podeEditar ? `abrirVerAgendamentoKanban(${ag.id})` : ''}">
-        <div class="sch-ev-hora">${horaIniStr}${alturaPx > 45 ? `–${horaFimStr}` : ''}</div>
-        <div class="sch-ev-titulo">${ag.cliente_nome}${atrasado ? ' ⚠️' : ''}</div>
-        ${alturaPx > 55 ? `<div class="sch-ev-prof">${statusEmoji[ag.status]||''} ${ag.profissional_nome||'—'}</div>` : ''}
-      </div>`;
-    }).join('');
-
-    // Slots clicáveis para novo agendamento
-    let slotsHtml = '';
-    for (let s = 0; s < totalSlots; s++) {
-      const h  = SCHED_HORA_INI + Math.floor(s / 2);
-      const m  = s % 2 === 0 ? '00' : '30';
-      slotsHtml += `<div class="sch-slot" style="top:${s*SCHED_SLOT_MIN}px;height:${SCHED_SLOT_MIN}px"
-        onclick="novoAgendamentoScheduler('${ds}','${String(h).padStart(2,'0')}:${m}')"></div>`;
-    }
-
-    colsDias += `<div class="sch-col-dia ${ehHoje ? 'sch-col-hoje' : ''}" style="position:relative;height:${totalAltura}px">
-      ${indicadorAgora}
-      ${slotsHtml}
-      ${eventosHtml}
-    </div>`;
-  });
-
-  // Monta HTML do scheduler
-  const larguraLabel = 52;
-  container.innerHTML = `
-    <div class="sch-toolbar">
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <button class="btn btn-secondary btn-sm" onclick="schedulerNavegar(-1)">‹ Anterior</button>
-        <button class="btn btn-secondary btn-sm" onclick="schedulerHoje()">Hoje</button>
-        <button class="btn btn-secondary btn-sm" onclick="schedulerNavegar(1)">Próximo ›</button>
-        <span class="sch-toolbar-titulo">${titulo}</span>
-      </div>
-      <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap">
-        <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
-        <select id="filtroProfissional" onchange="carregarSchedulerDados()" style="min-width:180px">
-          <option value="">Todos</option>
-          ${profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
-      </div>
-    </div>
-
-    <div class="sch-wrapper">
-      <!-- Coluna de horas -->
-      <div class="sch-coluna-horas" style="width:${larguraLabel}px">
-        <div class="sch-hora-spacer"></div>
-        <div style="position:relative;height:${totalAltura}px">
-          ${linhasHora}
-        </div>
-      </div>
-
-      <!-- Grade de dias -->
-      <div class="sch-grade" style="flex:1;overflow-x:auto">
-        ${ehSemana ? `<div class="sch-header-dias" style="display:grid;grid-template-columns:repeat(7,1fr)">
-          ${headerCols}
-        </div>` : ''}
-        <div class="sch-dias-container" style="display:grid;grid-template-columns:repeat(${dias.length},1fr);position:relative">
-          <!-- Linhas de fundo -->
-          <div class="sch-fundo-linhas" style="position:absolute;inset:0;pointer-events:none">
-            ${Array.from({length: totalSlots}, (_,s) =>
-              `<div style="position:absolute;left:0;right:0;top:${s*SCHED_SLOT_MIN}px;height:1px;background:${s%2===0?'var(--border)':'rgba(0,0,0,0.04)'}"></div>`
-            ).join('')}
-          </div>
-          ${colsDias}
-        </div>
-      </div>
-    </div>`;
-}
-
-// ── Scheduler Mês ─────────────────────────────────────────
-function renderSchedulerMes(container) {
-  const ano = schedulerDate.getFullYear();
-  const mes = schedulerDate.getMonth();
-  const primeiroDia = new Date(ano, mes, 1).getDay();
-  const ultimoDia   = new Date(ano, mes+1, 0).getDate();
-  const hoje = new Date().toLocaleDateString('en-CA');
-
-  document.getElementById('tituloAgendaPagina').innerHTML = `Agenda <span>do Mês</span>`;
-  document.getElementById('subtituloAgenda').textContent = `${MESES[mes]} ${ano}`;
-
-  const titulo = `${MESES[mes]} ${ano}`;
-
-  // Células do calendário
-  let celulas = DIAS.map(d => `<div class="sch-mes-cabecalho">${d}</div>`).join('');
-  // Células vazias antes do 1º dia
-  for (let i = 0; i < primeiroDia; i++) celulas += `<div class="sch-mes-celula sch-mes-fora"></div>`;
-
-  const agora = new Date();
-  const statusEmoji = { confirmado:'✅', pendente:'⏳', cancelado:'🚫', concluido:'🏁', faltou:'❌' };
-
-  for (let d = 1; d <= ultimoDia; d++) {
-    const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const ehHoje = ds === hoje;
-    const ehSel  = ds === dataSelecionada;
-    const evsDia = schedulerData.filter(a => {
-      const dd = new Date(a.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
-      return dd === ds;
-    });
-
-    const maxVisiveis = 3;
-    const eventosHtml = evsDia.slice(0, maxVisiveis).map(a => {
-      const prof = profissionais.find(p => p.id === a.profissional_id);
-      const cor  = corProf(prof);
-      const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
-      const corUs = atrasado ? '#ef4444' : cor;
-      const hora  = a.dia_todo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
-      return `<div class="sch-mes-ev" style="background:${hexToRgba(corUs,0.15)};border-left:2px solid ${corUs};color:${corUs}"
-        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${a.id})"
-        title="${a.cliente_nome} | ${hora}">
-        <span class="sch-mes-ev-hora">${hora}</span> ${a.cliente_nome}
-      </div>`;
-    }).join('');
-
-    const extra = evsDia.length > maxVisiveis
-      ? `<div class="sch-mes-mais" onclick="event.stopPropagation();schedulerVerDia('${ds}')">+${evsDia.length - maxVisiveis} mais</div>`
-      : '';
-
-    celulas += `<div class="sch-mes-celula ${ehHoje ? 'sch-mes-hoje' : ''} ${ehSel ? 'sch-mes-selecionado' : ''}"
-      onclick="schedulerVerDia('${ds}')">
-      <div class="sch-mes-num">${d}</div>
-      ${eventosHtml}${extra}
-    </div>`;
-  }
-
-  container.innerHTML = `
-    <div class="sch-toolbar">
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <button class="btn btn-secondary btn-sm" onclick="schedulerNavegar(-1)">‹ Anterior</button>
-        <button class="btn btn-secondary btn-sm" onclick="schedulerHoje()">Hoje</button>
-        <button class="btn btn-secondary btn-sm" onclick="schedulerNavegar(1)">Próximo ›</button>
-        <span class="sch-toolbar-titulo">${titulo}</span>
-      </div>
-      <div style="display:flex;gap:0.5rem;align-items:center">
-        <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
-        <select id="filtroProfissional" onchange="carregarSchedulerDados()" style="min-width:180px">
-          <option value="">Todos</option>
-          ${profissionais.map(p => `<option value="${p.id}">${p.nome}</option>`).join('')}
-        </select>
-        <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
-      </div>
-    </div>
-    <div class="sch-mes-grid">${celulas}</div>`;
-}
-
-// ── Helpers do Scheduler ──────────────────────────────────
-function hexToRgba(hex, alpha) {
-  try {
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  } catch { return `rgba(13,148,136,${alpha})`; }
-}
-
-function resolverSobreposicoes(ags) {
-  const sorted = [...ags].filter(a => !a.dia_todo).sort((a,b) => new Date(a.data_inicio) - new Date(b.data_inicio));
-  const resultado = [];
-  const grupos = [];
-
-  sorted.forEach(ag => {
-    const ini = new Date(ag.data_inicio).getTime();
-    const fim = ag.data_fim ? new Date(ag.data_fim).getTime() : ini + 30*60000;
-    let colocado = false;
-    for (const grupo of grupos) {
-      if (ini >= grupo.fim) {
-        grupo.fim = fim;
-        grupo.eventos.push(ag);
-        colocado = true;
-        break;
-      }
-    }
-    if (!colocado) grupos.push({ fim, eventos: [ag] });
-  });
-
-  grupos.forEach(grupo => {
-    const total = grupo.eventos.length;
-    grupo.eventos.forEach((ag, i) => resultado.push({ ag, col: i, totalCols: total }));
-  });
-
-  // Dia todo no topo (sem sobreposição)
-  ags.filter(a => a.dia_todo).forEach(ag => resultado.push({ ag, col: 0, totalCols: 1 }));
-
-  return resultado;
-}
-
-function schedulerNavegar(dir) {
-  if (schedulerView === 'dia') {
-    schedulerDate.setDate(schedulerDate.getDate() + dir);
-  } else if (schedulerView === 'semana') {
-    schedulerDate.setDate(schedulerDate.getDate() + dir * 7);
-  } else {
-    schedulerDate.setMonth(schedulerDate.getMonth() + dir);
-  }
-  dataSelecionada = schedulerDate.toLocaleDateString('en-CA');
-  carregarSchedulerDados();
-  renderMiniCalendarioComBolinhas();
-}
-
-function schedulerHoje() {
-  schedulerDate = new Date();
-  dataSelecionada = schedulerDate.toLocaleDateString('en-CA');
-  carregarSchedulerDados();
-  renderMiniCalendarioComBolinhas();
-}
-
-function selecionarDiaScheduler(ds) {
-  dataSelecionada = ds;
-  schedulerDate   = new Date(ds + 'T12:00:00');
-  schedulerView   = 'dia';
-  visualizacaoAtual = 'dia';
-  ['proximos','dia','semana','mes'].forEach(v => {
-    const btn = document.getElementById(`btnVis${v.charAt(0).toUpperCase()+v.slice(1)}`);
-    if (btn) btn.classList.toggle('ativo', v === 'dia');
-  });
-  carregarSchedulerDados();
-  renderMiniCalendarioComBolinhas();
-}
-
-function schedulerVerDia(ds) {
-  selecionarDiaScheduler(ds);
-}
-
-function novoAgendamentoScheduler(ds, hora) {
-  dataSelecionada = ds;
-  abrirNovoAgendamento();
-  setTimeout(() => {
-    const hf = document.getElementById('agHoraInicio');
-    if (hf) hf.value = hora;
-    const hfim = document.getElementById('agHoraFim');
-    if (hfim) {
-      const [h,m] = hora.split(':').map(Number);
-      const fimMin = m + 30 >= 60 ? `${String(h+1).padStart(2,'0')}:00` : `${String(h).padStart(2,'0')}:30`;
-      hfim.value = fimMin;
-    }
-  }, 50);
-}
-
-// ══════════════════════════════════════════════════════════
 // ── Stats ─────────────────────────────────────────────────
 async function carregarStatsAgenda() {
   try {
@@ -533,6 +206,7 @@ async function carregarStatsAgenda() {
     const r = await fetch(`${API}/agendamentos?inicio=${hoje}T00:00:00&fim=${hoje}T23:59:59`, { headers:{ Authorization:`Bearer ${token}` } });
     if (!r.ok) return;
     const ags = await r.json();
+    // Conta atrasados: data passada, status não concluído/cancelado
     const agora = new Date();
     let atrasados = 0;
     try {
@@ -542,6 +216,7 @@ async function carregarStatsAgenda() {
         atrasados = all.filter(a => !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim || a.data_inicio) < agora).length;
       }
     } catch {}
+    // Atualiza badge de notificação
     const btnNotif = document.getElementById('btnNotif');
     if (btnNotif && atrasados > 0) {
       btnNotif.innerHTML = `🔔<span style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:999px;font-size:0.6rem;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:700">${atrasados}</span>`;
@@ -561,7 +236,7 @@ async function carregarStatsAgenda() {
   } catch(err) { console.error(err); }
 }
 
-// ── Mini Calendário com Bolinhas ──────────────────────────
+// ── Calendário com bolinhas ───────────────────────────────
 async function renderMiniCalendarioComBolinhas() {
   const elMes = document.getElementById('calMes');
   const elGrid = document.getElementById('calendarioGrid');
@@ -576,19 +251,24 @@ async function renderMiniCalendarioComBolinhas() {
 
   let agendaMes = [];
   try {
-    const r = await fetch(`${API}/agendamentos?inicio=${ini}&fim=${fim}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const r = await fetch(`${API}/agendamentos?inicio=${ini}&fim=${fim}`, {
+      headers:{ Authorization:`Bearer ${token}` }
+    });
     if (r.ok) agendaMes = await r.json();
   } catch {}
 
   const diaParaCores = {};
   agendaMes.forEach(ag => {
-    const dia = new Date(ag.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+    const dia = new Date(ag.data_inicio).toLocaleDateString('en-CA', {
+      timeZone:'America/Sao_Paulo'
+    });
     if (!diaParaCores[dia]) diaParaCores[dia] = new Set();
     const prof = profissionais.find(p => p.id === ag.profissional_id);
     diaParaCores[dia].add(corProf(prof));
   });
 
   elMes.textContent = `${MESES[mes]} ${ano}`;
+
   let html = DIAS.map(d => `<div class="cal-header">${d}</div>`).join('');
   html += Array(primeiroDia).fill('<div></div>').join('');
 
@@ -596,23 +276,25 @@ async function renderMiniCalendarioComBolinhas() {
     const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const cores = diaParaCores[ds] ? [...diaParaCores[ds]].slice(0,3) : [];
     const bolinhas = cores.map(c => `<span class="cal-dot" style="background:${c}"></span>`).join('');
+
     html += `<div class="cal-dia ${ds===dataSelecionada?'selecionado':''} ${ds===hoje?'hoje':''}" onclick="selecionarDia('${ds}')">
       <span class="num">${d}</span>${bolinhas ? `<div class="cal-dots">${bolinhas}</div>` : ''}
     </div>`;
   }
+
   elGrid.innerHTML = html;
 }
+
 
 function renderMiniCalendario() { renderMiniCalendarioComBolinhas(); }
 function navegarMes(dir) { calAtual.setMonth(calAtual.getMonth()+dir); renderMiniCalendarioComBolinhas(); }
 function selecionarDia(data) {
   dataSelecionada = data;
-  schedulerDate   = new Date(data + 'T12:00:00');
   if (visualizacaoAtual !== 'dia') mudarVisualizacao('dia');
-  else { renderMiniCalendarioComBolinhas(); carregarSchedulerDados(); }
+  else { renderMiniCalendarioComBolinhas(); carregarAgenda(); }
 }
 
-// ── Kanban: Próximos ──────────────────────────────────────
+// ── Kanban: Próximos 5 por colaborador (padrão ao logar) ──
 async function carregarKanbanProximos() {
   const agora = new Date().toISOString().split('T')[0];
   const fimFuturo = `${new Date().getFullYear()+2}-12-31T23:59:59`;
@@ -621,14 +303,19 @@ async function carregarKanbanProximos() {
   const container = document.getElementById('kanbanProximos');
   if (container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Carregando...</p>';
   try {
+    // Garante que profissionais esteja carregado antes de renderizar
     if (!profissionais.length) await carregarProfissionaisFiltro();
+
     const r = await fetch(`${API}/agendamentos?inicio=${agora}T00:00:00&fim=${fimFuturo}`, { headers:{ Authorization:`Bearer ${token}` } });
     if (r.status === 401) { sair(); return; }
     const ags = await r.json();
+
     if (!Array.isArray(ags) || !ags.length) {
       if (container) container.innerHTML = '<p style="color:var(--muted);padding:1.5rem;text-align:center">Nenhum compromisso futuro agendado 🎉</p>';
       return;
     }
+
+    // Agrupa por profissional — usa nome do agendamento como fallback
     const grupos = {};
     ags.forEach(a => {
       const pid = String(a.profissional_id || 0);
@@ -642,6 +329,51 @@ async function carregarKanbanProximos() {
     console.error('Erro carregarKanbanProximos:', err);
     if (container) container.innerHTML = '<p style="color:var(--muted);padding:1rem">Erro ao carregar compromissos.</p>';
   }
+}
+
+// ── Kanban: Semana ────────────────────────────────────────
+async function carregarKanbanSemana() {
+  const hoje = new Date(dataSelecionada+'T12:00:00');
+  const ds = hoje.getDay();
+  const ini = new Date(hoje); ini.setDate(hoje.getDate()-ds);
+  const fim = new Date(hoje); fim.setDate(hoje.getDate()+(6-ds));
+  const iniStr = ini.toISOString().split('T')[0]+'T00:00:00';
+  const fimStr = fim.toISOString().split('T')[0]+'T23:59:59';
+  const semStr = `${ini.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})} – ${fim.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}`;
+  document.getElementById('tituloSemana').textContent = `Semana: ${semStr}`;
+  document.getElementById('subtituloAgenda').textContent = 'Kanban semanal — todos os colaboradores';
+  try {
+    const r = await fetch(`${API}/agendamentos?inicio=${iniStr}&fim=${fimStr}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const ags = await r.json();
+    const grupos = {};
+    ags.forEach(a => {
+      const pid = a.profissional_id || 0;
+      if (!grupos[pid]) grupos[pid] = { nome: a.profissional_nome||'Sem responsável', items: [] };
+      grupos[pid].items.push(a);
+    });
+    renderKanban('kanbanSemana', grupos);
+  } catch(err) { console.error(err); }
+}
+
+// ── Kanban: Mês ───────────────────────────────────────────
+async function carregarKanbanMes() {
+  const ano = calAtual.getFullYear(), mes = calAtual.getMonth();
+  const ultimoDia = new Date(ano, mes+1, 0).getDate();
+  const ini = `${ano}-${String(mes+1).padStart(2,'0')}-01T00:00:00`;
+  const fim = `${ano}-${String(mes+1).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}T23:59:59`;
+  document.getElementById('tituloMes').textContent = `${MESES[mes]} ${ano}`;
+  document.getElementById('subtituloAgenda').textContent = 'Kanban mensal — todos os colaboradores';
+  try {
+    const r = await fetch(`${API}/agendamentos?inicio=${ini}&fim=${fim}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const ags = await r.json();
+    const grupos = {};
+    ags.forEach(a => {
+      const pid = a.profissional_id || 0;
+      if (!grupos[pid]) grupos[pid] = { nome: a.profissional_nome||'Sem responsável', items: [] };
+      grupos[pid].items.push(a);
+    });
+    renderKanban('kanbanMes', grupos);
+  } catch(err) { console.error(err); }
 }
 
 // ── Render Kanban genérico ────────────────────────────────
@@ -663,8 +395,9 @@ function renderKanban(containerId, grupos) {
         ? new Date(a.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit'}) + ' · Dia todo'
         : new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
+      // Permissão: admin edita tudo, profissional só o seu
       const podeEditar = usuario.perfil === 'admin' || parseInt(pid) === usuario.id;
-      return `<div class="kanban-card"
+      return `<div class="kanban-card" 
         style="border-left-color:${cor};${atrasado?'background:rgba(239,68,68,0.06);':''}${!podeEditar?'cursor:default;opacity:0.8':''}"
         onclick="${podeEditar?`abrirVerAgendamentoKanban(${a.id})`:''}">
         <div class="kanban-card-titulo">${a.cliente_nome}${atrasado?` <span style="color:#ef4444;font-size:0.68rem">⚠️ atrasado</span>`:''}</div>
@@ -682,6 +415,47 @@ function renderKanban(containerId, grupos) {
       <div class="kanban-col-body">${cards||`<div class="kanban-empty">Nenhum compromisso</div>`}</div>
     </div>`;
   }).join('');
+}
+
+// ── Agenda do Dia ─────────────────────────────────────────
+async function carregarAgenda() {
+  const profId = document.getElementById('filtroProfissional')?.value || '';
+  const dataFmt = new Date(dataSelecionada+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('tituloTimeline').textContent = dataFmt.charAt(0).toUpperCase()+dataFmt.slice(1);
+  document.getElementById('subtituloAgenda').textContent = new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  try {
+    let url = `${API}/agendamentos?inicio=${dataSelecionada}T00:00:00&fim=${dataSelecionada}T23:59:59`;
+    if (profId) url += `&profissional_id=${profId}`;
+    const r = await fetch(url, { headers:{ Authorization:`Bearer ${token}` } });
+    if (r.status===401) { sair(); return; }
+    const ags = await r.json();
+    const agora = new Date();
+    if (!ags.length) {
+      document.getElementById('timelineDia').innerHTML = `<p style="color:var(--muted);text-align:center;padding:2rem;">Nenhum compromisso neste dia 🎉</p>`;
+      return;
+    }
+    const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente', cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
+    document.getElementById('timelineDia').innerHTML = ags.map(a => {
+      const prof = profissionais.find(p => p.id === a.profissional_id);
+      const cor  = corProf(prof);
+      const ehDiaTodo = a.dia_todo;
+      const hora = ehDiaTodo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'});
+      const horaFim = (!ehDiaTodo && a.data_fim) ? new Date(a.data_fim).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}) : '';
+      const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
+      const podeEditar = usuario.perfil === 'admin' || a.profissional_id === usuario.id;
+      return `<div class="ag-item" onclick="${podeEditar?`abrirVerAgendamento(${a.id})`:''}"
+        style="${!podeEditar?'cursor:default;opacity:0.85':''}${atrasado?';background:rgba(239,68,68,0.05);border-left:3px solid #ef4444;':''}">
+        <div class="ag-hora">${hora}${horaFim?`<br><span style="font-size:0.73rem;color:var(--muted)">${horaFim}</span>`:''}</div>
+        <div class="ag-cor" style="background:${cor}"></div>
+        <div class="ag-info">
+          <div class="ag-cliente">${a.cliente_nome}${atrasado?` <span style="color:#ef4444;font-size:0.72rem">⚠️ atrasado</span>`:''}</div>
+          <div class="ag-servico">${a.observacoes?`💬 ${a.observacoes.substring(0,40)}`:'—'}</div>
+          <div class="ag-prof"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${cor}"></span> ${a.profissional_nome||'—'}</div>
+        </div>
+        <span class="badge ${statusBadge[a.status]||''}">${a.status}</span>
+      </div>`;
+    }).join('');
+  } catch(err) { console.error(err); }
 }
 
 // ── Lista de Compromissos ─────────────────────────────────
@@ -710,6 +484,7 @@ async function carregarLista() {
         ?new Date(a.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit'})+' · Dia todo'
         :new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
+      // Profissional pode clicar apenas nos seus
       const podeEditar = usuario.perfil === 'admin' || a.profissional_id === usuario.id;
       return `<tr style="${atrasado?'background:rgba(239,68,68,0.06);':''}">
         <td>${dt}${atrasado?` <span style="color:#ef4444;font-size:0.72rem">⚠️</span>`:''}</td>
@@ -888,6 +663,7 @@ async function removerParticipante(id,agId){if(!confirm('Remover este participan
 async function carregarProfissionaisFiltro(){
   try{const r=await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}`,{headers:{Authorization:`Bearer ${token}`}});profissionais=await r.json();
     const opts='<option value="">Todos</option>'+profissionais.map(p=>`<option value="${p.id}">${p.nome}</option>`).join('');
+    const fp=document.getElementById('filtroProfissional');if(fp)fp.innerHTML=opts;
     const fp2=document.getElementById('filtroProf2');if(fp2)fp2.innerHTML=opts;
   }catch(err){console.error(err);}
 }
@@ -930,208 +706,182 @@ async function carregarConfiguracoes(){
     const r=await fetch(`${API}/empresas/minha`,{headers:{Authorization:`Bearer ${token}`}});
     const emp=await r.json();
     const linkEl=document.getElementById('linkPublico');
+    // Usa sempre a URL do Railway, não o IP local
     if(linkEl) linkEl.value=`${FRONTEND_URL}/agendar.html?empresa=${emp.slug}`;
   }catch(err){console.error(err);}
 }
 function copiarLink(){const link=document.getElementById('linkPublico');if(!link)return;navigator.clipboard.writeText(link.value).then(()=>{const conf=document.getElementById('linkCopiado');if(conf){conf.style.display='block';setTimeout(()=>conf.style.display='none',2500);}mostrarToast('🔗 Link copiado!','Compartilhe com seus clientes.');});}
 
 // ── Perfil ────────────────────────────────────────────────
-function abrirPerfil(){
-  const u=usuario;
-  document.getElementById('perfilInfo').innerHTML=`
-    <div><strong>Nome:</strong> ${u.nome}</div>
-    <div><strong>E-mail:</strong> ${u.email}</div>
-    <div><strong>Perfil:</strong> ${u.perfil==='admin'?'👑 Administrador':'🔍 Analista'}</div>`;
-  document.getElementById('novaSenhaP').value='';document.getElementById('confirmarSenhaP').value='';
-  document.getElementById('erroPerfil').style.display='none';document.getElementById('sucessoPerfil').style.display='none';
-  document.getElementById('modalPerfil').classList.add('active');
-}
+function abrirPerfil(){document.getElementById('perfilInfo').innerHTML=`<div><strong>Nome:</strong> ${usuario.nome}</div><div><strong>E-mail:</strong> ${usuario.email}</div><div><strong>Perfil:</strong> ${usuario.perfil==='admin'?'👑 Administrador':usuario.perfil==='superadmin'?'⚡ Super Admin':'🔍 Analista'}</div>`;document.getElementById('erroPerfil').style.display='none';document.getElementById('sucessoPerfil').style.display='none';document.getElementById('novaSenhaP').value='';document.getElementById('confirmarSenhaP').value='';document.getElementById('modalPerfil').classList.add('active');}
 function fecharPerfil(){document.getElementById('modalPerfil').classList.remove('active');}
-async function trocarSenha(){
-  const nova=document.getElementById('novaSenhaP').value,confirmar=document.getElementById('confirmarSenhaP').value;
-  const erro=document.getElementById('erroPerfil'),suc=document.getElementById('sucessoPerfil');
-  erro.style.display='none';suc.style.display='none';
-  if(!nova){erro.textContent='Informe a nova senha';erro.style.display='block';return;}
-  if(nova!==confirmar){erro.textContent='As senhas não coincidem';erro.style.display='block';return;}
-  if(nova.length<6){erro.textContent='Mínimo 6 caracteres';erro.style.display='block';return;}
-  try{const r=await fetch(`${API}/profissionais/${usuario.id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({senha:nova})});
-    if(!r.ok){const d=await r.json();erro.textContent=d.erro||'Erro ao salvar';erro.style.display='block';return;}
-    suc.textContent='✅ Senha alterada com sucesso!';suc.style.display='block';
-    document.getElementById('novaSenhaP').value='';document.getElementById('confirmarSenhaP').value='';
-  }catch{erro.textContent='Erro de conexão';erro.style.display='block';}
-}
-
-// ── Toast ─────────────────────────────────────────────────
-function mostrarToast(titulo, msg) {
-  const c = document.getElementById('toastContainer');
-  if (!c) return;
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.innerHTML = `<strong>${titulo}</strong>${msg ? `<div style="font-size:0.82rem;margin-top:2px;opacity:0.85">${msg}</div>` : ''}`;
-  c.appendChild(t);
-  setTimeout(() => t.classList.add('show'), 10);
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3500);
-}
-
-// ── Notificações ──────────────────────────────────────────
-function iniciarPolling(){pollingInterval=setInterval(verificarNovasNotifs,30000);}
-async function verificarNovasNotifs(){
-  try{const hoje=new Date().toISOString().split('T')[0];
-    const r=await fetch(`${API}/agendamentos?inicio=${hoje}T00:00:00&fim=${hoje}T23:59:59`,{headers:{Authorization:`Bearer ${token}`}});
-    if(!r.ok)return;const ags=await r.json();
-    const novos=ags.filter(a=>a.id>ultimaNotifId&&a.status==='confirmado');
-    if(novos.length&&ultimaNotifId>0)novos.forEach(a=>mostrarToast('🔔 Novo agendamento!',`${a.cliente_nome} — ${new Date(a.data_inicio).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`));
-    if(ags.length)ultimaNotifId=Math.max(...ags.map(a=>a.id));
-  }catch{}
-}
-function togglePainelNotificacoes(){const p=document.getElementById('painelNotificacoes');if(!p)return;const ativo=p.classList.toggle('active');if(ativo)carregarPainelAtrasados();}
-function fecharPainelNotificacoes(){document.getElementById('painelNotificacoes')?.classList.remove('active');}
-async function carregarPainelAtrasados(){
-  const el=document.getElementById('painelNotifBody');if(!el)return;el.innerHTML='<div class="notif-empty">Carregando...</div>';
-  try{const hoje=new Date().toISOString().split('T')[0];const agora=new Date();
-    const r=await fetch(`${API}/agendamentos?inicio=2020-01-01T00:00:00&fim=${hoje}T23:59:59`,{headers:{Authorization:`Bearer ${token}`}});
-    const all=await r.json();const atrasados=all.filter(a=>!['concluido','cancelado'].includes(a.status)&&new Date(a.data_fim||a.data_inicio)<agora);
-    if(!atrasados.length){el.innerHTML='<div class="notif-empty">Nenhum compromisso atrasado 🎉</div>';return;}
-    el.innerHTML=atrasados.map(a=>{
-      const dt=new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
-      return `<div class="notif-item" onclick="fecharPainelNotificacoes();abrirVerAgendamento(${a.id})">
-        <div style="font-weight:600;font-size:0.85rem">${a.cliente_nome}</div>
-        <div style="font-size:0.75rem;color:var(--muted)">${dt} · ${a.profissional_nome||'—'}</div>
-        <span class="badge badge-faltou" style="font-size:0.68rem;margin-top:3px">${a.status}</span>
-      </div>`;
-    }).join('');
-  }catch{el.innerHTML='<div class="notif-empty">Erro ao carregar.</div>';}
-}
-
-// ── Obs Status ────────────────────────────────────────────
-let _statusPendente = null;
-function pedirObsStatus(){
-  const status=document.getElementById('editStatus').value;
-  const labels={concluido:'🏁 Concluído',cancelado:'🚫 Cancelado',faltou:'❌ Faltou',confirmado:'✅ Confirmado'};
-  _statusPendente=status;
-  document.getElementById('tituloObsStatus').textContent=`Mudar para: ${labels[status]||status}`;
-  document.getElementById('subtituloObsStatus').textContent='Adicione uma observação antes de salvar (opcional).';
-  document.getElementById('obsStatusTexto').value='';
-  document.getElementById('modalObsStatus').classList.add('active');
-}
-function fecharObsStatus(){document.getElementById('modalObsStatus').classList.remove('active');_statusPendente=null;}
-async function confirmarAtualizarStatus(){
-  const obs=document.getElementById('obsStatusTexto').value.trim();
-  const id=document.getElementById('editAgId').value;
-  const status=_statusPendente||document.getElementById('editStatus').value;
-  try{
-    const body={status};if(obs)body.observacoes=obs;
-    const r=await fetch(`${API}/agendamentos/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
-    if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro||'Sem permissão');return;}
-    fecharObsStatus();fecharModalVer();
-    carregarPainelAgenda();
-    if(document.getElementById('abaLista').style.display!=='none') carregarLista();
-    mostrarToast('✅ Status atualizado!', `Compromisso marcado como ${status}.`);
-  } catch(err) { console.error(err); }
-}
-
-// ── Notas ─────────────────────────────────────────────────
-function abrirNotas(){
-  const chave=`notas_${usuario.id}`;
-  document.getElementById('notasTexto').value=localStorage.getItem(chave)||'';
-  document.getElementById('modalNotas').classList.add('active');
-}
-function fecharNotas(){document.getElementById('modalNotas').classList.remove('active');}
-function salvarNotas(){
-  const chave=`notas_${usuario.id}`;
-  localStorage.setItem(chave,document.getElementById('notasTexto').value);
-  fecharNotas();mostrarToast('📝 Anotações salvas!','');
-}
-
-// ── Logoff / Sair ─────────────────────────────────────────
-function logoff(){localStorage.removeItem('token');localStorage.removeItem('usuario');window.location.href='index.html';}
-function sair(){localStorage.clear();window.location.href='index.html';}
-function voltarInicio(){mudarAba('agenda');}
+async function trocarSenha(){const nova=document.getElementById('novaSenhaP').value.trim(),conf=document.getElementById('confirmarSenhaP').value.trim(),erro=document.getElementById('erroPerfil'),suc=document.getElementById('sucessoPerfil');erro.style.display='none';suc.style.display='none';if(!nova||!conf){erro.textContent='Preencha os dois campos';erro.style.display='block';return;}if(nova!==conf){erro.textContent='As senhas não conferem';erro.style.display='block';return;}if(nova.length<6){erro.textContent='Mínimo de 6 caracteres';erro.style.display='block';return;}try{const r=await fetch(`${API}/profissionais/${usuario.id}/senha`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({senha:nova})});if(r.ok){suc.textContent='✅ Senha alterada!';suc.style.display='block';}else{const d=await r.json();erro.textContent=d.erro||'Erro';erro.style.display='block';}}catch{erro.textContent='Erro de conexão';erro.style.display='block';}}
 
 // ── Empresas (superadmin) ─────────────────────────────────
-let todasEmpresas=[];
-async function carregarEmpresas(){
-  const tbody=document.getElementById('tabelaEmpresas');
-  if(!tbody)return;
-  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
-  try{const r=await fetch(`${API}/empresas`,{headers:{Authorization:`Bearer ${token}`}});todasEmpresas=await r.json();renderEmpresas(todasEmpresas);}
-  catch(err){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar.</td></tr>';}
-}
-function filtrarEmpresasSA(){const q=document.getElementById('pesquisaEmpresas').value.toLowerCase();renderEmpresas(todasEmpresas.filter(e=>e.nome.toLowerCase().includes(q)||e.cnpj?.includes(q)));}
-function renderEmpresas(lista){
-  const tbody=document.getElementById('tabelaEmpresas');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa encontrada.</td></tr>';return;}
-  const statusBadge={ativo:'badge-confirmado',suspenso:'badge-pendente',cancelado:'badge-cancelado'};
-  tbody.innerHTML=lista.map(e=>`<tr>
-    <td><strong>${e.nome}</strong></td><td>${e.cnpj||'—'}</td><td>${e.email||'—'}</td>
-    <td><code style="font-size:0.78rem">${e.slug||'—'}</code></td>
-    <td><span class="badge ${statusBadge[e.status]||''}">${e.status||'ativo'}</span></td>
-    <td><div style="display:flex;gap:4px">
-      <button class="btn btn-secondary btn-sm" onclick="verEmpresa(${e.id})">👁️</button>
-      <button class="btn btn-secondary btn-sm" onclick="verUsuariosSA(${e.id},'${e.nome}')">👥</button>
-    </div></td>
-  </tr>`).join('');
-}
-function abrirNovaEmpresa(){document.getElementById('empId').value='';document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';document.getElementById('btnEmpresaText').textContent='Criar Empresa';['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>document.getElementById(id).value='');document.getElementById('empCor').value='#0d9488';document.getElementById('secaoAdmin').style.display='block';document.getElementById('erroEmpresa').style.display='none';document.getElementById('slugPreview').textContent='slug';document.getElementById('modalEmpresa').classList.add('active');}
+let _todasEmpresasSA=[];
+async function carregarEmpresas(){try{const r=await fetch(`${API}/empresas`,{headers:{Authorization:`Bearer ${token}`}});const emps=await r.json();_todasEmpresasSA=emps||[];renderEmpresasSA(_todasEmpresasSA);}catch(err){console.error(err);}}
+function filtrarEmpresasSA(){const q=document.getElementById('pesquisaEmpresas').value.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');if(!q){renderEmpresasSA(_todasEmpresasSA);return;}const qd=q.replace(/\D/g,'');renderEmpresasSA(_todasEmpresasSA.filter(e=>{const n=(e.nome_fantasia||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');const c=(e.cnpj||'').replace(/\D/g,'');return n.includes(q)||(qd&&c.includes(qd));}));}
+function renderEmpresasSA(emps){const tbody=document.getElementById('tabelaEmpresas');if(!emps.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa encontrada.</td></tr>';return;}tbody.innerHTML=emps.map(e=>`<tr style="cursor:pointer" onclick="toggleUsuariosSA(${e.id},'${(e.nome_fantasia||'').replace(/'/g,"\\'")}',this)"><td><strong>${e.nome_fantasia}</strong></td><td style="font-size:0.82rem;color:var(--muted)">${e.cnpj}</td><td>${e.email||'—'}</td><td><code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:0.78rem">${e.slug||'—'}</code></td><td><span class="badge ${e.status==='ativo'?'badge-confirmado':'badge-cancelado'}">${e.status}</span></td><td onclick="event.stopPropagation()" style="display:flex;gap:0.4rem"><button class="btn btn-secondary btn-sm" onclick="abrirVerEmpresa(${e.id},'${e.status}')">✏️ Editar</button><button class="btn btn-secondary btn-sm" onclick="copiarLinkEmpresa('${e.slug}')">🔗 Link</button></td></tr><tr id="usersRow_${e.id}" style="display:none"><td colspan="6" style="padding:0"><div id="usersPanel_${e.id}" style="padding:1rem;background:var(--surface2);border-top:1px solid var(--border)"><span style="color:var(--muted);font-size:0.85rem">Carregando usuários...</span></div></td></tr>`).join('');}
+async function toggleUsuariosSA(id,nome,tr){const row=document.getElementById(`usersRow_${id}`);const panel=document.getElementById(`usersPanel_${id}`);if(row.style.display!=='none'){row.style.display='none';return;}// Fecha outros abertos
+document.querySelectorAll('[id^="usersRow_"]').forEach(r=>r.style.display='none');row.style.display='table-row';panel.innerHTML='<span style="color:var(--muted);font-size:0.85rem">Carregando usuários...</span>';try{const r=await fetch(`${API}/empresas/${id}/usuarios`,{headers:{Authorization:`Bearer ${token}`}});const users=await r.json();if(!users.length){panel.innerHTML='<p style="color:var(--muted);font-size:0.85rem;margin:0">Nenhum usuário cadastrado.</p>';return;}panel.innerHTML=`<p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">👥 Usuários de ${nome}</p><table style="width:100%;border-collapse:collapse"><thead><tr style="font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em"><th style="text-align:left;padding:4px 8px">Nome</th><th style="text-align:left;padding:4px 8px">E-mail</th><th style="text-align:left;padding:4px 8px">Perfil</th><th style="text-align:left;padding:4px 8px">Status</th></tr></thead><tbody>${users.map(u=>`<tr style="font-size:0.85rem;border-top:1px solid var(--border)"><td style="padding:6px 8px">${u.nome}</td><td style="padding:6px 8px;color:var(--muted)">${u.email}</td><td style="padding:6px 8px"><span class="badge ${u.perfil==='admin'?'badge-confirmado':'badge-pendente'}">${u.perfil==='admin'?'👑 Admin':'🔧 Analista'}</span></td><td style="padding:6px 8px">${u.ativo?'<span style="color:var(--accent)">✅ Ativo</span>':'<span style="color:var(--error)">❌ Inativo</span>'}</td></tr>`).join('')}</tbody></table>`;}catch{panel.innerHTML='<p style="color:var(--error);font-size:0.85rem;margin:0">Erro ao carregar usuários.</p>';}}
+function abrirNovaEmpresa(){document.getElementById('empId').value='';document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';document.getElementById('btnEmpresaText').textContent='Criar Empresa';document.getElementById('secaoAdmin').style.display='block';['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>document.getElementById(id).value='');document.getElementById('empCor').value='#0d9488';document.getElementById('slugPreview').textContent='slug';document.getElementById('erroEmpresa').style.display='none';document.getElementById('modalEmpresa').classList.add('active');document.getElementById('empSlug').oninput=function(){document.getElementById('slugPreview').textContent=this.value||'slug';};}
 function fecharModalEmpresa(){document.getElementById('modalEmpresa').classList.remove('active');}
-async function salvarEmpresa(){
-  const id=document.getElementById('empId').value;
-  const nome=document.getElementById('empNome').value.trim();
-  const cnpj=document.getElementById('empCnpj').value.replace(/\D/g,'');
-  const email=document.getElementById('empEmail').value.trim();
-  const tel=document.getElementById('empTelefone').value.trim();
-  const slug=document.getElementById('empSlug').value.trim();
-  const cor=document.getElementById('empCor').value;
-  const erro=document.getElementById('erroEmpresa');
-  if(!nome||!cnpj||!slug){erro.textContent='Nome, CNPJ e Slug são obrigatórios';erro.style.display='block';return;}
-  document.getElementById('spinnerEmpresa').style.display='inline-block';erro.style.display='none';
-  try{
-    if(!id){
-      const adminNome=document.getElementById('empAdminNome').value.trim();
-      const adminEmail=document.getElementById('empAdminEmail').value.trim();
-      const adminSenha=document.getElementById('empAdminSenha').value;
-      if(!adminNome||!adminEmail||!adminSenha){erro.textContent='Dados do administrador são obrigatórios';erro.style.display='block';return;}
-      const r=await fetch(`${API}/empresas`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({nome,cnpj,email:email||null,telefone:tel||null,slug,cor_primaria:cor,admin:{nome:adminNome,email:adminEmail,senha:adminSenha}})});
-      const d=await r.json();if(!r.ok){erro.textContent=d.erro||'Erro ao criar';erro.style.display='block';return;}
-    }
-    fecharModalEmpresa();carregarEmpresas();mostrarToast('✅ Empresa salva!',nome);
-  }catch{erro.textContent='Erro de conexão';erro.style.display='block';}
-  finally{document.getElementById('spinnerEmpresa').style.display='none';}
-}
-async function verEmpresa(id){
-  const e=todasEmpresas.find(x=>x.id===id);if(!e)return;
-  document.getElementById('detalheEmpresa').innerHTML=`
-    <div style="font-size:0.88rem;line-height:2">
-      <div><strong>Nome:</strong> ${e.nome}</div><div><strong>CNPJ:</strong> ${e.cnpj||'—'}</div>
-      <div><strong>E-mail:</strong> ${e.email||'—'}</div><div><strong>Slug:</strong> ${e.slug||'—'}</div>
-    </div>`;
-  document.getElementById('editEmpresaStatus').value=e.status||'ativo';
-  document.getElementById('editEmpresaId').value=id;
-  document.getElementById('modalVerEmpresa').classList.add('active');
-}
+function abrirVerEmpresa(id,status){document.getElementById('editEmpresaId').value=id;document.getElementById('editEmpresaStatus').value=status;document.getElementById('detalheEmpresa').innerHTML=`<p style="color:var(--muted);font-size:0.88rem">Atualize o status da empresa abaixo.</p>`;document.getElementById('modalVerEmpresa').classList.add('active');}
 function fecharModalVerEmpresa(){document.getElementById('modalVerEmpresa').classList.remove('active');}
-async function atualizarEmpresa(){
-  const id=document.getElementById('editEmpresaId').value;
-  const status=document.getElementById('editEmpresaStatus').value;
-  try{const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({status})});
-    if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro||'Erro');return;}
-    fecharModalVerEmpresa();carregarEmpresas();mostrarToast('✅ Empresa atualizada!','');
-  }catch{mostrarToast('❌ Erro','Erro de conexão');}
+async function atualizarEmpresa(){const id=document.getElementById('editEmpresaId').value,status=document.getElementById('editEmpresaStatus').value;try{const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({status})});if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro);return;}fecharModalVerEmpresa();carregarEmpresas();mostrarToast('✅ Empresa atualizada!','Status alterado com sucesso.');}catch{mostrarToast('❌ Erro de conexão','Tente novamente.');}}
+async function salvarEmpresa(){const nome=document.getElementById('empNome').value.trim(),cnpj=document.getElementById('empCnpj').value.trim(),slug=document.getElementById('empSlug').value.trim(),adminNome=document.getElementById('empAdminNome').value.trim(),adminEmail=document.getElementById('empAdminEmail').value.trim(),adminSenha=document.getElementById('empAdminSenha').value,erro=document.getElementById('erroEmpresa');if(!nome||!cnpj||!slug){erro.textContent='Nome, CNPJ e slug são obrigatórios';erro.style.display='block';return;}if(!adminNome||!adminEmail||!adminSenha){erro.textContent='Preencha os dados do administrador';erro.style.display='block';return;}if(adminSenha.length<6){erro.textContent='A senha deve ter no mínimo 6 caracteres';erro.style.display='block';return;}erro.style.display='none';document.getElementById('btnEmpresaText').style.display='none';document.getElementById('spinnerEmpresa').style.display='inline-block';try{const r=await fetch(`${API}/empresas`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({nome_fantasia:nome,cnpj,email:document.getElementById('empEmail').value,telefone:document.getElementById('empTelefone').value,slug,cor_primaria:document.getElementById('empCor').value,admin_nome:adminNome,admin_email:adminEmail,admin_senha:adminSenha})});const data=await r.json();if(!r.ok){erro.textContent=data.erro||'Erro ao criar empresa';erro.style.display='block';return;}fecharModalEmpresa();carregarEmpresas();mostrarToast('✅ Empresa criada!',`${nome} foi cadastrada.`);}catch{erro.textContent='Erro de conexão';erro.style.display='block';}finally{document.getElementById('btnEmpresaText').style.display='inline';document.getElementById('spinnerEmpresa').style.display='none';}}
+function copiarLinkEmpresa(slug){navigator.clipboard.writeText(`${FRONTEND_URL}/agendar.html?empresa=${slug}`).then(()=>mostrarToast('🔗 Link copiado!',`${FRONTEND_URL}/agendar.html?empresa=${slug}`));}
+
+// ── Notificações ──────────────────────────────────────────
+function iniciarPolling(){verificarNotificacoes();pollingInterval=setInterval(verificarNotificacoes,30000);}
+async function verificarNotificacoes(){
+  try{
+    const r=await fetch(`${API}/notificacoes`,{headers:{Authorization:`Bearer ${token}`}});
+    if(r.status===401){sair();return;}
+    const notifs=await r.json();
+    const novas=notifs.filter(n=>n.id>ultimaNotifId);
+    novas.forEach(n=>mostrarToast(n.titulo,n.mensagem,n.id));
+    if(novas.length) ultimaNotifId=Math.max(...novas.map(n=>n.id));
+    // Badge de notificações do sistema (não atraso, isso é feito nas stats)
+    const btnNotif=document.getElementById('btnNotif');
+    if(btnNotif&&notifs.length>0&&!btnNotif.innerHTML.includes('badge')) {
+      btnNotif.innerHTML=`🔔<span style="position:absolute;top:-4px;right:-4px;background:#0d9488;color:#fff;border-radius:999px;font-size:0.6rem;min-width:16px;height:16px;display:flex;align-items:center;justify-content:center;padding:0 3px;font-weight:700">${notifs.length}</span>`;
+      btnNotif.style.position='relative';
+    } else if(btnNotif&&notifs.length===0) {
+      btnNotif.innerHTML='🔔';
+    }
+  }catch{}
 }
-async function verUsuariosSA(empresaId,nomeEmpresa){
-  document.getElementById('tituloEmpresaUsuariosSA').textContent=nomeEmpresa;
-  document.getElementById('listaUsuariosSA').innerHTML='<p style="color:var(--muted)">Carregando...</p>';
-  document.getElementById('modalUsuariosSA').classList.add('active');
-  try{const r=await fetch(`${API}/profissionais?empresa_id=${empresaId}`,{headers:{Authorization:`Bearer ${token}`}});
-    const lista=await r.json();
-    document.getElementById('listaUsuariosSA').innerHTML=lista.map(p=>`
-      <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border)">
-        <div style="width:32px;height:32px;border-radius:50%;background:${corProf(p)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${p.nome.charAt(0)}</div>
-        <div><div style="font-weight:600">${p.nome}</div><div style="font-size:0.75rem;color:var(--muted)">${p.email}</div></div>
-        <span class="badge ${p.perfil==='admin'?'badge-confirmado':'badge-pendente'}" style="margin-left:auto">${p.perfil}</span>
-      </div>`).join('')||'<p style="color:var(--muted)">Nenhum usuário.</p>';
-  }catch{document.getElementById('listaUsuariosSA').innerHTML='<p style="color:var(--muted)">Erro ao carregar.</p>';}
+function abrirNotificacoes(){verificarNotificacoes();}
+function mostrarToast(titulo,mensagem,id){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className='toast';t.innerHTML=`<div class="toast-header"><span>🔔</span><strong class="toast-title">${titulo}</strong><button class="toast-close" onclick="fecharToast(this,${id||0})">✕</button></div><div class="toast-body">${mensagem}</div>`;c.appendChild(t);requestAnimationFrame(()=>t.classList.add('toast-show'));setTimeout(()=>fecharToast(t.querySelector('.toast-close'),id||0),7000);}
+async function fecharToast(btn,id){const t=btn.closest('.toast');if(!t)return;t.classList.remove('toast-show');t.classList.add('toast-hide');setTimeout(()=>t.remove(),300);if(id){try{await fetch(`${API}/notificacoes/${id}/lida`,{method:'PATCH',headers:{Authorization:`Bearer ${token}`}});}catch{}}}
+
+// ── Auth ──────────────────────────────────────────────────
+function sair(){if(pollingInterval)clearInterval(pollingInterval);localStorage.clear();window.location.href='index.html';}
+function logoff(){if(pollingInterval)clearInterval(pollingInterval);const cnpj=localStorage.getItem('cnpj_salvo');localStorage.removeItem('token');localStorage.removeItem('usuario');if(cnpj)localStorage.setItem('cnpj_salvo',cnpj);window.location.href='index.html';}
+
+
+// ── Voltar ao início ──────────────────────────────────────
+function voltarInicio() {
+  mudarAba('agenda');
+  mudarVisualizacao('proximos');
+}
+
+// ── Painel de Notificações (Atrasados) ────────────────────
+let painelNotifAberto = false;
+
+function togglePainelNotificacoes() {
+  painelNotifAberto = !painelNotifAberto;
+  const painel = document.getElementById('painelNotificacoes');
+  if (painelNotifAberto) {
+    painel.classList.add('active');
+    carregarAtrasadosNoPanel();
+    // fecha ao clicar fora
+    setTimeout(() => document.addEventListener('click', fecharPainelFora, { once: true }), 100);
+  } else {
+    painel.classList.remove('active');
+  }
+}
+
+function fecharPainelFora(e) {
+  const painel = document.getElementById('painelNotificacoes');
+  const btn = document.getElementById('btnNotif');
+  if (!painel.contains(e.target) && !btn.contains(e.target)) {
+    painel.classList.remove('active');
+    painelNotifAberto = false;
+  }
+}
+
+function fecharPainelNotificacoes() {
+  document.getElementById('painelNotificacoes').classList.remove('active');
+  painelNotifAberto = false;
+}
+
+async function carregarAtrasadosNoPanel() {
+  const body = document.getElementById('painelNotifBody');
+  body.innerHTML = '<div class="notif-empty">Buscando...</div>';
+  try {
+    const agora = new Date();
+    const hoje = agora.toISOString().split('T')[0];
+    const r = await fetch(`${API}/agendamentos?inicio=2020-01-01T00:00:00&fim=${hoje}T23:59:59`, { headers:{ Authorization:`Bearer ${token}` } });
+    const ags = await r.json();
+    const atrasados = ags.filter(a => !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora);
+    if (!atrasados.length) {
+      body.innerHTML = '<div class="notif-empty">✅ Você não tem compromissos em atraso!</div>';
+      return;
+    }
+    body.innerHTML = atrasados.map(a => {
+      const dt = a.dia_todo
+        ? new Date(a.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit'}) + ' · Dia todo'
+        : new Date(a.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      return `<div class="notif-item" onclick="abrirVerAgendamentoKanban(${a.id});fecharPainelNotificacoes();" style="cursor:pointer">
+        <div class="notif-item-titulo">⚠️ ${a.cliente_nome}</div>
+        <div class="notif-item-data">👤 ${a.profissional_nome||'—'} · 📅 ${dt}</div>
+      </div>`;
+    }).join('');
+  } catch(err) {
+    body.innerHTML = '<div class="notif-empty">Erro ao carregar.</div>';
+  }
+}
+
+// ── Bloco de Notas ────────────────────────────────────────
+function abrirNotas() {
+  const chave = `notas_${usuario.id}`;
+  const salvo = localStorage.getItem(chave) || '';
+  document.getElementById('notasTexto').value = salvo;
+  document.getElementById('modalNotas').classList.add('active');
+}
+function fecharNotas() { document.getElementById('modalNotas').classList.remove('active'); }
+function salvarNotas() {
+  const chave = `notas_${usuario.id}`;
+  localStorage.setItem(chave, document.getElementById('notasTexto').value);
+  fecharNotas();
+  mostrarToast('📝 Anotações salvas!', 'Suas anotações foram salvas localmente.');
+}
+
+// ── Atualizar Status com Observação ──────────────────────
+let _statusPendente = null;
+
+function pedirObsStatus() {
+  const status = document.getElementById('editStatus').value;
+  _statusPendente = status;
+  const titulo = status === 'concluido' ? '🏁 Concluído — O que foi feito?' :
+                 status === 'cancelado' ? '🚫 Cancelado — Qual o motivo?' :
+                 '📝 Observação';
+  const subtitulo = status === 'concluido'
+    ? 'Descreva brevemente o que foi realizado.'
+    : status === 'cancelado'
+    ? 'Informe o motivo do cancelamento.'
+    : 'Adicione uma observação opcional.';
+  document.getElementById('tituloObsStatus').textContent = titulo;
+  document.getElementById('subtituloObsStatus').textContent = subtitulo;
+  document.getElementById('obsStatusTexto').value = '';
+  document.getElementById('modalVerAgendamento').classList.remove('active');
+  document.getElementById('modalObsStatus').classList.add('active');
+}
+function fecharObsStatus() {
+  document.getElementById('modalObsStatus').classList.remove('active');
+  document.getElementById('modalVerAgendamento').classList.add('active');
+  _statusPendente = null;
+}
+async function confirmarAtualizarStatus() {
+  const id = document.getElementById('editAgId').value;
+  const obs = document.getElementById('obsStatusTexto').value.trim();
+  const status = _statusPendente;
+  if (!status) return;
+  try {
+    const r = await fetch(`${API}/agendamentos/${id}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+      body: JSON.stringify({ status, observacoes: obs || undefined })
+    });
+    if (!r.ok) { const d=await r.json(); mostrarToast('❌ Erro', d.erro||'Sem permissão'); return; }
+    document.getElementById('modalObsStatus').classList.remove('active');
+    _statusPendente = null;
+    carregarPainelAgenda();
+    if (document.getElementById('abaLista').style.display!=='none') carregarLista();
+    mostrarToast('✅ Status atualizado!', `Compromisso marcado como ${status}.`);
+  } catch(err) { console.error(err); }
 }
 
 // ── Aba Serviços ──────────────────────────────────────────
@@ -1230,18 +980,28 @@ async function sincronizarProfissionaisServico(servicoId, profissionaisIds) {
     });
     if (r.ok) return;
   } catch {}
+  // Fallback: insere/remove individualmente
   try {
-    const rAtual = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${servicoId}`, { headers: { Authorization: `Bearer ${token}` } });
+    const rAtual = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${servicoId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     const atuais = rAtual.ok ? await rAtual.json() : [];
     const idsAtuais = Array.isArray(atuais) ? atuais.map(p => p.id) : [];
     for (const pid of profissionaisIds) {
       if (!idsAtuais.includes(pid)) {
-        await fetch(`${API}/profissional-servicos`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ profissional_id: pid, servico_id: servicoId }) });
+        await fetch(`${API}/profissional-servicos`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ profissional_id: pid, servico_id: servicoId })
+        });
       }
     }
     for (const pid of idsAtuais) {
       if (!profissionaisIds.includes(pid)) {
-        await fetch(`${API}/profissional-servicos?profissional_id=${pid}&servico_id=${servicoId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        await fetch(`${API}/profissional-servicos?profissional_id=${pid}&servico_id=${servicoId}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
       }
     }
   } catch(err) { console.warn('Não foi possível sincronizar profissionais:', err); }
@@ -1258,7 +1018,9 @@ async function editarServico(id) {
     document.getElementById('servicoDuracao').value = s.duracao_minutos || '';
     document.getElementById('btnSalvarServico').textContent = 'Atualizar Serviço';
     document.getElementById('erroServico').style.display='none';
-    const rProfs = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${id}`, { headers:{ Authorization:`Bearer ${token}` } });
+    const rProfs = await fetch(`${API}/profissionais?empresa_id=${usuario.empresa_id}&servico_id=${id}`, {
+      headers:{ Authorization:`Bearer ${token}` }
+    });
     const profsVinculados = rProfs.ok ? await rProfs.json() : [];
     const idsVinculados = Array.isArray(profsVinculados) ? profsVinculados.map(p => p.id) : [];
     await carregarCheckboxesProfissionais(idsVinculados);
@@ -1276,7 +1038,7 @@ async function excluirServico(id) {
   } catch(err) { mostrarToast('❌ Erro', 'Erro de conexão'); }
 }
 
-// ── Dashboard Stats ───────────────────────────────────────
+// ── Dashboard Stats — modal ao clicar nos cards ───────────
 async function abrirDashboardStats(filtro) {
   let lista = window._agsHoje || [];
   if (filtro === 'atrasado') {
@@ -1290,9 +1052,12 @@ async function abrirDashboardStats(filtro) {
   } else if (filtro !== 'todos') {
     lista = lista.filter(a => a.status === filtro);
   }
+
   const titulos = { todos:'📋 Todos os compromissos de hoje', confirmado:'✅ Confirmados hoje',
     cancelado:'❌ Cancelados hoje', concluido:'🏁 Concluídos hoje', atrasado:'⚠️ Compromissos atrasados' };
-  const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente', cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
+  const statusBadge = { confirmado:'badge-confirmado', pendente:'badge-pendente',
+    cancelado:'badge-cancelado', concluido:'badge-concluido', faltou:'badge-faltou' };
+
   document.getElementById('dashboardStatsTitle').textContent = titulos[filtro]||'Compromissos';
   document.getElementById('dashboardStatsBody').innerHTML = lista.length
     ? `<table style="width:100%;border-collapse:collapse">
@@ -1308,16 +1073,20 @@ async function abrirDashboardStats(filtro) {
           return '<tr>' +
             '<td style="padding:6px 8px;font-size:0.85rem">'+dt+'</td>' +
             '<td style="padding:6px 8px"><strong>'+a.cliente_nome+'</strong></td>' +
-            '<td style="padding:6px 8px;color:var(--muted)">'+(a.profissional_nome||'—')+'</td>' +
+            '<td style="padding:6px 8px;color:var(--muted)">'+( a.profissional_nome||'—')+'</td>' +
             '<td style="padding:6px 8px"><span class="badge '+(statusBadge[a.status]||'')+'">'+a.status+'</span></td>' +
             '<td style="padding:6px 8px"><button class="btn btn-secondary btn-sm" onclick="fecharDashboardStats();abrirVerAgendamento('+a.id+')">Ver</button></td>' +
             '</tr>';
         }).join('')}</tbody>
       </table>`
     : '<p style="color:var(--muted);text-align:center;padding:2rem">Nenhum compromisso nesta categoria.</p>';
+
   document.getElementById('modalDashboardStats').classList.add('active');
 }
-function fecharDashboardStats() { document.getElementById('modalDashboardStats').classList.remove('active'); }
+
+function fecharDashboardStats() {
+  document.getElementById('modalDashboardStats').classList.remove('active');
+}
 
 function toggleConvidarExterno(chk) {
   const campo = document.getElementById('campoConvidarExterno');
@@ -1325,3 +1094,4 @@ function toggleConvidarExterno(chk) {
 }
 
 init();
+
