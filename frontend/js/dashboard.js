@@ -21,39 +21,11 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 function corProf(prof) { return prof?.cor_agenda || prof?.cor || '#0d9488'; }
 
 // ── Inicialização ─────────────────────────────────────────
-// ── Aplica tema da empresa (cor + imagem de fundo) ───────
-function aplicarTemaEmpresa(usuario) {
-  const cor = usuario.cor_primaria || '#0d9488';
-  // Aplica cor primária como CSS variable em todo o documento
-  document.documentElement.style.setProperty('--accent', cor);
-  document.documentElement.style.setProperty('--accent-hover', cor + 'cc');
-
-  // Deriva cor mais clara para backgrounds (20% opacidade)
-  const r = parseInt(cor.slice(1,3),16);
-  const g = parseInt(cor.slice(3,5),16);
-  const b = parseInt(cor.slice(5,7),16);
-  document.documentElement.style.setProperty('--accent-soft', `rgba(${r},${g},${b},0.12)`);
-  document.documentElement.style.setProperty('--accent-border', `rgba(${r},${g},${b},0.35)`);
-
-  // Aplica imagem de fundo se existir
-  if (usuario.imagem_fundo_url) {
-    document.body.style.backgroundImage = `url('${usuario.imagem_fundo_url}')`;
-    document.body.style.backgroundSize = 'cover';
-    document.body.style.backgroundPosition = 'center';
-    document.body.style.backgroundAttachment = 'fixed';
-    // Overlay para garantir legibilidade (marca d'água)
-    document.body.style.setProperty('--fundo-overlay', 'rgba(var(--bg-rgb,15,23,42),0.88)');
-  }
-}
-
 function init() {
   token   = localStorage.getItem('token');
   usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
   if (!token || !usuario) { window.location.href = 'index.html'; return; }
   usuario.id = parseInt(usuario.id);
-
-  // Aplica tema da empresa imediatamente ao carregar
-  aplicarTemaEmpresa(usuario);
 
   document.getElementById('nomeUsuario').textContent = usuario.nome;
   document.getElementById('badgePerfil').textContent =
@@ -87,13 +59,10 @@ function init() {
   }
 
   montarAbasMobile();
-  // Proteção: se carregarProfissionaisFiltro falhar, ainda carrega a agenda
-  carregarProfissionaisFiltro()
-    .catch(e => console.warn('Profissionais não carregados:', e))
-    .finally(() => {
-      mudarAba('agenda');
-      iniciarPolling();
-    });
+  carregarProfissionaisFiltro().then(() => {
+    mudarAba('agenda');
+    iniciarPolling();
+  });
 }
 
 function montarAbasMobile() {
@@ -1103,27 +1072,7 @@ function renderEmpresas(lista){
     </div></td>
   </tr>`).join('');
 }
-function abrirNovaEmpresa(){
-  document.getElementById('empId').value='';
-  document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';
-  document.getElementById('btnEmpresaText').textContent='Criar Empresa';
-  ['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('empCor').value='#0d9488';
-  const empFundo = document.getElementById('empFundoUrl');
-  if (empFundo) empFundo.value='';
-  atualizarPreviewCor('#0d9488');
-  document.getElementById('secaoAdmin').style.display='block';
-  document.getElementById('erroEmpresa').style.display='none';
-  document.getElementById('slugPreview').textContent='slug';
-  document.getElementById('modalEmpresa').classList.add('active');
-}
-function atualizarPreviewCor(cor) {
-  const preview = document.getElementById('previewCor');
-  if (!preview) return;
-  preview.style.background = cor;
-  preview.style.boxShadow = `0 0 0 3px ${cor}44`;
-}
-
+function abrirNovaEmpresa(){document.getElementById('empId').value='';document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';document.getElementById('btnEmpresaText').textContent='Criar Empresa';['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>document.getElementById(id).value='');document.getElementById('empCor').value='#0d9488';document.getElementById('secaoAdmin').style.display='block';document.getElementById('erroEmpresa').style.display='none';document.getElementById('slugPreview').textContent='slug';document.getElementById('modalEmpresa').classList.add('active');}
 function fecharModalEmpresa(){document.getElementById('modalEmpresa').classList.remove('active');}
 async function salvarEmpresa(){
   const id=document.getElementById('empId').value;
@@ -1143,7 +1092,7 @@ async function salvarEmpresa(){
       const adminSenha=document.getElementById('empAdminSenha').value;
       if(!adminNome||!adminEmail||!adminSenha){erro.textContent='Dados do administrador são obrigatórios';erro.style.display='block';return;}
       const r=await fetch(`${API}/empresas`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({nome_fantasia:nome,cnpj,email:email||null,telefone:tel||null,slug,cor_primaria:cor,imagem_fundo_url:document.getElementById('empFundoUrl')?.value?.trim()||null,admin_nome:adminNome,admin_email:adminEmail,admin_senha:adminSenha})});
+        body:JSON.stringify({nome,cnpj,email:email||null,telefone:tel||null,slug,cor_primaria:cor,admin:{nome:adminNome,email:adminEmail,senha:adminSenha}})});
       const d=await r.json();if(!r.ok){erro.textContent=d.erro||'Erro ao criar';erro.style.display='block';return;}
     }
     fecharModalEmpresa();carregarEmpresas();mostrarToast('✅ Empresa salva!',nome);

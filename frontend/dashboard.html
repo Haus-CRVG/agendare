@@ -29,7 +29,6 @@
       border-radius: var(--radius) var(--radius) 0 0;
       margin-bottom: 0;
     }
-
     .sch-toolbar-titulo {
       font-family: 'Syne', sans-serif;
       font-weight: 700;
@@ -53,20 +52,16 @@
       border-right: 1px solid var(--border);
       background: var(--surface2);
     }
-
     .sch-hora-spacer {
       height: 0px;
       border-bottom: 1px solid var(--border);
     }
-
     .sch-linha-hora {
       position: absolute;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       display: flex;
       align-items: flex-start;
     }
-
     .sch-hora-label {
       font-size: 0.68rem;
       color: var(--muted);
@@ -75,32 +70,26 @@
       font-weight: 600;
       letter-spacing: 0.02em;
     }
-
     .sch-linha-meio {
       position: absolute;
-      left: 0;
-      right: 0;
-      border-top: 1px dashed rgba(0, 0, 0, 0.05);
+      left: 0; right: 0;
+      border-top: 1px dashed rgba(0,0,0,0.05);
     }
 
     /* Indicador de agora */
     .sch-agora {
       position: absolute;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       height: 2px;
       background: #ef4444;
       z-index: 10;
       border-radius: 1px;
     }
-
     .sch-agora::before {
       content: '';
       position: absolute;
-      left: -4px;
-      top: -4px;
-      width: 10px;
-      height: 10px;
+      left: -4px; top: -4px;
+      width: 10px; height: 10px;
       background: #ef4444;
       border-radius: 50%;
     }
@@ -111,7 +100,6 @@
       overflow-y: auto;
       max-height: 640px;
     }
-
     .sch-header-dias {
       position: sticky;
       top: 0;
@@ -119,7 +107,6 @@
       background: var(--surface);
       border-bottom: 1px solid var(--border);
     }
-
     .sch-col-header {
       display: flex;
       flex-direction: column;
@@ -131,64 +118,38 @@
       font-size: 0.78rem;
       color: var(--muted);
     }
-
-    .sch-col-header:hover {
-      background: rgba(13, 148, 136, 0.05);
-    }
-
-    .sch-col-header.sch-hoje {
-      color: var(--accent);
-    }
-
+    .sch-col-header:hover { background: rgba(13,148,136,0.05); }
+    .sch-col-header.sch-hoje { color: var(--accent); }
     .sch-col-dianum {
       font-size: 1.1rem;
       font-weight: 700;
       line-height: 1.2;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
     }
-
     .sch-col-dianum.sch-hoje-num {
       background: var(--accent);
       color: #fff;
     }
-
-    .sch-col-diasem {
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
+    .sch-col-diasem { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Colunas de dias */
     .sch-col-dia {
       border-right: 1px solid var(--border);
       min-width: 100px;
     }
-
-    .sch-col-hoje {
-      background: rgba(13, 148, 136, 0.02);
-    }
-
-    .sch-col-dia:last-child {
-      border-right: none;
-    }
+    .sch-col-hoje { background: rgba(13,148,136,0.02); }
+    .sch-col-dia:last-child { border-right: none; }
 
     /* Slots clicáveis */
     .sch-slot {
       position: absolute;
-      left: 0;
-      right: 0;
+      left: 0; right: 0;
       cursor: pointer;
       transition: background 0.1s;
     }
-
-    .sch-slot:hover {
-      background: rgba(13, 148, 136, 0.07);
-    }
+    .sch-slot:hover { background: rgba(13,148,136,0.07); }
 
     /* Eventos */
     .sch-evento {
@@ -199,21 +160,15 @@
       cursor: pointer;
       transition: filter 0.15s, transform 0.1s;
       z-index: 2;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-
-    .sch-evento:hover {
-      filter: brightness(0.94);
-      transform: translateY(-1px);
-    }
-
+    .sch-evento:hover { filter: brightness(0.94); transform: translateY(-1px); }
     .sch-ev-hora {
       font-size: 0.65rem;
       font-weight: 700;
       opacity: 0.8;
       margin-bottom: 1px;
     }
-
     .sch-ev-titulo {
       font-size: 0.78rem;
       font-weight: 700;
@@ -222,7 +177,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .sch-ev-prof {
       font-size: 0.68rem;
       opacity: 0.75;
@@ -242,7 +196,6 @@
       border-radius: 0 0 var(--radius) var(--radius);
       overflow: hidden;
     }
-
     .sch-mes-cabecalho {
       padding: 0.5rem;
       text-align: center;
@@ -255,11 +208,7 @@
       border-right: 1px solid var(--border);
       background: var(--surface2);
     }
-
-    .sch-mes-cabecalho:last-child {
-      border-right: none;
-    }
-
+    .sch-mes-cabecalho:last-child { border-right: none; }
     .sch-mes-celula {
       min-height: 110px;
       padding: 6px;
@@ -269,48 +218,24 @@
       transition: background 0.15s;
       vertical-align: top;
     }
-
-    .sch-mes-celula:last-child,
-    .sch-mes-celula:nth-child(7n) {
-      border-right: none;
-    }
-
-    .sch-mes-celula:hover {
-      background: rgba(13, 148, 136, 0.04);
-    }
-
-    .sch-mes-fora {
-      background: var(--surface2);
-      cursor: default;
-    }
-
-    .sch-mes-hoje {
-      background: rgba(13, 148, 136, 0.05);
-    }
-
-    .sch-mes-selecionado {
-      outline: 2px solid var(--accent);
-      outline-offset: -2px;
-    }
-
+    .sch-mes-celula:last-child, .sch-mes-celula:nth-child(7n) { border-right: none; }
+    .sch-mes-celula:hover { background: rgba(13,148,136,0.04); }
+    .sch-mes-fora { background: var(--surface2); cursor: default; }
+    .sch-mes-hoje { background: rgba(13,148,136,0.05); }
+    .sch-mes-selecionado { outline: 2px solid var(--accent); outline-offset: -2px; }
     .sch-mes-num {
       font-size: 0.82rem;
       font-weight: 700;
       color: var(--text);
       margin-bottom: 4px;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
       border-radius: 50%;
     }
-
     .sch-mes-hoje .sch-mes-num {
       background: var(--accent);
       color: #fff;
     }
-
     .sch-mes-ev {
       font-size: 0.72rem;
       font-weight: 600;
@@ -323,17 +248,12 @@
       cursor: pointer;
       transition: filter 0.1s;
     }
-
-    .sch-mes-ev:hover {
-      filter: brightness(0.9);
-    }
-
+    .sch-mes-ev:hover { filter: brightness(0.9); }
     .sch-mes-ev-hora {
       font-weight: 800;
       margin-right: 3px;
       opacity: 0.85;
     }
-
     .sch-mes-mais {
       font-size: 0.7rem;
       color: var(--accent);
@@ -341,10 +261,7 @@
       cursor: pointer;
       padding: 1px 4px;
     }
-
-    .sch-mes-mais:hover {
-      text-decoration: underline;
-    }
+    .sch-mes-mais:hover { text-decoration: underline; }
   </style>
   <style>
     .kanban-board {
@@ -460,11 +377,7 @@
       border-color: var(--accent)
     }
 
-    #fcCalendario {
-      display: none;
-    }
-
-    /* removido — usando scheduler customizado */
+    #fcCalendario { display: none; } /* removido — usando scheduler customizado */
 
     .empresa-badge {
       background: rgba(13, 148, 136, 0.1);
@@ -668,16 +581,14 @@
             </div>
             <!-- Profissionais vinculados -->
             <div style="margin-bottom:0.75rem">
-              <label
-                style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
                 👥 Profissionais habilitados para este serviço
               </label>
               <div id="servicoProfissionaisCheck"
                 style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
                 <span style="color:var(--muted);font-size:0.82rem">Carregando...</span>
               </div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar
-                este serviço. Só eles aparecerão no link público.</div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar este serviço. Só eles aparecerão no link público.</div>
             </div>
             <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
             <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
@@ -954,131 +865,117 @@
           <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
               id="empTelefone" placeholder="(00) 00000-0000" /></div>
         </div>
-        <div class="form-group" style="margin-bottom:0.75rem">
-          <label>Cor primária da empresa</label>
-          <div style="display:flex;align-items:center;gap:0.75rem">
-            <input type="color" id="empCor" value="#0d9488"
-              style="height:42px;width:60px;padding:4px;cursor:pointer;border-radius:8px;border:1px solid var(--border)"
-              oninput="atualizarPreviewCor(this.value)" />
-            <div id="previewCor"
-              style="flex:1;height:42px;border-radius:10px;background:#0d9488;transition:background 0.2s,box-shadow 0.2s;display:flex;align-items:center;justify-content:center;">
-              <span style="color:#fff;font-size:0.82rem;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,0.3)">
-                Prévia da cor
-              </span>
-            </div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
+              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
+              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
+                id="slugPreview">slug</strong></span></div>
+          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
+              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
+        </div>
+      </div>
+      <div id="secaoAdmin">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+          <p
+            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+            👑 Administrador da Empresa</p>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
+                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
+                placeholder="Nome completo" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
+                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
+                placeholder="admin@empresa.com" /></div>
           </div>
-        </div>
-        <div id="secaoAdmin">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
-            <p
-              style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
-              👑 Administrador da Empresa</p>
-            <div class="form-grid">
-              <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
-                    style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
-                  placeholder="Nome completo" /></div>
-              <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
-                    style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
-                  placeholder="admin@empresa.com" /></div>
-            </div>
-            <div class="form-group" style="margin-bottom:0"><label>Senha <span
-                  style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
-                placeholder="Mínimo 6 caracteres" /></div>
-          </div>
-        </div>
-        <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
-        <div class="form-group" style="margin-bottom:0.75rem">
-          <label>Imagem de fundo (URL)</label>
-          <input type="url" id="empFundoUrl" placeholder="https://exemplo.com/imagem.jpg (aparece como marca d'água)"
-            style="width:100%" />
-          <span style="font-size:0.72rem;color:var(--muted)">
-            A imagem aparece como plano de fundo semitransparente para os usuários desta empresa.
-          </span>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
-          <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
-            <div class="spinner" id="spinnerEmpresa"></div>
-          </button>
+          <div class="form-group" style="margin-bottom:0"><label>Senha <span
+                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
+              placeholder="Mínimo 6 caracteres" /></div>
         </div>
       </div>
-    </div>
-
-    <div class="modal-overlay" id="modalVerEmpresa">
-      <div class="modal" style="max-width:480px">
-        <h3>🏢 Detalhes da Empresa</h3>
-        <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
-        <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
-            <option value="ativo">✅ Ativo</option>
-            <option value="suspenso">⚠️ Suspenso</option>
-            <option value="cancelado">❌ Cancelado</option>
-          </select></div>
-        <input type="hidden" id="editEmpresaId" />
-        <div class="modal-actions"><button class="btn btn-secondary"
-            onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
-            onclick="atualizarEmpresa()">Salvar</button></div>
+      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
+          <div class="spinner" id="spinnerEmpresa"></div>
+        </button>
       </div>
     </div>
+  </div>
 
-    <div class="notif-panel" id="painelNotificacoes">
-      <div class="notif-panel-header">
-        <span>⚠️ Compromissos em Atraso</span>
-        <button onclick="fecharPainelNotificacoes()"
-          style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
-      </div>
-      <div class="notif-panel-body" id="painelNotifBody">
-        <div class="notif-empty">Carregando...</div>
+  <div class="modal-overlay" id="modalVerEmpresa">
+    <div class="modal" style="max-width:480px">
+      <h3>🏢 Detalhes da Empresa</h3>
+      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
+          <option value="ativo">✅ Ativo</option>
+          <option value="suspenso">⚠️ Suspenso</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select></div>
+      <input type="hidden" id="editEmpresaId" />
+      <div class="modal-actions"><button class="btn btn-secondary"
+          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
+          onclick="atualizarEmpresa()">Salvar</button></div>
+    </div>
+  </div>
+
+  <div class="notif-panel" id="painelNotificacoes">
+    <div class="notif-panel-header">
+      <span>⚠️ Compromissos em Atraso</span>
+      <button onclick="fecharPainelNotificacoes()"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
+    </div>
+    <div class="notif-panel-body" id="painelNotifBody">
+      <div class="notif-empty">Carregando...</div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalUsuariosSA">
+    <div class="modal" style="max-width:640px">
+      <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
+      <div id="listaUsuariosSA" style="margin:1rem 0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
       </div>
     </div>
+  </div>
 
-    <div class="modal-overlay" id="modalUsuariosSA">
-      <div class="modal" style="max-width:640px">
-        <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
-        <div id="listaUsuariosSA" style="margin:1rem 0"></div>
-        <div class="modal-actions">
-          <button class="btn btn-secondary"
-            onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
-        </div>
+  <div class="modal-overlay" id="modalNotas">
+    <div class="modal notas-modal" style="max-width:480px">
+      <h3>📝 Minhas Anotações</h3>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
+      <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button
+          class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalObsStatus">
+    <div class="modal" style="max-width:420px">
+      <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação
+        antes de salvar.</p>
+      <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
+          placeholder="Descreva o que foi feito, motivo do cancelamento..."
+          style="resize:none;height:100px;width:100%;"></textarea></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button
+          class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+    </div>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+
+  <!-- Modal Dashboard Stats -->
+  <div class="modal-overlay" id="modalDashboardStats">
+    <div class="modal" style="max-width:700px">
+      <h3 id="dashboardStatsTitle">Compromissos</h3>
+      <div id="dashboardStatsBody" style="margin:1rem 0;max-height:420px;overflow-y:auto"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
       </div>
     </div>
-
-    <div class="modal-overlay" id="modalNotas">
-      <div class="modal notas-modal" style="max-width:480px">
-        <h3>📝 Minhas Anotações</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
-        <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
-        <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button
-            class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="modalObsStatus">
-      <div class="modal" style="max-width:420px">
-        <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
-        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma
-          observação
-          antes de salvar.</p>
-        <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
-            placeholder="Descreva o que foi feito, motivo do cancelamento..."
-            style="resize:none;height:100px;width:100%;"></textarea></div>
-        <div class="modal-actions"><button class="btn btn-secondary"
-            onclick="fecharObsStatus()">Cancelar</button><button class="btn btn-primary"
-            onclick="confirmarAtualizarStatus()">Confirmar</button></div>
-      </div>
-    </div>
-
-    <script src="js/dashboard.js"></script>
-
-    <!-- Modal Dashboard Stats -->
-    <div class="modal-overlay" id="modalDashboardStats">
-      <div class="modal" style="max-width:700px">
-        <h3 id="dashboardStatsTitle">Compromissos</h3>
-        <div id="dashboardStatsBody" style="margin:1rem 0;max-height:420px;overflow-y:auto"></div>
-        <div class="modal-actions">
-          <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
-        </div>
-      </div>
-    </div>
+  </div>
 </body>
 
 </html>

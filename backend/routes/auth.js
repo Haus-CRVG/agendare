@@ -84,8 +84,7 @@ router.post('/login', async (req, res) => {
 
     // ── Login normal: usuário de uma empresa específica ────
     const r = await pool.query(
-      `SELECT u.*, e.nome_fantasia AS empresa_nome, e.slug, e.cor_primaria,
-              COALESCE(e.imagem_fundo_url, '') AS imagem_fundo_url
+      `SELECT u.*, e.nome_fantasia AS empresa_nome, e.slug, e.cor_primaria
        FROM usuarios u
        JOIN empresas e ON u.empresa_id = e.id
        WHERE u.email = $1 AND u.empresa_id = $2 AND u.ativo = true`,
@@ -112,8 +111,7 @@ router.post('/login', async (req, res) => {
       usuario: {
         id: u.id, nome: u.nome, email: u.email, perfil: u.perfil,
         empresa_id: u.empresa_id, empresa_nome: u.empresa_nome,
-        slug: u.slug, cor_primaria: u.cor_primaria,
-        imagem_fundo_url: u.imagem_fundo_url || null
+        slug: u.slug, cor_primaria: u.cor_primaria
       }
     });
 
