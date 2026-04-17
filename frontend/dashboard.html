@@ -396,21 +396,8 @@
 </head>
 
 <style>
-  /* ── TOPBAR SUPER ADMIN (tema escuro igual ao Implanta) ── */
-  body.modo-sa {
-    --bg:       #0f1117;
-    --surface:  #1a1d27;
-    --surface2: #21242f;
-    --border:   #2a2d3a;
-    --text:     #e2e8f0;
-    --muted:    #64748b;
-  }
-  body.modo-sa .topbar {
-    background: #1a1d27;
-    border-bottom: 1px solid #2a2d3a;
-  }
-  body.modo-sa .topbar-user { color: #e2e8f0; }
-  /* Esconde todos os botões extras da topbar no modo SA */
+  /* ── TOPBAR SUPER ADMIN (tema claro, sem sidebar) ── */
+  /* Esconde botões extras da topbar no modo SA */
   body.modo-sa #empresaBadge,
   body.modo-sa .btn-icon,
   body.modo-sa .btn-logout:not(#btnSairSA),
@@ -421,8 +408,8 @@
     display: none;
     align-items: center;
     gap: 4px;
-    background: rgba(13,148,136,0.12);
-    border: 1px solid rgba(13,148,136,0.3);
+    background: rgba(13,148,136,0.10);
+    border: 1px solid rgba(13,148,136,0.25);
     color: #0d9488;
     font-size: 0.75rem;
     font-weight: 700;
@@ -430,11 +417,11 @@
     border-radius: 999px;
   }
   body.modo-sa .sa-topbar-badge { display: inline-flex; }
-  /* Abas SA no topo (substituem o sidebar) */
+  /* Abas SA no topo (substituem o sidebar) — tema claro */
   .sa-nav-tabs {
     display: none;
-    background: #1a1d27;
-    border-bottom: 1px solid #2a2d3a;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     padding: 0 1.5rem;
     gap: 0.25rem;
   }
@@ -447,7 +434,7 @@
     padding: 0.75rem 1rem;
     font-size: 0.88rem;
     font-weight: 500;
-    color: #64748b;
+    color: var(--muted);
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
@@ -456,8 +443,8 @@
     transition: color 0.15s, border-color 0.15s;
     margin-bottom: -1px;
   }
-  .sa-nav-tab:hover { color: #e2e8f0; }
-  .sa-nav-tab.active { color: #0d9488; border-bottom-color: #0d9488; font-weight: 600; }
+  .sa-nav-tab:hover { color: var(--text); }
+  .sa-nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
   /* Esconde sidebar e ajusta layout no modo SA */
   body.modo-sa #sidebar { display: none !important; }
   body.modo-sa .layout { display: block; }
@@ -471,6 +458,68 @@
   body.modo-sa #abaConfiguracoes { display: none !important; }
   /* Mostra o botão Sair exclusivo do SA */
   body.modo-sa #btnSairSA { display: inline-flex !important; }
+
+  /* ── Linha expandível de usuários da empresa ── */
+  .empresa-row { cursor: pointer; transition: background 0.15s; }
+  .empresa-row:hover td { background: rgba(13,148,136,0.04) !important; }
+  .empresa-row td:first-child { padding-left: 0.75rem; }
+  .empresa-expand-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 4px;
+    background: rgba(13,148,136,0.1); color: var(--accent);
+    font-size: 0.7rem; font-weight: 700; margin-right: 6px;
+    transition: transform 0.2s, background 0.15s; flex-shrink: 0;
+    border: none; cursor: pointer;
+  }
+  .empresa-expand-btn.aberto { transform: rotate(90deg); background: var(--accent); color: #fff; }
+  .usuarios-row { display: none; }
+  .usuarios-row.visivel { display: table-row; }
+  .usuarios-row td { padding: 0 !important; border-bottom: 1px solid var(--border); }
+  .usuarios-inner {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    margin: 0;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+  }
+  .usuarios-inner-header {
+    font-size: 0.7rem; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
+  }
+  .usuario-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+    font-size: 0.84rem;
+  }
+  .usuario-item:last-child { border-bottom: none; }
+  .usuario-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 800; font-size: 0.75rem; flex-shrink: 0;
+  }
+  .usuario-nome { font-weight: 600; color: var(--text); flex: 1; }
+  .usuario-email { font-size: 0.78rem; color: var(--muted); }
+  .usuario-loading { color: var(--muted); font-size: 0.82rem; padding: 0.5rem 0; }
+
+  /* ── Pop-up de cobrança (boleto em aberto) ── */
+  #popupCobranca {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 9998;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+  }
+  #popupCobranca.ativo { display: flex; }
+  .popup-cobranca-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    text-align: center;
+    animation: slideUp 0.3s ease both;
+  }
+  .popup-cobranca-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+  .popup-cobranca-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem; }
+  .popup-cobranca-msg { font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem; }
+  .popup-cobranca-box .btn { width: 100%; justify-content: center; }
 </style>
 
 <body>
@@ -499,10 +548,9 @@
     </div>
   </div>
 
-  <!-- Abas de navegação SA (visível só no modo SA) -->
+  <!-- Abas de navegação SA (visível só no modo SA) — apenas Empresas -->
   <nav class="sa-nav-tabs" id="saNavTabs">
     <button class="sa-nav-tab active" onclick="mudarAba('empresas')" data-aba="empresas">🏢 Empresas</button>
-    <button class="sa-nav-tab" onclick="mudarAba('usuarios-sa')" data-aba="usuarios-sa">👥 Usuários</button>
   </nav>
 
   <div class="mobile-tabs" id="mobileTabs"></div>
@@ -1004,8 +1052,17 @@
           </div>
           <div class="form-group">
             <label>Imagem de fundo (marca d'água)</label>
-            <input type="url" id="empFundoUrl" placeholder="https://exemplo.com/logo.png" oninput="atualizarPreviewFundo(this.value)" />
-            <span style="font-size:0.7rem;color:var(--muted)">Aparece semitransparente no dashboard</span>
+            <div style="display:flex;gap:0.5rem;margin-bottom:4px">
+              <input type="url" id="empFundoUrl" placeholder="https://exemplo.com/logo.png"
+                oninput="atualizarPreviewFundo(this.value)"
+                style="flex:1" />
+              <label style="display:inline-flex;align-items:center;gap:6px;padding:0 0.75rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;height:42px">
+                📁 Arquivo
+                <input type="file" id="empFundoFile" accept="image/*" style="display:none"
+                  onchange="carregarImagemLocal(this)" />
+              </label>
+            </div>
+            <span style="font-size:0.7rem;color:var(--muted)">Cole uma URL ou escolha um arquivo do seu computador</span>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
@@ -1164,36 +1221,26 @@
 
   <script src="js/dashboard.js"></script>
   <script>
-  // ── Ativação do Modo Super Admin ─────────────────────────
+  const _SA_API = 'https://agendare-backend-production.up.railway.app/api';
+
+  // ════════════════════════════════════════════════════════
+  // 1. ATIVAÇÃO DO MODO SUPER ADMIN
+  // ════════════════════════════════════════════════════════
   (function() {
     const u = JSON.parse(localStorage.getItem('usuario') || 'null');
     if (!u || u.perfil !== 'superadmin') return;
 
-    // Aplica classe que altera toda a aparência via CSS
     document.body.classList.add('modo-sa');
 
-    // Garante que a aba Empresas começa visível
     const empresasEl = document.getElementById('abaEmpresas');
     if (empresasEl) empresasEl.style.display = 'block';
 
-    // Substitui mudarAba para suportar as abas SA
     const _mudarAbaOriginal = typeof mudarAba === 'function' ? mudarAba : null;
     window.mudarAba = function(aba) {
-      // Abas exclusivas SA
-      const abasSA = ['empresas', 'usuarios-sa'];
+      const abasSA = ['empresas'];
       if (abasSA.includes(aba)) {
-        // Esconde todas as abas SA
         const empresasDiv = document.getElementById('abaEmpresas');
-        const usuariosDiv = document.getElementById('abaUsuariosSa');
-        if (empresasDiv) empresasDiv.style.display = 'none';
-        if (usuariosDiv) usuariosDiv.style.display = 'none';
-        // Mostra a aba selecionada
-        if (aba === 'empresas' && empresasDiv) empresasDiv.style.display = 'block';
-        if (aba === 'usuarios-sa' && usuariosDiv) {
-          usuariosDiv.style.display = 'block';
-          carregarUsuariosSATab();
-        }
-        // Atualiza abas ativas
+        if (empresasDiv) empresasDiv.style.display = 'block';
         document.querySelectorAll('.sa-nav-tab').forEach(b => {
           b.classList.toggle('active', b.dataset.aba === aba);
         });
@@ -1203,65 +1250,214 @@
     };
   })();
 
-  // ── Aba Usuários SA (tabela de todos os usuários) ────────
-  let _todosUsuariosSA = [];
+  // ════════════════════════════════════════════════════════
+  // 2. EXPAND USUÁRIOS NA LINHA DA EMPRESA
+  // ════════════════════════════════════════════════════════
+  // Sobrescreve renderizarEmpresasSA (chamada pelo dashboard.js)
+  // para adicionar o botão de expandir na linha
+  const _renderEmpresasOriginal = window.renderizarEmpresasSA;
 
-  async function carregarUsuariosSATab() {
-    const tbody = document.getElementById('tabelaUsuariosSATab');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
-    try {
-      const token = localStorage.getItem('token');
-      const API = 'https://agendare-backend-production.up.railway.app/api';
-      // Busca todas as empresas primeiro
-      const re = await fetch(API + '/empresas', { headers: { Authorization: 'Bearer ' + token } });
-      const empresas = await re.json();
-      if (!Array.isArray(empresas) || !empresas.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa.</td></tr>';
-        return;
-      }
-      // Busca usuários de cada empresa em paralelo
-      const results = await Promise.all(
-        empresas.map(e =>
-          fetch(`${API}/profissionais?empresa_id=${e.id}`, { headers: { Authorization: 'Bearer ' + token } })
-            .then(r => r.json())
-            .then(data => Array.isArray(data) ? data.map(u => ({ ...u, _empresa: e.nome_fantasia })) : [])
-            .catch(() => [])
-        )
-      );
-      _todosUsuariosSA = results.flat();
-      renderUsuariosSATab(_todosUsuariosSA);
-    } catch {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar.</td></tr>';
-    }
-  }
-
-  function filtrarUsuariosSATab() {
-    const q = (document.getElementById('pesquisaUsuariosSA')?.value || '').toLowerCase();
-    renderUsuariosSATab(_todosUsuariosSA.filter(u =>
-      (u.nome || '').toLowerCase().includes(q) ||
-      (u.email || '').toLowerCase().includes(q) ||
-      (u._empresa || '').toLowerCase().includes(q)
-    ));
-  }
-
-  function renderUsuariosSATab(lista) {
-    const tbody = document.getElementById('tabelaUsuariosSATab');
+  function _renderEmpresasSAComExpand(lista) {
+    const tbody = document.getElementById('tabelaEmpresas');
     if (!tbody) return;
     if (!lista.length) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum usuário encontrado.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa encontrada.</td></tr>';
       return;
     }
-    const labelPerfil = { admin: '👑 Admin', profissional: '🔍 Analista', superadmin: '⚡ SA' };
-    const badgePerfil = { admin: 'badge-confirmado', profissional: 'badge-pendente', superadmin: 'badge-concluido' };
-    tbody.innerHTML = lista.map(u => `<tr>
-      <td><strong>${u.nome || '—'}</strong></td>
-      <td style="color:var(--muted);font-size:0.82rem">${u.email || '—'}</td>
-      <td>${u._empresa || '—'}</td>
-      <td><span class="badge ${badgePerfil[u.perfil] || 'badge-confirmado'}">${labelPerfil[u.perfil] || u.perfil}</span></td>
-      <td><span class="badge ${u.ativo !== false ? 'badge-confirmado' : 'badge-cancelado'}">${u.ativo !== false ? '✅ Ativo' : '❌ Inativo'}</span></td>
-    </tr>`).join('');
+    const badgeCls = { ativo: 'badge-confirmado', suspenso: 'badge-pendente', cancelado: 'badge-cancelado' };
+    const badgeLabel = { ativo: '✅ Ativo', suspenso: '⚠️ Suspenso', cancelado: '❌ Cancelado' };
+    tbody.innerHTML = lista.map(e => `
+      <tr class="empresa-row" id="row-emp-${e.id}" onclick="toggleUsuariosEmpresa(${e.id}, this)">
+        <td>
+          <button class="empresa-expand-btn" id="expand-btn-${e.id}" title="Ver usuários">▶</button>
+          <strong>${e.nome_fantasia || '—'}</strong>
+        </td>
+        <td style="color:var(--muted);font-size:0.82rem">${e.cnpj || '—'}</td>
+        <td style="font-size:0.82rem">${e.email || '—'}</td>
+        <td><code style="font-size:0.75rem;background:var(--surface2);padding:2px 6px;border-radius:4px">${e.slug || '—'}</code></td>
+        <td><span class="badge ${badgeCls[e.status] || 'badge-confirmado'}">${badgeLabel[e.status] || e.status}</span></td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex;gap:4px">
+            <button class="btn btn-secondary btn-sm" onclick="verEmpresa(${e.id})" title="Editar">✏️</button>
+            <button class="btn btn-secondary btn-sm" onclick="verUsuariosEmpresa(${e.id},'${(e.nome_fantasia||'').replace(/'/g,"\\'")}')">👥</button>
+          </div>
+        </td>
+      </tr>
+      <tr class="usuarios-row" id="usuarios-row-${e.id}">
+        <td colspan="6">
+          <div class="usuarios-inner" id="usuarios-inner-${e.id}">
+            <div class="usuario-loading">Carregando usuários...</div>
+          </div>
+        </td>
+      </tr>`).join('');
   }
+
+  // Patch: quando dashboard.js chama renderizarEmpresasSA, interceptamos
+  const _origFiltrar = window.filtrarEmpresasSA;
+  window.filtrarEmpresasSA = function() {
+    if (typeof _origFiltrar === 'function') _origFiltrar();
+    // Re-aplica o render customizado após o original rodar
+    // (fallback: se não houver função original, renderizamos diretamente)
+  };
+
+  // Hook na tabela: observa quando tabelaEmpresas é populada pelo dashboard.js
+  // e re-renderiza com expand se estivermos no modo SA
+  const _tabelaObs = new MutationObserver(function(mutations) {
+    if (!document.body.classList.contains('modo-sa')) return;
+    const tbody = document.getElementById('tabelaEmpresas');
+    if (!tbody) return;
+    // Só reprocessa se não tiver os botões de expand ainda
+    if (tbody.querySelector('.empresa-expand-btn')) return;
+    // Extrai dados do DOM atual para recriar com expand
+    // Melhor: pega do array global do dashboard.js
+    const lista = window._todasEmpresasSA || window.todasEmpresas || [];
+    if (lista.length) _renderEmpresasSAComExpand(lista);
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const tbody = document.getElementById('tabelaEmpresas');
+    if (tbody) _tabelaObs.observe(tbody, { childList: true });
+  });
+
+  async function toggleUsuariosEmpresa(empresaId, rowEl) {
+    if (rowEl.classList.contains('empresa-expand-btn')) return; // clique no botão filho
+    const btnExpand = document.getElementById(`expand-btn-${empresaId}`);
+    const usuariosRow = document.getElementById(`usuarios-row-${empresaId}`);
+    const inner = document.getElementById(`usuarios-inner-${empresaId}`);
+    if (!usuariosRow) return;
+
+    const estaAberto = usuariosRow.classList.contains('visivel');
+    if (estaAberto) {
+      usuariosRow.classList.remove('visivel');
+      if (btnExpand) btnExpand.classList.remove('aberto');
+      return;
+    }
+
+    usuariosRow.classList.add('visivel');
+    if (btnExpand) btnExpand.classList.add('aberto');
+    inner.innerHTML = '<div class="usuario-loading">⏳ Carregando usuários...</div>';
+
+    try {
+      const token = localStorage.getItem('token');
+      const r = await fetch(`${_SA_API}/profissionais?empresa_id=${empresaId}`, {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      const data = await r.json();
+      if (!Array.isArray(data) || !data.length) {
+        inner.innerHTML = '<div class="usuario-loading" style="color:var(--muted2)">Nenhum usuário cadastrado.</div>';
+        return;
+      }
+      const labelPerfil = { admin: '👑 Admin', profissional: '🔍 Analista', superadmin: '⚡ SA' };
+      const badgePerfil = { admin: 'badge-confirmado', profissional: 'badge-pendente' };
+      inner.innerHTML = `
+        <div class="usuarios-inner-header">👥 USUÁRIOS DE ${data[0]?._empresa || ''}</div>
+        ${data.map(u => `
+          <div class="usuario-item">
+            <div class="usuario-avatar" style="background:${u.cor_agenda || '#0d9488'}">${(u.nome||'?').charAt(0).toUpperCase()}</div>
+            <span class="usuario-nome">${u.nome || '—'}</span>
+            <span class="usuario-email">${u.email || '—'}</span>
+            <span class="badge ${badgePerfil[u.perfil] || 'badge-confirmado'}" style="font-size:0.7rem">${labelPerfil[u.perfil] || u.perfil}</span>
+            <span class="badge ${u.ativo !== false ? 'badge-confirmado' : 'badge-cancelado'}" style="font-size:0.7rem">${u.ativo !== false ? '✅ Ativo' : '❌ Inativo'}</span>
+          </div>`).join('')}`;
+    } catch {
+      inner.innerHTML = '<div class="usuario-loading" style="color:var(--error)">Erro ao carregar usuários.</div>';
+    }
+  }
+
+  // ════════════════════════════════════════════════════════
+  // 4. LOGO / MENU EMPRESA → VOLTAR PARA INÍCIO (abaEmpresas)
+  // ════════════════════════════════════════════════════════
+  document.addEventListener('DOMContentLoaded', function() {
+    // Logo já chama voltarInicio() — sobrescrevemos para SA
+    const logoEl = document.querySelector('.logo-top');
+    if (logoEl) {
+      logoEl._origOnclick = logoEl.onclick;
+      logoEl.onclick = function() {
+        if (document.body.classList.contains('modo-sa')) {
+          window.mudarAba('empresas');
+        } else if (logoEl._origOnclick) {
+          logoEl._origOnclick();
+        }
+      };
+    }
+  });
+
+  // ════════════════════════════════════════════════════════
+  // 5. UPLOAD DE IMAGEM LOCAL (converte para base64 / URL blob)
+  // ════════════════════════════════════════════════════════
+  function carregarImagemLocal(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      document.getElementById('empFundoUrl').value = dataUrl;
+      if (typeof atualizarPreviewFundo === 'function') atualizarPreviewFundo(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ════════════════════════════════════════════════════════
+  // 6. POP-UP DE COBRANÇA (vencimento próximo / em atraso)
+  // ════════════════════════════════════════════════════════
+  let _popupCobrancaTimer = null;
+
+  function verificarVencimento() {
+    const u = JSON.parse(localStorage.getItem('usuario') || 'null');
+    if (!u || u.perfil === 'superadmin') return; // SA não vê popup
+
+    // Busca dados da empresa do usuário
+    const token = localStorage.getItem('token');
+    fetch(`${_SA_API}/empresas/${u.empresa_id || ''}`, {
+      headers: { Authorization: 'Bearer ' + token }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(empresa => {
+      if (!empresa || !empresa.vencimento) return;
+
+      const hoje = new Date();
+      hoje.setHours(0,0,0,0);
+      const venc = new Date(empresa.vencimento);
+      venc.setHours(0,0,0,0);
+      const diffDias = Math.ceil((venc - hoje) / 86400000);
+
+      if (diffDias < -5) {
+        // Mais de 5 dias em atraso → bloqueia acesso
+        localStorage.clear();
+        alert('⛔ Acesso suspenso.\n\nSua assinatura está com pagamento em atraso há mais de 5 dias.\nEntre em contato para regularizar.');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      if (diffDias >= -5 && diffDias <= 0) {
+        // Vencido há até 5 dias → mostra popup agora e a cada 10 min
+        const diasAtraso = Math.abs(diffDias);
+        const msg = diasAtraso === 0
+          ? 'Sua assinatura vence hoje. Regularize o pagamento para evitar a suspensão do acesso.'
+          : `Sua assinatura está com ${diasAtraso} dia${diasAtraso > 1 ? 's' : ''} de atraso. Regularize o pagamento para evitar a suspensão do acesso.`;
+        mostrarPopupCobranca(msg);
+        // Agenda repetição a cada 10 minutos
+        _popupCobrancaTimer = setInterval(() => mostrarPopupCobranca(msg), 10 * 60 * 1000);
+      }
+    })
+    .catch(() => {}); // Falha silenciosa
+  }
+
+  function mostrarPopupCobranca(msg) {
+    const popup = document.getElementById('popupCobranca');
+    const msgEl = document.getElementById('popupCobrancaMsg');
+    if (!popup) return;
+    if (msgEl) msgEl.textContent = msg;
+    popup.classList.add('ativo');
+  }
+
+  function fecharPopupCobranca() {
+    const popup = document.getElementById('popupCobranca');
+    if (popup) popup.classList.remove('ativo');
+  }
+
+  // Roda a verificação quando a página carrega
+  document.addEventListener('DOMContentLoaded', verificarVencimento);
   </script>
 
   <!-- Modal Dashboard Stats -->
@@ -1274,6 +1470,18 @@
       </div>
     </div>
   </div>
+  <!-- Pop-up de cobrança (boleto em aberto) -->
+  <div id="popupCobranca">
+    <div class="popup-cobranca-box">
+      <div class="popup-cobranca-icon">⚠️</div>
+      <div class="popup-cobranca-title">Atenção — Boleto em Aberto</div>
+      <div class="popup-cobranca-msg" id="popupCobrancaMsg">
+        Sua assinatura possui um pagamento em aberto. Entre em contato para regularizar e evitar a suspensão do acesso.
+      </div>
+      <button class="btn btn-primary" onclick="fecharPopupCobranca()">Entendi</button>
+    </div>
+  </div>
+
 </body>
 
 </html>
