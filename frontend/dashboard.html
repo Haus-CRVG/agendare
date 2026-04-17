@@ -843,57 +843,89 @@
   </div>
 
   <div class="modal-overlay" id="modalEmpresa">
-    <div class="modal" style="max-width:580px">
+    <div class="modal" style="max-width:620px">
       <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
       <input type="hidden" id="empId" />
-      <div
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
-        <p
-          style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
-          Dados da Empresa</p>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">📋 Dados da Empresa</p>
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empNome"
-              placeholder="Ex: Salão da Maria" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empCnpj"
-              placeholder="00.000.000/0001-00" /></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail"
-              placeholder="contato@empresa.com" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
-              id="empTelefone" placeholder="(00) 00000-0000" /></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
-              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
-              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
-                id="slugPreview">slug</strong></span></div>
-          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
-              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
-        </div>
-      </div>
-      <div id="secaoAdmin">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
-          <p
-            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
-            👑 Administrador da Empresa</p>
-          <div class="form-grid">
-            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
-                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
-                placeholder="Nome completo" /></div>
-            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
-                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
-                placeholder="admin@empresa.com" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span style="color:var(--accent)">*</span></label><input type="text" id="empNome" placeholder="Ex: Clínica Vida Plena" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label><input type="text" id="empCnpj" placeholder="00.000.000/0001-00" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail" placeholder="contato@empresa.com" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text" id="empTelefone" placeholder="(00) 00000-0000" /></div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Slug <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="empSlug" placeholder="clinica-vida-plena"
+              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');document.getElementById('slugPreview').textContent=this.value||'slug'" />
+            <span style="font-size:0.7rem;color:var(--muted)">agendar.html?empresa=<strong id="slugPreview">slug</strong></span>
           </div>
-          <div class="form-group" style="margin-bottom:0"><label>Senha <span
-                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
-              placeholder="Mínimo 6 caracteres" /></div>
+          <div class="form-group" style="margin-bottom:0"><label>Vencimento</label><input type="date" id="empVencimento" /></div>
         </div>
       </div>
-      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">🎨 Identidade Visual</p>
+        <div class="form-grid" style="margin-bottom:0.75rem">
+          <div class="form-group">
+            <label>Cor primária</label>
+            <div style="display:flex;align-items:center;gap:0.6rem">
+              <input type="color" id="empCor" value="#0d9488"
+                style="height:40px;width:52px;padding:3px;cursor:pointer;border-radius:8px;border:1px solid var(--border);flex-shrink:0"
+                oninput="atualizarPreviewCor(this.value)" />
+              <div id="previewCor" style="flex:1;height:40px;border-radius:8px;background:#0d9488;display:flex;align-items:center;justify-content:center;transition:background 0.2s">
+                <span style="color:#fff;font-size:0.78rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.2)">Prévia</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Imagem de fundo (marca d'água)</label>
+            <input type="url" id="empFundoUrl" placeholder="https://exemplo.com/logo.png" oninput="atualizarPreviewFundo(this.value)" />
+            <span style="font-size:0.7rem;color:var(--muted)">Aparece semitransparente no dashboard</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
+          <label style="font-size:0.78rem;font-weight:600;white-space:nowrap">Opacidade</label>
+          <input type="range" id="empOpacidade" min="5" max="40" value="12" style="flex:1;accent-color:var(--accent)"
+            oninput="atualizarOpacidadePreview(this.value)" />
+          <span id="empOpacidadeVal" style="font-size:0.78rem;color:var(--muted);width:36px;text-align:right">12%</span>
+          <input type="hidden" id="empOpacidadeHidden" value="12" />
+        </div>
+        <!-- Preview do layout -->
+        <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
+          <div id="previewTopbar" style="background:#0d9488;padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
+            <span style="color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px">AGENDARE</span>
+            <div style="display:flex;gap:4px"><div style="width:18px;height:6px;border-radius:3px;background:rgba(255,255,255,0.35)"></div><div style="width:18px;height:6px;border-radius:3px;background:rgba(255,255,255,0.35)"></div></div>
+          </div>
+          <div style="display:flex;height:56px">
+            <div id="previewSidebar" style="width:80px;padding:6px;border-right:1px solid rgba(13,148,136,0.28)">
+              <div id="previewSidebarItem" style="background:#0d9488;border-radius:5px;padding:4px 6px;color:#fff;font-size:10px;font-weight:600;margin-bottom:3px">📅 Agenda</div>
+              <div style="padding:4px 6px;color:#94a3b8;font-size:10px">📋 Lista</div>
+            </div>
+            <div style="flex:1;padding:8px 10px;position:relative;overflow:hidden">
+              <div id="previewFundoImg" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.12"></div>
+              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:#1e293b;position:relative">Agenda <span id="previewAccentText" style="color:#0d9488">do Dia</span></div>
+              <div style="display:flex;gap:4px;margin-top:4px;position:relative">
+                <div id="previewStatCard" style="background:rgba(13,148,136,0.18);border:1px solid rgba(13,148,136,0.28);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#0d9488">3 hoje</div>
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;font-size:10px;color:#94a3b8">0 canc.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="secaoAdmin">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+          <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">👑 Administrador Inicial</p>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome" placeholder="Nome completo" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail" placeholder="admin@empresa.com" /></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label>Senha <span style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha" placeholder="Mínimo 6 caracteres" /></div>
+        </div>
+      </div>
+
+      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
         <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
@@ -904,18 +936,60 @@
   </div>
 
   <div class="modal-overlay" id="modalVerEmpresa">
-    <div class="modal" style="max-width:480px">
+    <div class="modal" style="max-width:520px">
       <h3>🏢 Detalhes da Empresa</h3>
-      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
-      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
-          <option value="ativo">✅ Ativo</option>
-          <option value="suspenso">⚠️ Suspenso</option>
-          <option value="cancelado">❌ Cancelado</option>
-        </select></div>
+      <div id="detalheEmpresa" style="margin-bottom:1rem"></div>
+
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">⚙️ Configurações</p>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0.75rem">
+            <label>Status</label>
+            <select id="editEmpresaStatus">
+              <option value="ativo">✅ Ativo</option>
+              <option value="suspenso">⚠️ Suspenso</option>
+              <option value="cancelado">❌ Cancelado</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Cor primária</label>
+            <div style="display:flex;align-items:center;gap:0.6rem">
+              <input type="color" id="editEmpresaCor" value="#0d9488"
+                style="height:40px;width:52px;padding:3px;cursor:pointer;border-radius:8px;border:1px solid var(--border);flex-shrink:0"
+                oninput="atualizarPreviewCorEdit(this.value)" />
+              <div id="previewCorEdit" style="flex:1;height:40px;border-radius:8px;background:#0d9488;display:flex;align-items:center;justify-content:center;transition:background 0.2s">
+                <span style="color:#fff;font-size:0.78rem;font-weight:700">Prévia</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Imagem de fundo (URL)</label>
+          <input type="url" id="editEmpresaFundo" placeholder="https://..." style="width:100%" oninput="atualizarPreviewFundoEdit(this.value)" />
+        </div>
+        <!-- Mini preview edit -->
+        <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+          <div id="editLpTopbar" style="background:#0d9488;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
+            <span style="color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:12px">AGENDARE</span>
+            <div style="width:28px;height:5px;border-radius:3px;background:rgba(255,255,255,0.35)"></div>
+          </div>
+          <div style="display:flex;height:46px">
+            <div id="editLpSidebar" style="width:72px;padding:5px;border-right:1px solid rgba(13,148,136,0.28)">
+              <div id="editLpItem" style="background:#0d9488;border-radius:4px;padding:3px 5px;color:#fff;font-size:10px;font-weight:600">📅 Agenda</div>
+            </div>
+            <div style="flex:1;padding:7px 9px;position:relative;overflow:hidden">
+              <div id="editLpFundo" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.12"></div>
+              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:#1e293b;position:relative">Agenda <span id="editLpAccent" style="color:#0d9488">do Dia</span></div>
+              <div style="margin-top:3px;position:relative"><div id="editLpChip" style="display:inline-block;background:rgba(13,148,136,0.18);border:1px solid rgba(13,148,136,0.28);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;color:#0d9488">3 hoje</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <input type="hidden" id="editEmpresaId" />
-      <div class="modal-actions"><button class="btn btn-secondary"
-          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
-          onclick="atualizarEmpresa()">Salvar</button></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
+        <button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar alterações</button>
+      </div>
     </div>
   </div>
 

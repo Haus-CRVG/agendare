@@ -20,14 +20,46 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Ag
 
 function corProf(prof) { return prof?.cor_agenda || prof?.cor || '#0d9488'; }
 
-// ── Inicialização ─────────────────────────────────────────
+// ── Aplica tema da empresa (cor + imagem de fundo) ────────
+function aplicarTemaEmpresa(u) {
+  const cor = u.cor_primaria || '#0d9488';
+  document.documentElement.style.setProperty('--accent', cor);
+  document.documentElement.style.setProperty('--accent-hover', cor + 'cc');
+  try {
+    const r = parseInt(cor.slice(1,3),16)||13;
+    const g = parseInt(cor.slice(3,5),16)||148;
+    const b = parseInt(cor.slice(5,7),16)||136;
+    document.documentElement.style.setProperty('--accent-soft',   `rgba(${r},${g},${b},0.10)`);
+    document.documentElement.style.setProperty('--accent-border', `rgba(${r},${g},${b},0.28)`);
+  } catch(e) {}
+
+  // Remove overlay anterior
+  const ant = document.getElementById('_fundoOverlay');
+  if (ant) ant.remove();
+
+  // Aplica imagem de fundo como marca d'água fixa
+  if (u.imagem_fundo_url) {
+    const opacidade = ((u.imagem_fundo_opacidade ?? 12)) / 100;
+    const overlay = document.createElement('div');
+    overlay.id = '_fundoOverlay';
+    overlay.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:0', 'pointer-events:none',
+      `background-image:url('${u.imagem_fundo_url}')`,
+      'background-size:cover', 'background-position:center', 'background-attachment:fixed',
+      `opacity:${opacidade}`
+    ].join(';');
+    document.body.prepend(overlay);
+  }
+}
+
 function init() {
   token   = localStorage.getItem('token');
   usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
   if (!token || !usuario) { window.location.href = 'index.html'; return; }
   usuario.id = parseInt(usuario.id);
 
-  document.getElementById('nomeUsuario').textContent = usuario.nome;
+  // Aplica tema da empresa imediatamente ao carregar
+  aplicarTemaEmpresa(usuario);
   document.getElementById('badgePerfil').textContent =
     usuario.perfil === 'superadmin' ? '⚡ Super Admin' :
     usuario.perfil === 'admin'      ? '👑 Admin'       : '🔍 Analista';
@@ -1057,23 +1089,84 @@ async function carregarEmpresas(){
   try{const r=await fetch(`${API}/empresas`,{headers:{Authorization:`Bearer ${token}`}});todasEmpresas=await r.json();renderEmpresas(todasEmpresas);}
   catch(err){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Erro ao carregar.</td></tr>';}
 }
-function filtrarEmpresasSA(){const q=document.getElementById('pesquisaEmpresas').value.toLowerCase();renderEmpresas(todasEmpresas.filter(e=>e.nome.toLowerCase().includes(q)||e.cnpj?.includes(q)));}
+function filtrarEmpresasSA(){
+  const q=document.getElementById('pesquisaEmpresas').value.toLowerCase();
+  renderEmpresas(todasEmpresas.filter(e=>(e.nome_fantasia||e.nome||'').toLowerCase().includes(q)||e.cnpj?.includes(q)));
+}
 function renderEmpresas(lista){
   const tbody=document.getElementById('tabelaEmpresas');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa encontrada.</td></tr>';return;}
   const statusBadge={ativo:'badge-confirmado',suspenso:'badge-pendente',cancelado:'badge-cancelado'};
-  tbody.innerHTML=lista.map(e=>`<tr>
-    <td><strong>${e.nome}</strong></td><td>${e.cnpj||'—'}</td><td>${e.email||'—'}</td>
-    <td><code style="font-size:0.78rem">${e.slug||'—'}</code></td>
-    <td><span class="badge ${statusBadge[e.status]||''}">${e.status||'ativo'}</span></td>
-    <td><div style="display:flex;gap:4px">
-      <button class="btn btn-secondary btn-sm" onclick="verEmpresa(${e.id})">👁️</button>
-      <button class="btn btn-secondary btn-sm" onclick="verUsuariosSA(${e.id},'${e.nome}')">👥</button>
-    </div></td>
-  </tr>`).join('');
+  tbody.innerHTML=lista.map(e=>{
+    const cor=e.cor_primaria||'#0d9488';
+    const nome=e.nome_fantasia||e.nome||'—';
+    return `<tr>
+      <td><strong>${nome}</strong></td>
+      <td>${e.cnpj||'—'}</td>
+      <td>${e.email||'—'}</td>
+      <td><code style="font-size:0.78rem">${e.slug||'—'}</code></td>
+      <td><span class="badge ${statusBadge[e.status]||''}">${e.status||'ativo'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-secondary btn-sm" onclick="verEmpresa(${e.id})">✏️</button>
+        <button class="btn btn-secondary btn-sm" onclick="verUsuariosSA(${e.id},'${nome.replace(/'/g,"\\'")}')">👥</button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
-function abrirNovaEmpresa(){document.getElementById('empId').value='';document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';document.getElementById('btnEmpresaText').textContent='Criar Empresa';['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>document.getElementById(id).value='');document.getElementById('empCor').value='#0d9488';document.getElementById('secaoAdmin').style.display='block';document.getElementById('erroEmpresa').style.display='none';document.getElementById('slugPreview').textContent='slug';document.getElementById('modalEmpresa').classList.add('active');}
+
+// ── Preview helpers ───────────────────────────────────────
+function _aplicarCorPreviewDash(cor, ids) {
+  try {
+    const r=parseInt(cor.slice(1,3),16), g=parseInt(cor.slice(3,5),16), b=parseInt(cor.slice(5,7),16);
+    const soft=`rgba(${r},${g},${b},0.09)`, borda=`rgba(${r},${g},${b},0.28)`, soft2=`rgba(${r},${g},${b},0.18)`;
+    const el=id=>document.getElementById(id);
+    if(el(ids.topbar))  el(ids.topbar).style.background=cor;
+    if(el(ids.sidebar)) { el(ids.sidebar).style.background=soft; el(ids.sidebar).style.borderRightColor=borda; }
+    if(el(ids.item))    el(ids.item).style.background=cor;
+    if(el(ids.accent))  el(ids.accent).style.color=cor;
+    if(el(ids.chip))    { el(ids.chip).style.background=soft2; el(ids.chip).style.color=cor; }
+    if(el(ids.prev))    { el(ids.prev).style.background=cor; el(ids.prev).style.boxShadow=`0 0 0 3px ${cor}44`; }
+  } catch(e){}
+}
+function atualizarPreviewCor(cor) {
+  _aplicarCorPreviewDash(cor, {topbar:'previewTopbar',sidebar:'previewSidebar',item:'previewSidebarItem',accent:'previewAccentText',chip:'previewStatCard',prev:'previewCor'});
+}
+function atualizarPreviewCorEdit(cor) {
+  _aplicarCorPreviewDash(cor, {topbar:'editLpTopbar',sidebar:'editLpSidebar',item:'editLpItem',accent:'editLpAccent',chip:'editLpChip',prev:'previewCorEdit'});
+}
+function atualizarPreviewFundo(url) {
+  const el=document.getElementById('previewFundoImg'); if(!el)return;
+  const ok=url&&url.startsWith('http'); el.style.display=ok?'block':'none'; if(ok)el.style.backgroundImage=`url('${url}')`;
+}
+function atualizarPreviewFundoEdit(url) {
+  const el=document.getElementById('editLpFundo'); if(!el)return;
+  const ok=url&&url.startsWith('http'); el.style.display=ok?'block':'none'; if(ok)el.style.backgroundImage=`url('${url}')`;
+}
+function atualizarOpacidadePreview(val) {
+  document.getElementById('empOpacidadeVal').textContent=val+'%';
+  document.getElementById('empOpacidadeHidden').value=val;
+  const el=document.getElementById('previewFundoImg'); if(el) el.style.opacity=val/100;
+}
+
+function abrirNovaEmpresa(){
+  document.getElementById('empId').value='';
+  document.getElementById('tituloModalEmpresa').textContent='🏢 Nova Empresa';
+  document.getElementById('btnEmpresaText').textContent='Criar Empresa';
+  ['empNome','empCnpj','empEmail','empTelefone','empSlug','empAdminNome','empAdminEmail','empAdminSenha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('empCor').value='#0d9488';
+  ['empFundoUrl','empVencimento'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const op=document.getElementById('empOpacidade'); if(op)op.value=12;
+  const oh=document.getElementById('empOpacidadeHidden'); if(oh)oh.value=12;
+  const ov=document.getElementById('empOpacidadeVal'); if(ov)ov.textContent='12%';
+  document.getElementById('secaoAdmin').style.display='block';
+  document.getElementById('erroEmpresa').style.display='none';
+  document.getElementById('slugPreview').textContent='slug';
+  atualizarPreviewCor('#0d9488');
+  atualizarPreviewFundo('');
+  document.getElementById('modalEmpresa').classList.add('active');
+}
 function fecharModalEmpresa(){document.getElementById('modalEmpresa').classList.remove('active');}
+
 async function salvarEmpresa(){
   const id=document.getElementById('empId').value;
   const nome=document.getElementById('empNome').value.trim();
@@ -1082,6 +1175,9 @@ async function salvarEmpresa(){
   const tel=document.getElementById('empTelefone').value.trim();
   const slug=document.getElementById('empSlug').value.trim();
   const cor=document.getElementById('empCor').value;
+  const fundo=document.getElementById('empFundoUrl')?.value?.trim()||null;
+  const op=parseInt(document.getElementById('empOpacidadeHidden')?.value||'12');
+  const venc=document.getElementById('empVencimento')?.value||null;
   const erro=document.getElementById('erroEmpresa');
   if(!nome||!cnpj||!slug){erro.textContent='Nome, CNPJ e Slug são obrigatórios';erro.style.display='block';return;}
   document.getElementById('spinnerEmpresa').style.display='inline-block';erro.style.display='none';
@@ -1092,44 +1188,72 @@ async function salvarEmpresa(){
       const adminSenha=document.getElementById('empAdminSenha').value;
       if(!adminNome||!adminEmail||!adminSenha){erro.textContent='Dados do administrador são obrigatórios';erro.style.display='block';return;}
       const r=await fetch(`${API}/empresas`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-        body:JSON.stringify({nome,cnpj,email:email||null,telefone:tel||null,slug,cor_primaria:cor,admin:{nome:adminNome,email:adminEmail,senha:adminSenha}})});
+        body:JSON.stringify({nome_fantasia:nome,cnpj,email:email||null,telefone:tel||null,slug,cor_primaria:cor,
+          imagem_fundo_url:fundo,imagem_fundo_opacidade:op,vencimento:venc,
+          admin_nome:adminNome,admin_email:adminEmail,admin_senha:adminSenha})});
       const d=await r.json();if(!r.ok){erro.textContent=d.erro||'Erro ao criar';erro.style.display='block';return;}
+    } else {
+      const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+        body:JSON.stringify({nome_fantasia:nome,email:email||null,telefone:tel||null,slug,cor_primaria:cor,
+          imagem_fundo_url:fundo,imagem_fundo_opacidade:op,vencimento:venc})});
+      if(!r.ok){const d=await r.json();erro.textContent=d.erro||'Erro ao salvar';erro.style.display='block';return;}
     }
     fecharModalEmpresa();carregarEmpresas();mostrarToast('✅ Empresa salva!',nome);
   }catch{erro.textContent='Erro de conexão';erro.style.display='block';}
   finally{document.getElementById('spinnerEmpresa').style.display='none';}
 }
+
 async function verEmpresa(id){
   const e=todasEmpresas.find(x=>x.id===id);if(!e)return;
+  const nome=e.nome_fantasia||e.nome||'—';
   document.getElementById('detalheEmpresa').innerHTML=`
-    <div style="font-size:0.88rem;line-height:2">
-      <div><strong>Nome:</strong> ${e.nome}</div><div><strong>CNPJ:</strong> ${e.cnpj||'—'}</div>
-      <div><strong>E-mail:</strong> ${e.email||'—'}</div><div><strong>Slug:</strong> ${e.slug||'—'}</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem;font-size:0.85rem;line-height:1.8">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.3rem 1rem">
+        <div><span style="color:var(--muted);font-size:0.72rem">Nome</span><div style="font-weight:700">${nome}</div></div>
+        <div><span style="color:var(--muted);font-size:0.72rem">CNPJ</span><div>${e.cnpj||'—'}</div></div>
+        <div><span style="color:var(--muted);font-size:0.72rem">E-mail</span><div>${e.email||'—'}</div></div>
+        <div><span style="color:var(--muted);font-size:0.72rem">Slug</span><code style="font-size:0.78rem">${e.slug||'—'}</code></div>
+      </div>
     </div>`;
   document.getElementById('editEmpresaStatus').value=e.status||'ativo';
   document.getElementById('editEmpresaId').value=id;
+
+  const cor=e.cor_primaria||'#0d9488';
+  document.getElementById('editEmpresaCor').value=cor;
+  atualizarPreviewCorEdit(cor);
+
+  const fundo=e.imagem_fundo_url||'';
+  document.getElementById('editEmpresaFundo').value=fundo;
+  atualizarPreviewFundoEdit(fundo);
+
   document.getElementById('modalVerEmpresa').classList.add('active');
 }
 function fecharModalVerEmpresa(){document.getElementById('modalVerEmpresa').classList.remove('active');}
 async function atualizarEmpresa(){
   const id=document.getElementById('editEmpresaId').value;
   const status=document.getElementById('editEmpresaStatus').value;
-  try{const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({status})});
+  const cor=document.getElementById('editEmpresaCor').value;
+  const fundo=document.getElementById('editEmpresaFundo').value.trim()||null;
+  try{
+    const r=await fetch(`${API}/empresas/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+      body:JSON.stringify({status,cor_primaria:cor,imagem_fundo_url:fundo})});
     if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro||'Erro');return;}
-    fecharModalVerEmpresa();carregarEmpresas();mostrarToast('✅ Empresa atualizada!','');
+    fecharModalVerEmpresa();carregarEmpresas();mostrarToast('✅ Empresa atualizada!','Cor e configurações salvas.');
   }catch{mostrarToast('❌ Erro','Erro de conexão');}
 }
+
 async function verUsuariosSA(empresaId,nomeEmpresa){
   document.getElementById('tituloEmpresaUsuariosSA').textContent=nomeEmpresa;
   document.getElementById('listaUsuariosSA').innerHTML='<p style="color:var(--muted)">Carregando...</p>';
   document.getElementById('modalUsuariosSA').classList.add('active');
   try{const r=await fetch(`${API}/profissionais?empresa_id=${empresaId}`,{headers:{Authorization:`Bearer ${token}`}});
     const lista=await r.json();
+    const badgePerfil={admin:'badge-confirmado',profissional:'badge-pendente'};
     document.getElementById('listaUsuariosSA').innerHTML=lista.map(p=>`
       <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0;border-bottom:1px solid var(--border)">
         <div style="width:32px;height:32px;border-radius:50%;background:${corProf(p)};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">${p.nome.charAt(0)}</div>
         <div><div style="font-weight:600">${p.nome}</div><div style="font-size:0.75rem;color:var(--muted)">${p.email}</div></div>
-        <span class="badge ${p.perfil==='admin'?'badge-confirmado':'badge-pendente'}" style="margin-left:auto">${p.perfil}</span>
+        <span class="badge ${badgePerfil[p.perfil]||''}" style="margin-left:auto">${p.perfil==='admin'?'👑 Admin':'🔍 Analista'}</span>
       </div>`).join('')||'<p style="color:var(--muted)">Nenhum usuário.</p>';
   }catch{document.getElementById('listaUsuariosSA').innerHTML='<p style="color:var(--muted)">Erro ao carregar.</p>';}
 }
