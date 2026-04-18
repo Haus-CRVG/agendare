@@ -51,7 +51,7 @@ router.get('/slug/:slug', async (req, res) => {
 router.post('/', auth(['superadmin']), superAdminOnly, async (req, res) => {
   const {
     cnpj, nome_fantasia, email, telefone, slug, cor_primaria, vencimento,
-    admin_nome, admin_email, admin_senha, imagem_fundo_url
+    admin_nome, admin_email, admin_senha, imagem_fundo_url, imagem_fundo_opacidade
   } = req.body;
 
   if (!cnpj || !nome_fantasia || !slug)
@@ -65,10 +65,11 @@ router.post('/', auth(['superadmin']), superAdminOnly, async (req, res) => {
 
     // Cria a empresa
     const empResult = await client.query(
-      `INSERT INTO empresas (cnpj, nome_fantasia, email, telefone, slug, cor_primaria, vencimento, imagem_fundo_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      `INSERT INTO empresas (cnpj, nome_fantasia, email, telefone, slug, cor_primaria, vencimento, imagem_fundo_url, imagem_fundo_opacidade)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [cnpj.replace(/\D/g,''), nome_fantasia, email||null, telefone||null,
-       slug.toLowerCase().replace(/\s+/g,'-'), cor_primaria||'#0d9488', vencimento||null, imagem_fundo_url||null]
+       slug.toLowerCase().replace(/\s+/g,'-'), cor_primaria||'#0d9488', vencimento||null,
+       imagem_fundo_url||null, imagem_fundo_opacidade||12]
     );
     const empresa = empResult.rows[0];
 
@@ -97,21 +98,24 @@ router.post('/', auth(['superadmin']), superAdminOnly, async (req, res) => {
 
 // PATCH /api/empresas/:id — editar empresa
 router.patch('/:id', auth(['superadmin']), superAdminOnly, async (req, res) => {
-  const { cnpj, nome_fantasia, email, telefone, slug, cor_primaria, status, vencimento, imagem_fundo_url } = req.body;
+  const { cnpj, nome_fantasia, email, telefone, slug, cor_primaria, status, vencimento, imagem_fundo_url, imagem_fundo_opacidade } = req.body;
   try {
     const result = await pool.query(`
       UPDATE empresas SET
-        cnpj             = COALESCE($1, cnpj),
-        nome_fantasia    = COALESCE($2, nome_fantasia),
-        email            = COALESCE($3, email),
-        telefone         = COALESCE($4, telefone),
-        slug             = COALESCE($5, slug),
-        cor_primaria     = COALESCE($6, cor_primaria),
-        status           = COALESCE($7, status),
-        vencimento       = COALESCE($8, vencimento),
-        imagem_fundo_url = COALESCE($9, imagem_fundo_url)
-      WHERE id = $10 RETURNING *`,
-      [cnpj, nome_fantasia, email, telefone, slug?.toLowerCase(), cor_primaria, status, vencimento, imagem_fundo_url||null, req.params.id]
+        cnpj                   = COALESCE($1, cnpj),
+        nome_fantasia          = COALESCE($2, nome_fantasia),
+        email                  = COALESCE($3, email),
+        telefone               = COALESCE($4, telefone),
+        slug                   = COALESCE($5, slug),
+        cor_primaria           = COALESCE($6, cor_primaria),
+        status                 = COALESCE($7, status),
+        vencimento             = COALESCE($8, vencimento),
+        imagem_fundo_url       = COALESCE($9, imagem_fundo_url),
+        imagem_fundo_opacidade = COALESCE($10, imagem_fundo_opacidade)
+      WHERE id = $11 RETURNING *`,
+      [cnpj, nome_fantasia, email, telefone, slug?.toLowerCase(), cor_primaria, status,
+       vencimento, imagem_fundo_url!==undefined?(imagem_fundo_url||null):undefined,
+       imagem_fundo_opacidade||null, req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ erro: 'Empresa não encontrada' });
     res.json(result.rows[0]);
