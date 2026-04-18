@@ -305,8 +305,9 @@ function renderSchedulerGrade(container) {
       const prof      = profissionais.find(p => p.id === ag.profissional_id);
       const cor       = corProf(prof);
       const atrasado  = !['concluido','cancelado'].includes(ag.status) && fim < agora;
-      const corFundo  = atrasado ? '#fef2f2' : hexToRgba(cor, 0.12);
-      const corBorda  = atrasado ? '#ef4444' : cor;
+      const ehPeriodo = !!ag.data_fim_periodo || !!ag.evento_pessoal;
+      const corFundo  = atrasado ? '#fef2f2' : ehPeriodo ? 'rgba(245,158,11,0.13)' : hexToRgba(cor, 0.12);
+      const corBorda  = atrasado ? '#ef4444' : ehPeriodo ? '#f59e0b' : cor;
       const largPct   = (100 / totalCols);
       const leftPct   = col * largPct;
       const podeEditar = usuario.perfil === 'admin' || ag.profissional_id === usuario.id;
@@ -424,12 +425,15 @@ function renderSchedulerMes(container) {
       const prof = profissionais.find(p => p.id === a.profissional_id);
       const cor  = corProf(prof);
       const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
-      const corUs = atrasado ? '#ef4444' : cor;
+      const ehPeriodo = !!a.data_fim_periodo || !!a.evento_pessoal;
+      const corUs = atrasado ? '#ef4444' : ehPeriodo ? '#f59e0b' : cor;
       const hora  = a.dia_todo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
-      return `<div class="sch-mes-ev" style="background:${hexToRgba(corUs,0.15)};border-left:2px solid ${corUs};color:${corUs}"
+      const bgEv  = ehPeriodo ? 'rgba(245,158,11,0.18)' : hexToRgba(corUs,0.15);
+      return `<div class="sch-mes-ev" style="background:${bgEv};border-left:2px solid ${corUs};color:${corUs}"
         onclick="event.stopPropagation();abrirVerAgendamentoKanban(${a.id})"
         title="${a.cliente_nome} | ${hora}">
         <span class="sch-mes-ev-hora">${hora}</span> ${a.cliente_nome}
+        ${ehPeriodo ? '<span style="font-size:0.58rem;background:#f59e0b;color:#fff;border-radius:3px;padding:0 3px;margin-left:3px;font-weight:800">PERÍODO</span>' : ''}
       </div>`;
     }).join('');
 
@@ -437,9 +441,17 @@ function renderSchedulerMes(container) {
       ? `<div class="sch-mes-mais" onclick="event.stopPropagation();schedulerVerDia('${ds}')">+${evsDia.length - maxVisiveis} mais</div>`
       : '';
 
-    celulas += `<div class="sch-mes-celula ${ehHoje ? 'sch-mes-hoje' : ''} ${ehSel ? 'sch-mes-selecionado' : ''}"
+    // Dias intermediários do período: fundo âmbar suave sem evento
+    const bandeiraDePeriodo = ehDiaDePeriodo
+      ? `<div style="font-size:0.68rem;background:rgba(245,158,11,0.2);border-left:2px solid #f59e0b;color:#92400e;
+           border-radius:4px;padding:2px 5px;margin-bottom:2px;font-weight:600">🌴 Em período</div>`
+      : '';
+
+    celulas += `<div class="sch-mes-celula ${ehHoje ? 'sch-mes-hoje' : ''} ${ehSel ? 'sch-mes-selecionado' : ''} ${ehDiaDePeriodo ? 'sch-mes-periodo' : ''}"
+      style="${ehDiaDePeriodo ? 'background:rgba(245,158,11,0.06);outline:1.5px dashed rgba(245,158,11,0.35);outline-offset:-2px;' : ''}"
       onclick="schedulerVerDia('${ds}')">
       <div class="sch-mes-num">${d}</div>
+      ${bandeiraDePeriodo}
       ${eventosHtml}${extra}
     </div>`;
   }
@@ -840,6 +852,20 @@ function abrirNovoAgendamento() {
   if(_campoExt) _campoExt.style.display='none';
   const _emailExt=document.getElementById('emailConvidado');
   if(_emailExt) _emailExt.value='';
+  // Resetar campos de período/evento pessoal
+  const _dataFim=document.getElementById('agDataFim');
+  if(_dataFim) _dataFim.value='';
+  const _chkPess=document.getElementById('chkEventoPessoal');
+  if(_chkPess){ _chkPess.checked=false; }
+  const _campoPess=document.getElementById('campoEventoPessoal');
+  if(_campoPess) _campoPess.style.display='none';
+  const _tipoEv=document.getElementById('agTipoEventoPessoal');
+  if(_tipoEv) _tipoEv.value='';
+  // Resetar toggle visual do "Dia Todo"
+  const _track=document.getElementById('toggleDiaTodoTrack');
+  const _thumb=document.getElementById('toggleDiaTodoThumb');
+  if(_track) _track.style.background='#d1d5db';
+  if(_thumb) _thumb.style.transform='translateX(0)';
   document.getElementById('modalAgendamento').classList.add('active');
 }
 function fecharModalAgendamento(){document.getElementById('modalAgendamento').classList.remove('active');}
@@ -856,20 +882,53 @@ async function salvarAgendamento() {
   const addPart=document.getElementById('chkAddParticipante').checked;
   const partId=document.getElementById('agParticipante').value;
   const erro=document.getElementById('erroAgendamento');
+
+  // Campos novos: data fim de período, evento pessoal, tipo
+  const dataFimInput   = document.getElementById('agDataFim')?.value || null;
+  const eventoPessoal  = document.getElementById('chkEventoPessoal')?.checked || false;
+  const tipoEvento     = document.getElementById('agTipoEventoPessoal')?.value || null;
+
   if(!titulo){erro.textContent='Informe o título';erro.style.display='block';return;}
   if(!data){erro.textContent='Informe a data';erro.style.display='block';return;}
+  if(dataFimInput && dataFimInput < data){erro.textContent='A data fim não pode ser anterior à data início';erro.style.display='block';return;}
   if(!diaTodo&&!horaIni){erro.textContent='Informe o horário de início';erro.style.display='block';return;}
   if(!diaTodo&&!horaFim){erro.textContent='Informe o horário de fim';erro.style.display='block';return;}
   erro.style.display='none';
   document.getElementById('btnAgendar').style.display='none';
   document.getElementById('spinnerAgendar').style.display='inline-block';
   try {
-    const data_inicio=diaTodo?`${data}T00:00:00-03:00`:`${data}T${horaIni}:00-03:00`;
-    const data_fim=diaTodo?`${data}T23:59:59-03:00`:`${data}T${horaFim}:00-03:00`;
+    // Usa offset real do browser para evitar bug de "dia anterior"
+    const tzOffset = -new Date().getTimezoneOffset();
+    const tzSign   = tzOffset >= 0 ? '+' : '-';
+    const tzHH     = String(Math.floor(Math.abs(tzOffset)/60)).padStart(2,'0');
+    const tzMM     = String(Math.abs(tzOffset)%60).padStart(2,'0');
+    const tz       = `${tzSign}${tzHH}:${tzMM}`;
+
+    const data_inicio = diaTodo ? `${data}T00:00:00${tz}` : `${data}T${horaIni}:00${tz}`;
+    // Se tem dataFim de período: usa ela como data_fim, senão comportamento original
+    const dataFimReal = dataFimInput || data;
+    const data_fim    = diaTodo ? `${dataFimReal}T23:59:59${tz}` : `${data}T${horaFim}:00${tz}`;
+
     const emailConvidado = document.getElementById('chkConvidarExterno')?.checked
       ? (document.getElementById('emailConvidado')?.value?.trim() || null) : null;
+
+    const payload = {
+      empresa_id:usuario.empresa_id,
+      profissional_id:usuario.id,
+      cliente_nome:titulo,
+      data_inicio,
+      data_fim,
+      dia_todo:diaTodo,
+      observacoes:obs||null,
+      email_convidado:emailConvidado,
+      // Campos de período pessoal
+      evento_pessoal: eventoPessoal || null,
+      tipo_evento: tipoEvento || null,
+      data_fim_periodo: (dataFimInput && dataFimInput !== data) ? `${dataFimInput}T23:59:59${tz}` : null
+    };
+
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
-      body:JSON.stringify({empresa_id:usuario.empresa_id,profissional_id:usuario.id,cliente_nome:titulo,data_inicio,data_fim,dia_todo:diaTodo,observacoes:obs||null,email_convidado:emailConvidado})});
+      body:JSON.stringify(payload)});
     const dataResp=await r.json();
     if(!r.ok){erro.textContent=dataResp.erro||'Erro ao salvar';erro.style.display='block';return;}
     if(addPart&&partId) await fetch(`${API}/participantes`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({agendamento_id:dataResp.id,profissional_id:parseInt(partId)})});
