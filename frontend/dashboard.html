@@ -393,6 +393,38 @@
       text-overflow: ellipsis
     }
   </style>
+  <style>
+    /* ── Eventos de período (férias, atestado, banco de horas) ── */
+    .sch-evento.periodo-ev,
+    .sch-mes-ev.periodo-ev {
+      background: rgba(245,158,11,0.18) !important;
+      border-left: 3px solid #f59e0b !important;
+      color: #78350f !important;
+    }
+    .sch-mes-celula.periodo-dia {
+      background: rgba(245,158,11,0.07) !important;
+      outline: 1.5px dashed rgba(245,158,11,0.4) !important;
+      outline-offset: -2px;
+    }
+    .kanban-card.periodo-ev {
+      border-left-color: #f59e0b !important;
+      background: rgba(245,158,11,0.08) !important;
+    }
+    /* Badge "PERÍODO" nos eventos de férias na visão semana/dia */
+    .sch-ev-periodo-badge {
+      display: inline-block;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      background: #f59e0b;
+      color: #fff;
+      border-radius: 4px;
+      padding: 1px 4px;
+      margin-left: 4px;
+      vertical-align: middle;
+      text-transform: uppercase;
+    }
+  </style>
 </head>
 
 <body>
@@ -1040,6 +1072,135 @@
       const campo = document.getElementById('campoEventoPessoal');
       if (campo) campo.style.display = cb.checked ? 'block' : 'none';
     }
+
+    // ══════════════════════════════════════════════
+    // MARCAÇÃO DE PERÍODOS (férias, atestados etc.)
+    // ══════════════════════════════════════════════
+
+    // Cor especial para eventos de período longo
+    const COR_PERIODO = '#f59e0b'; // âmbar/laranja
+    const COR_PERIODO_BG = 'rgba(245,158,11,0.13)';
+    const TIPOS_PERIODO = ['ferias', 'atestado', 'banco_de_horas'];
+
+    // Intercepta salvarAgendamento para incluir dataFim
+    document.addEventListener('DOMContentLoaded', function () {
+
+      // ── Valida dataFim ao salvar ──────────────────────────────────────
+      const btnConfirmar = document.querySelector('#modalAgendamento .btn-primary');
+      if (btnConfirmar) {
+        btnConfirmar.addEventListener('click', function () {
+          const dataInicio = document.getElementById('agData')?.value;
+          const dataFim    = document.getElementById('agDataFim')?.value;
+          if (dataFim && dataInicio && dataFim < dataInicio) {
+            const err = document.getElementById('erroAgendamento');
+            if (err) { err.textContent = 'A data fim não pode ser anterior à data início.'; err.style.display = 'block'; }
+            return;
+          }
+        }, true); // capture: roda antes do handler original
+      }
+
+      // ── Ao abrir modal: sincroniza dataFim mínimo ─────────────────────
+      document.getElementById('agData')?.addEventListener('change', function () {
+        const fim = document.getElementById('agDataFim');
+        if (fim) fim.min = this.value;
+      });
+
+      // ── MutationObserver: coloriza eventos de período na agenda ───────
+      const painelCal = document.getElementById('painelCalendario');
+      const painelProx = document.getElementById('kanbanProximos');
+
+      function aplicarEstiloPeriodo(root) {
+        // Eventos no scheduler semana/dia (.sch-evento) e mês (.sch-mes-ev)
+        root.querySelectorAll('.sch-evento, .sch-mes-ev, .kanban-card').forEach(el => {
+          if (el.dataset.periodoColorido) return; // já processado
+
+          const titulo = (el.querySelector('.sch-ev-titulo, .kanban-card-titulo')?.textContent || el.textContent || '').toLowerCase();
+          const isPeriodo = TIPOS_PERIODO.some(t => titulo.includes(t.replace('_',' ')))
+                         || titulo.includes('férias') || titulo.includes('ferias')
+                         || titulo.includes('atestado') || titulo.includes('banco de horas')
+                         || titulo.includes('banco horas');
+
+          if (isPeriodo) {
+            el.style.background = COR_PERIODO_BG;
+            el.style.borderLeft = '3px solid ' + COR_PERIODO;
+            el.style.color = '#92400e';
+            if (el.classList.contains('sch-mes-ev')) {
+              el.style.background = 'rgba(245,158,11,0.22)';
+              el.style.color = '#78350f';
+            }
+            el.dataset.periodoColorido = '1';
+          }
+        });
+
+        // Células do calendário mensal: fundo suave nos dias do período
+        aplicarFundoDiasMes(root);
+      }
+
+      function aplicarFundoDiasMes(root) {
+        // Busca eventos de período para extrair datas
+        const agendaGlobal = (typeof window._agendamentos !== 'undefined') ? window._agendamentos : [];
+        if (!agendaGlobal.length) return;
+
+        const periodos = agendaGlobal.filter(a =>
+          a.dataFim && (
+            TIPOS_PERIODO.some(t => (a.titulo||'').toLowerCase().includes(t.replace('_',' '))) ||
+            (a.titulo||'').toLowerCase().includes('férias') ||
+            (a.titulo||'').toLowerCase().includes('ferias') ||
+            (a.titulo||'').toLowerCase().includes('atestado') ||
+            (a.eventoPessoal === true)
+          )
+        );
+
+        root.querySelectorAll('.sch-mes-celula[data-data]').forEach(celula => {
+          const d = celula.dataset.data; // espera formato YYYY-MM-DD
+          if (!d) return;
+          const dentroDeAlgumPeriodo = periodos.some(p => d >= p.data && d <= p.dataFim);
+          if (dentroDeAlgumPeriodo && !celula.dataset.periodoFundo) {
+            celula.style.background = 'rgba(245,158,11,0.07)';
+            celula.style.outline = '1.5px dashed rgba(245,158,11,0.35)';
+            celula.style.outlineOffset = '-2px';
+            celula.dataset.periodoFundo = '1';
+          }
+        });
+      }
+
+      // Observa renderizações da agenda
+      [painelCal, painelProx].forEach(painel => {
+        if (!painel) return;
+        new MutationObserver(() => aplicarEstiloPeriodo(painel))
+          .observe(painel, { childList: true, subtree: true });
+      });
+
+      // Roda uma vez caso já tenha conteúdo
+      aplicarEstiloPeriodo(document.body);
+    });
+  </script>
+
+  <!-- Patch: expõe dataFim e eventoPessoal ao salvarAgendamento original -->
+  <script>
+    // Aguarda dashboard.js carregar, então envolve salvarAgendamento
+    window.addEventListener('load', function () {
+      const _salvarOriginal = window.salvarAgendamento;
+      if (typeof _salvarOriginal !== 'function') return;
+
+      window.salvarAgendamento = function () {
+        // Injeta campos extras nos inputs antes de chamar o original
+        const dataFimEl = document.getElementById('agDataFim');
+        const tipoEvEl  = document.getElementById('agTipoEventoPessoal');
+        const chkPess   = document.getElementById('chkEventoPessoal');
+
+        // Guarda em atributos data- para o dashboard.js poder ler, se quiser
+        if (dataFimEl)  dataFimEl.setAttribute('data-value', dataFimEl.value);
+        if (tipoEvEl)   tipoEvEl.setAttribute('data-value', tipoEvEl.value);
+
+        // Também expõe via window para interceptação pós-save
+        window._pendingDataFim       = dataFimEl?.value  || null;
+        window._pendingEventoPessoal = chkPess?.checked  || false;
+        window._pendingTipoEvento    = tipoEvEl?.value   || null;
+
+        return _salvarOriginal.apply(this, arguments);
+      };
+    });
   </script>
 
   <!-- Modal Dashboard Stats -->
