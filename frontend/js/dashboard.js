@@ -403,63 +403,99 @@ function renderSchedulerMes(container) {
 
   const titulo = `${MESES[mes]} ${ano}`;
 
-  // Células do calendário
+  // ── Pré-processa eventos de período para a barra contínua ──────────────
+  // Normaliza data de um agendamento para string YYYY-MM-DD no fuso SP
+  const toDS = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+
+  // Eventos com período multidia (data_fim_periodo é string YYYY-MM-DD pura)
+  const eventosPeriodo = schedulerData.filter(a => a.data_fim_periodo);
+
+  // Monta mapa: ds -> lista de barras de período que cruzam esse dia
+  // Cada entrada: { ag, isInicio, isFim, isIntermedio }
+  const barrasPorDia = {};
+  eventosPeriodo.forEach(a => {
+    const dsIni = toDS(a.data_inicio);
+    const dsFim = a.data_fim_periodo; // já é YYYY-MM-DD puro
+    // Gera todos os dias do período dentro deste mês
+    let cur = new Date(dsIni + 'T12:00:00');
+    const endDate = new Date(dsFim + 'T12:00:00');
+    while (cur <= endDate) {
+      const ds = cur.toLocaleDateString('en-CA');
+      if (!barrasPorDia[ds]) barrasPorDia[ds] = [];
+      barrasPorDia[ds].push({
+        ag,
+        isInicio: ds === dsIni,
+        isFim:    ds === dsFim,
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+  });
+
+  // ── Monta células ──────────────────────────────────────────────────────
   let celulas = DIAS.map(d => `<div class="sch-mes-cabecalho">${d}</div>`).join('');
-  // Células vazias antes do 1º dia
   for (let i = 0; i < primeiroDia; i++) celulas += `<div class="sch-mes-celula sch-mes-fora"></div>`;
 
   const agora = new Date();
-  const statusEmoji = { confirmado:'✅', pendente:'⏳', cancelado:'🚫', concluido:'🏁', faltou:'❌' };
 
   for (let d = 1; d <= ultimoDia; d++) {
     const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const ehHoje = ds === hoje;
     const ehSel  = ds === dataSelecionada;
+    const diaDaSemana = new Date(ds + 'T12:00:00').getDay(); // 0=dom
+
+    // Eventos normais do dia (excluindo os de período, que viram barra)
     const evsDia = schedulerData.filter(a => {
-      const dd = new Date(a.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+      if (a.data_fim_periodo) return false; // período vira barra separada
+      const dd = toDS(a.data_inicio);
       return dd === ds;
     });
 
-    // Verifica se este dia está dentro de algum período (férias, atestado etc.)
-    const ehDiaDePeriodo = schedulerData.some(a => {
-      if (!a.data_fim_periodo) return false;
-      const ini = new Date(a.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
-      const fim = new Date(a.data_fim_periodo).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
-      return ds > ini && ds <= fim;
-    });
-
-    const maxVisiveis = 3;
-    const eventosHtml = evsDia.slice(0, maxVisiveis).map(a => {
-      const prof = profissionais.find(p => p.id === a.profissional_id);
+    // Barras de período que passam por este dia
+    const barrasHoje = barrasPorDia[ds] || [];
+    const barrasHtml = barrasHoje.map(({ ag, isInicio, isFim }) => {
+      const prof = profissionais.find(p => p.id === ag.profissional_id);
       const cor  = corProf(prof);
-      const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
-      const ehPeriodo = !!a.data_fim_periodo || !!a.evento_pessoal;
-      const corUs = atrasado ? '#ef4444' : ehPeriodo ? '#f59e0b' : cor;
-      const hora  = a.dia_todo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
-      const bgEv  = ehPeriodo ? 'rgba(245,158,11,0.18)' : hexToRgba(corUs,0.15);
-      return `<div class="sch-mes-ev" style="background:${bgEv};border-left:2px solid ${corUs};color:${corUs}"
-        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${a.id})"
-        title="${a.cliente_nome} | ${hora}">
-        <span class="sch-mes-ev-hora">${hora}</span> ${a.cliente_nome}
-        ${ehPeriodo ? '<span style="font-size:0.58rem;background:#f59e0b;color:#fff;border-radius:3px;padding:0 3px;margin-left:3px;font-weight:800">PERÍODO</span>' : ''}
+      // Bordas arredondadas só nas pontas
+      const borderRadius = isInicio && isFim ? '6px' : isInicio ? '6px 0 0 6px' : isFim ? '0 6px 6px 0' : '0';
+      // Margem negativa para a barra sangrar até a borda da célula
+      const marginLeft  = isInicio ? '2px' : '-1px';
+      const marginRight = isFim    ? '2px' : '-1px';
+      const label = isInicio ? `<span style="font-size:0.72rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:6px">${ag.cliente_nome}</span>` : '';
+      return `<div class="sch-periodo-barra"
+        style="background:${cor};border-radius:${borderRadius};margin-left:${marginLeft};margin-right:${marginRight};color:#fff;"
+        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${ag.id})"
+        title="${ag.cliente_nome}">
+        ${label}
       </div>`;
     }).join('');
 
-    const extra = evsDia.length > maxVisiveis
-      ? `<div class="sch-mes-mais" onclick="event.stopPropagation();schedulerVerDia('${ds}')">+${evsDia.length - maxVisiveis} mais</div>`
+    // Eventos normais
+    const maxVisiveis = 3 - barrasHoje.length;
+    const eventosHtml = evsDia.slice(0, Math.max(0, maxVisiveis)).map(a => {
+      const prof = profissionais.find(p => p.id === a.profissional_id);
+      const cor  = corProf(prof);
+      const atrasado = !['concluido','cancelado'].includes(a.status) && new Date(a.data_fim||a.data_inicio) < agora;
+      const corUs = atrasado ? '#ef4444' : cor;
+      const hora  = a.dia_todo ? 'Dia todo' : new Date(a.data_inicio).toLocaleTimeString('pt-BR', { timeZone:'America/Sao_Paulo', hour:'2-digit', minute:'2-digit' });
+      return `<div class="sch-mes-ev" style="background:${hexToRgba(corUs,0.15)};border-left:2px solid ${corUs};color:${corUs}"
+        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${a.id})"
+        title="${a.cliente_nome} | ${hora}">
+        <span class="sch-mes-ev-hora">${hora}</span> ${a.cliente_nome}
+      </div>`;
+    }).join('');
+
+    const totalVisiveis = barrasHoje.length + Math.min(evsDia.length, Math.max(0, maxVisiveis));
+    const totalEventos  = barrasHoje.length + evsDia.length;
+    const extra = totalEventos > 3
+      ? `<div class="sch-mes-mais" onclick="event.stopPropagation();schedulerVerDia('${ds}')">+${totalEventos - 3} mais</div>`
       : '';
 
-    // Dias intermediários do período: fundo âmbar suave sem evento
-    const bandeiraDePeriodo = ehDiaDePeriodo
-      ? `<div style="font-size:0.68rem;background:rgba(245,158,11,0.2);border-left:2px solid #f59e0b;color:#92400e;
-           border-radius:4px;padding:2px 5px;margin-bottom:2px;font-weight:600">🌴 Em período</div>`
-      : '';
+    const ehDiaDePeriodo = barrasHoje.length > 0;
 
-    celulas += `<div class="sch-mes-celula ${ehHoje ? 'sch-mes-hoje' : ''} ${ehSel ? 'sch-mes-selecionado' : ''} ${ehDiaDePeriodo ? 'sch-mes-periodo' : ''}"
-      style="${ehDiaDePeriodo ? 'background:rgba(245,158,11,0.06);outline:1.5px dashed rgba(245,158,11,0.35);outline-offset:-2px;' : ''}"
+    celulas += `<div class="sch-mes-celula ${ehHoje ? 'sch-mes-hoje' : ''} ${ehSel ? 'sch-mes-selecionado' : ''}"
       onclick="schedulerVerDia('${ds}')">
       <div class="sch-mes-num">${d}</div>
-      ${bandeiraDePeriodo}
+      ${barrasHtml}
       ${eventosHtml}${extra}
     </div>`;
   }
@@ -932,7 +968,7 @@ async function salvarAgendamento() {
       // Campos de período pessoal
       evento_pessoal: eventoPessoal || null,
       tipo_evento: tipoEvento || null,
-      data_fim_periodo: (dataFimInput && dataFimInput !== data) ? `${dataFimInput}T23:59:59${tz}` : null
+      data_fim_periodo: (dataFimInput && dataFimInput !== data) ? dataFimInput : null
     };
 
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
