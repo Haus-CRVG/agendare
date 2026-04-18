@@ -701,12 +701,35 @@
       <input type="hidden" id="agId" />
       <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
           id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
-      <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label><input type="date"
-          id="agData" /></div>
-      <div class="form-group" style="margin-bottom:0.5rem"><label
-          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
-            id="chkDiaTodo" onchange="toggleDiaTodo(this)"
-            style="accent-color:var(--accent);width:16px;height:16px;" />Dia todo</label></div>
+      <!-- Datas: Início e Fim lado a lado -->
+      <div style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:0.75rem">
+        <div class="form-group" style="margin:0;flex:1"><label>Data Início <span style="color:var(--accent)">*</span></label><input type="date" id="agData" /></div>
+        <div class="form-group" style="margin:0;flex:1" id="campoDataFim"><label>Data Fim</label><input type="date" id="agDataFim" /></div>
+      </div>
+
+      <!-- Toggle Dia Todo -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.85rem">
+        <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">DIA TODO</span>
+        <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
+          <input type="checkbox" id="chkDiaTodo" onchange="toggleDiaTodo(this)" style="opacity:0;width:0;height:0;position:absolute" />
+          <span id="toggleDiaTodoTrack" style="
+            position:absolute;inset:0;
+            background:#d1d5db;
+            border-radius:24px;
+            transition:background 0.2s;
+          "></span>
+          <span id="toggleDiaTodoThumb" style="
+            position:absolute;
+            top:3px;left:3px;
+            width:18px;height:18px;
+            background:#fff;
+            border-radius:50%;
+            box-shadow:0 1px 4px rgba(0,0,0,0.18);
+            transition:transform 0.2s;
+          "></span>
+        </label>
+      </div>
+
       <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
         <div class="form-group" style="margin:0;flex:1"><label>Início <span
               style="color:var(--accent)">*</span></label><input type="time" id="agHoraInicio" /></div>
@@ -719,6 +742,27 @@
             style="accent-color:var(--accent);width:16px;height:16px;" />Adicionar participante?</label></div>
       <div id="campoParticipante" style="display:none;margin-bottom:1rem">
         <div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div>
+      </div>
+      <!-- Evento Pessoal -->
+      <div class="form-group" style="margin-bottom:0.5rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="chkEventoPessoal" onchange="toggleEventoPessoal(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />
+          🙋 Evento pessoal
+        </label>
+      </div>
+      <div id="campoEventoPessoal" style="display:none;margin-bottom:1rem">
+        <div class="form-group" style="margin:0">
+          <label>Tipo de evento</label>
+          <select id="agTipoEventoPessoal">
+            <option value="">Selecione...</option>
+            <option value="consulta_medica">🏥 Consulta médica</option>
+            <option value="dentista">🦷 Dentista</option>
+            <option value="banco_de_horas">⏱️ Banco de horas</option>
+            <option value="atestado">📄 Atestado</option>
+            <option value="ferias">🌴 Férias</option>
+          </select>
+        </div>
       </div>
       <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..."
           style="resize:none;height:70px;"></textarea></div>
@@ -965,6 +1009,32 @@
   </div>
 
   <script src="js/dashboard.js"></script>
+  <script>
+    // Toggle visual do switch "Dia Todo"
+    function toggleDiaTodo(cb) {
+      const track = document.getElementById('toggleDiaTodoTrack');
+      const thumb = document.getElementById('toggleDiaTodoThumb');
+      if (track && thumb) {
+        if (cb.checked) {
+          track.style.background = 'var(--accent)';
+          thumb.style.transform = 'translateX(18px)';
+        } else {
+          track.style.background = '#d1d5db';
+          thumb.style.transform = 'translateX(0)';
+        }
+      }
+      const campos = document.getElementById('camposHora');
+      if (campos) campos.style.display = cb.checked ? 'none' : 'flex';
+      const campoDataFim = document.getElementById('campoDataFim');
+      if (campoDataFim) campoDataFim.style.opacity = cb.checked ? '0.5' : '1';
+    }
+
+    // Evento Pessoal dropdown
+    function toggleEventoPessoal(cb) {
+      const campo = document.getElementById('campoEventoPessoal');
+      if (campo) campo.style.display = cb.checked ? 'block' : 'none';
+    }
+  </script>
 
   <!-- Modal Dashboard Stats -->
   <div class="modal-overlay" id="modalDashboardStats">

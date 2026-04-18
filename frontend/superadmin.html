@@ -7,117 +7,68 @@
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
-<body>
-<div class="dashboard">
 
-  <div class="topbar">
-    <div class="topbar-brand">
-      <h2 style="color:var(--accent)">📅 Agendare</h2>
-    </div>
-    <div class="topbar-user">
-      <span style="color:var(--accent);font-weight:600">👑 Super Admin</span>
-      <button class="btn-logout" onclick="logout()">Sair</button>
+<body style="background:#0b1220;color:white;font-family:'DM Sans', sans-serif;">
+
+<div style="padding:2rem 3rem;max-width:1200px;margin:auto;">
+
+  <!-- TOPO -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+    <h2 style="color:#22d3ee">📅 Agendare</h2>
+    <div>
+      <span style="margin-right:1rem;color:#22d3ee">⚡ Super Admin</span>
+      <button onclick="logout()">Sair</button>
     </div>
   </div>
 
-  <div class="tabs" style="display:flex">
-    <button class="tab active" onclick="mudarAba('empresas')">🏢 Empresas</button>
-    <button class="tab" onclick="mudarAba('nova')">➕ Nova Empresa</button>
+  <!-- ABAS -->
+  <div style="display:flex;gap:1rem;margin-bottom:2rem;">
+    <button onclick="mudarAba('empresas')">🏢 Empresas</button>
+    <button onclick="mudarAba('nova')">➕ Nova Empresa</button>
   </div>
 
-  <div class="content-wrapper">
+  <!-- EMPRESAS -->
+  <div id="abaEmpresas">
+    <h1>Gestão de Empresas</h1>
 
-    <!-- EMPRESAS -->
-    <div class="main-content" id="abaEmpresas">
-      <div class="page-title">Gestão de <span>Empresas</span></div>
-
-      <div class="table-card">
-        <div class="table-header" style="flex-direction:column;align-items:flex-start;gap:1rem;">
-          <h2>Empresas Cadastradas</h2>
-          <div style="display:flex;gap:0.75rem;width:100%;max-width:500px;">
-            <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar empresa..."
-              oninput="filtrarEmpresas()" style="flex:1;" />
-            <button class="btn-sm" onclick="limparBusca()">✕</button>
-          </div>
-        </div>
-
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Empresa</th>
-                <th>CNPJ</th>
-                <th>E-mail</th>
-                <th>Vencimento</th>
-                <th>Status</th>
-                <th>Usuários</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaEmpresas"></tbody>
-          </table>
-        </div>
-      </div>
+    <div style="margin:1rem 0;display:flex;gap:1rem;">
+      <input id="busca" placeholder="Buscar empresa..." oninput="filtrarEmpresas()" style="flex:1;padding:8px" />
+      <button onclick="limparBusca()">Limpar</button>
     </div>
 
-    <!-- NOVA EMPRESA -->
-    <div class="main-content" id="abaNova" style="display:none">
-      <div class="page-title">Nova <span>Empresa</span></div>
+    <table border="1" width="100%" cellpadding="10" style="background:#111827">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>CNPJ</th>
+          <th>E-mail</th>
+          <th>Status</th>
+          <th>Usuários</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaEmpresas"></tbody>
+    </table>
+  </div>
 
-      <div class="table-card">
-        <div style="padding:1.5rem">
-          <div class="form-grid">
-            <div class="form-group">
-              <label>CNPJ *</label>
-              <input type="text" id="nCnpj" />
-            </div>
-            <div class="form-group">
-              <label>Nome Fantasia *</label>
-              <input type="text" id="nNome" />
-            </div>
-            <div class="form-group">
-              <label>E-mail</label>
-              <input type="email" id="nEmail" />
-            </div>
-            <div class="form-group">
-              <label>Telefone</label>
-              <input type="text" id="nTelefone" />
-            </div>
-          </div>
+  <!-- NOVA EMPRESA -->
+  <div id="abaNova" style="display:none">
+    <h1>Nova Empresa</h1>
 
-          <hr style="margin:1.5rem 0" />
+    <div style="display:grid;gap:10px;max-width:400px;">
+      <input id="nCnpj" placeholder="CNPJ" />
+      <input id="nNome" placeholder="Nome Fantasia" />
+      <input id="nEmail" placeholder="Email" />
+      <input id="nTelefone" placeholder="Telefone" />
 
-          <h4>ADMIN INICIAL</h4>
-          <div class="form-grid">
-            <div class="form-group"><input type="text" id="nAdminNome" placeholder="Nome" /></div>
-            <div class="form-group"><input type="email" id="nAdminEmail" placeholder="Email" /></div>
-            <div class="form-group"><input type="password" id="nAdminSenha" placeholder="Senha" /></div>
-          </div>
+      <h3>Admin</h3>
+      <input id="nAdminNome" placeholder="Nome" />
+      <input id="nAdminEmail" placeholder="Email" />
+      <input id="nAdminSenha" placeholder="Senha" type="password" />
 
-          <div id="erroNova" class="alert-error" style="display:none"></div>
-          <div id="sucessoNova" class="alert-success" style="display:none"></div>
-
-          <button class="btn" onclick="criarEmpresa()">Cadastrar Empresa</button>
-        </div>
-      </div>
+      <button onclick="criarEmpresa()">Cadastrar</button>
     </div>
-
   </div>
-</div>
 
-<!-- MODAL EDITAR -->
-<div class="modal-overlay" id="modalEditarEmpresa">
-  <div class="modal">
-    <h3>Editar Empresa</h3>
-    <input type="hidden" id="editEmpresaId" />
-
-    <div class="form-group"><input type="text" id="editEmpresaNome" placeholder="Nome" /></div>
-    <div class="form-group"><input type="email" id="editEmpresaEmail" placeholder="Email" /></div>
-    <div class="form-group"><input type="text" id="editEmpresaTel" placeholder="Telefone" /></div>
-
-    <button class="btn" onclick="salvarEmpresa()">Salvar</button>
-    <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
-  </div>
 </div>
 
 <script>
@@ -125,18 +76,18 @@ const API = 'https://agendare-backend-production.up.railway.app/api';
 let token = localStorage.getItem('token');
 let todasEmpresas = [];
 
-function logout(){ localStorage.clear(); window.location.href='index.html'; }
+function logout(){ localStorage.clear(); location.href='index.html'; }
 
 function mudarAba(aba){
-  document.getElementById('abaEmpresas').style.display = aba==='empresas' ? 'block':'none';
-  document.getElementById('abaNova').style.display = aba==='nova' ? 'block':'none';
+  abaEmpresas.style.display = aba==='empresas'?'block':'none';
+  abaNova.style.display = aba==='nova'?'block':'none';
 }
 
 async function api(method, path, body){
   const r = await fetch(API+path,{
     method,
     headers:{ 'Content-Type':'application/json', Authorization:'Bearer '+token },
-    body: body ? JSON.stringify(body):undefined
+    body: body?JSON.stringify(body):undefined
   });
   return r.json();
 }
@@ -147,76 +98,68 @@ async function carregarEmpresas(){
   renderEmpresas(todasEmpresas);
 }
 
-function limparBusca(){
-  document.getElementById('pesquisaEmpresas').value='';
-  renderEmpresas(todasEmpresas);
-}
-
-function filtrarEmpresas(){
-  const q = document.getElementById('pesquisaEmpresas').value.toLowerCase();
-  const filtradas = todasEmpresas.filter(e =>
-    e.nome_fantasia.toLowerCase().includes(q) ||
-    e.cnpj.includes(q)
-  );
-  renderEmpresas(filtradas);
-}
-
 function renderEmpresas(lista){
   const tbody = document.getElementById('tabelaEmpresas');
 
   tbody.innerHTML = lista.map(e => `
-    <tr>
-      <td><strong>${e.nome_fantasia}</strong></td>
+    <tr onclick="toggleUsuarios(${e.id})" style="cursor:pointer">
+      <td>${e.nome_fantasia}</td>
       <td>${e.cnpj}</td>
       <td>${e.email||'-'}</td>
-      <td>${e.vencimento||'-'}</td>
       <td>${e.status||'-'}</td>
       <td>${e.total_usuarios||0}</td>
-      <td>
-        <button onclick="abrirEditarEmpresa(${e.id})">✏️</button>
-      </td>
+    </tr>
+    <tr id="u-${e.id}" style="display:none">
+      <td colspan="5" id="lista-${e.id}">Carregando...</td>
     </tr>
   `).join('');
 }
 
-function abrirEditarEmpresa(id){
-  const e = todasEmpresas.find(x=>x.id===id);
-  document.getElementById('editEmpresaId').value=id;
-  document.getElementById('editEmpresaNome').value=e.nome_fantasia;
-  document.getElementById('editEmpresaEmail').value=e.email||'';
-  document.getElementById('editEmpresaTel').value=e.telefone||'';
-  document.getElementById('modalEditarEmpresa').classList.add('active');
+async function toggleUsuarios(id){
+  const row = document.getElementById(`u-${id}`);
+  const lista = document.getElementById(`lista-${id}`);
+
+  if(row.style.display==='table-row'){
+    row.style.display='none';
+    return;
+  }
+
+  row.style.display='table-row';
+
+  if(lista.dataset.loaded) return;
+
+  const usuarios = await api('GET',`/empresas/${id}/usuarios`);
+
+  lista.innerHTML = usuarios.map(u=>`
+    <div>${u.nome} (${u.email})</div>
+  `).join('');
+
+  lista.dataset.loaded = true;
 }
 
-async function salvarEmpresa(){
-  const id = document.getElementById('editEmpresaId').value;
-  await api('PATCH','/empresas/'+id,{
-    nome_fantasia: document.getElementById('editEmpresaNome').value,
-    email: document.getElementById('editEmpresaEmail').value,
-    telefone: document.getElementById('editEmpresaTel').value
-  });
-  fecharModal();
-  carregarEmpresas();
+function filtrarEmpresas(){
+  const q = busca.value.toLowerCase();
+  const filtradas = todasEmpresas.filter(e=>
+    e.nome_fantasia.toLowerCase().includes(q) || e.cnpj.includes(q)
+  );
+  renderEmpresas(filtradas);
 }
 
-function fecharModal(){ document.getElementById('modalEditarEmpresa').classList.remove('active'); }
+function limparBusca(){ busca.value=''; renderEmpresas(todasEmpresas); }
 
 async function criarEmpresa(){
-  const data = await api('POST','/empresas',{
-    cnpj: nCnpj.value,
-    nome_fantasia: nNome.value,
-    email: nEmail.value,
-    telefone: nTelefone.value,
-    admin_nome: nAdminNome.value,
-    admin_email: nAdminEmail.value,
-    admin_senha: nAdminSenha.value
+  await api('POST','/empresas',{
+    cnpj:nCnpj.value,
+    nome_fantasia:nNome.value,
+    email:nEmail.value,
+    telefone:nTelefone.value,
+    admin_nome:nAdminNome.value,
+    admin_email:nAdminEmail.value,
+    admin_senha:nAdminSenha.value
   });
 
-  if(data.erro){ erroNova.textContent=data.erro; erroNova.style.display='block'; return; }
-
-  sucessoNova.textContent='Empresa criada!';
-  sucessoNova.style.display='block';
-
+  alert('Empresa criada');
+  mudarAba('empresas');
   carregarEmpresas();
 }
 
