@@ -420,6 +420,14 @@ function renderSchedulerMes(container) {
       return dd === ds;
     });
 
+    // Verifica se este dia está dentro de algum período (férias, atestado etc.)
+    const ehDiaDePeriodo = schedulerData.some(a => {
+      if (!a.data_fim_periodo) return false;
+      const ini = new Date(a.data_inicio).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+      const fim = new Date(a.data_fim_periodo).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
+      return ds > ini && ds <= fim;
+    });
+
     const maxVisiveis = 3;
     const eventosHtml = evsDia.slice(0, maxVisiveis).map(a => {
       const prof = profissionais.find(p => p.id === a.profissional_id);
