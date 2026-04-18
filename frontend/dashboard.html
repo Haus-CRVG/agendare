@@ -395,141 +395,11 @@
   </style>
 </head>
 
-<style>
-  /* ── TOPBAR SUPER ADMIN (tema claro, sem sidebar) ── */
-  /* Esconde botões extras da topbar no modo SA */
-  body.modo-sa #empresaBadge,
-  body.modo-sa .btn-icon,
-  body.modo-sa .btn-logout:not(#btnSairSA),
-  body.modo-sa strong#nomeUsuario,
-  body.modo-sa #badgePerfil { display: none !important; }
-  /* Badge SA */
-  .sa-topbar-badge {
-    display: none;
-    align-items: center;
-    gap: 4px;
-    background: rgba(13,148,136,0.10);
-    border: 1px solid rgba(13,148,136,0.25);
-    color: #0d9488;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 3px 12px;
-    border-radius: 999px;
-  }
-  body.modo-sa .sa-topbar-badge { display: inline-flex; }
-  /* Abas SA no topo (substituem o sidebar) — tema claro */
-  .sa-nav-tabs {
-    display: none;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 1.5rem;
-    gap: 0.25rem;
-  }
-  body.modo-sa .sa-nav-tabs { display: flex; }
-  body.modo-sa #mobileTabs { display: none !important; }
-  .sa-nav-tab {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--muted);
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    font-family: 'Inter', sans-serif;
-    transition: color 0.15s, border-color 0.15s;
-    margin-bottom: -1px;
-  }
-  .sa-nav-tab:hover { color: var(--text); }
-  .sa-nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-  /* Esconde sidebar e ajusta layout no modo SA */
-  body.modo-sa #sidebar { display: none !important; }
-  body.modo-sa .layout { display: block; }
-  body.modo-sa .content { padding: 1.75rem 1.5rem; max-width: 1400px; margin: 0 auto; }
-  /* Esconde abas que não são do SA */
-  body.modo-sa #abaAgenda,
-  body.modo-sa #abaLista,
-  body.modo-sa #abaProfissionais,
-  body.modo-sa #abaServicos,
-  body.modo-sa #abaDisponibilidade,
-  body.modo-sa #abaConfiguracoes { display: none !important; }
-  /* Mostra o botão Sair exclusivo do SA */
-  body.modo-sa #btnSairSA { display: inline-flex !important; }
-
-  /* ── Linha expandível de usuários da empresa ── */
-  .empresa-row { cursor: pointer; transition: background 0.15s; }
-  .empresa-row:hover td { background: rgba(13,148,136,0.04) !important; }
-  .empresa-row td:first-child { padding-left: 0.75rem; }
-  .empresa-expand-btn {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 20px; height: 20px; border-radius: 4px;
-    background: rgba(13,148,136,0.1); color: var(--accent);
-    font-size: 0.7rem; font-weight: 700; margin-right: 6px;
-    transition: transform 0.2s, background 0.15s; flex-shrink: 0;
-    border: none; cursor: pointer;
-  }
-  .empresa-expand-btn.aberto { transform: rotate(90deg); background: var(--accent); color: #fff; }
-  .usuarios-row { display: none; }
-  .usuarios-row.visivel { display: table-row; }
-  .usuarios-row td { padding: 0 !important; border-bottom: 1px solid var(--border); }
-  .usuarios-inner {
-    background: var(--surface2);
-    border-left: 3px solid var(--accent);
-    margin: 0;
-    padding: 0.75rem 1rem 0.75rem 2.5rem;
-  }
-  .usuarios-inner-header {
-    font-size: 0.7rem; font-weight: 700; color: var(--muted);
-    text-transform: uppercase; letter-spacing: 0.08em;
-    margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
-  }
-  .usuario-item {
-    display: flex; align-items: center; gap: 0.75rem;
-    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
-    font-size: 0.84rem;
-  }
-  .usuario-item:last-child { border-bottom: none; }
-  .usuario-avatar {
-    width: 28px; height: 28px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-weight: 800; font-size: 0.75rem; flex-shrink: 0;
-  }
-  .usuario-nome { font-weight: 600; color: var(--text); flex: 1; }
-  .usuario-email { font-size: 0.78rem; color: var(--muted); }
-  .usuario-loading { color: var(--muted); font-size: 0.82rem; padding: 0.5rem 0; }
-
-  /* ── Pop-up de cobrança (boleto em aberto) ── */
-  #popupCobranca {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.45); z-index: 9998;
-    align-items: center; justify-content: center;
-    backdrop-filter: blur(2px);
-  }
-  #popupCobranca.ativo { display: flex; }
-  .popup-cobranca-box {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; padding: 2rem; max-width: 400px; width: 90%;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    text-align: center;
-    animation: slideUp 0.3s ease both;
-  }
-  .popup-cobranca-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
-  .popup-cobranca-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 0.5rem; }
-  .popup-cobranca-msg { font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem; }
-  .popup-cobranca-box .btn { width: 100%; justify-content: center; }
-</style>
-
 <body>
   <div id="toastContainer"></div>
-
-  <!-- Topbar única (adapta via JS/CSS para SA ou usuário normal) -->
-  <div class="topbar" id="topbarNormal">
+  <div class="topbar">
     <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
     <div class="topbar-user">
-      <!-- Elementos usuário normal -->
       <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
       Olá, <strong id="nomeUsuario">...</strong>
       <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
@@ -541,18 +411,8 @@
       <button class="btn-logout" onclick="logoff()">Logoff</button>
       <button class="btn-logout" onclick="sair()"
         style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
-      <!-- Elementos exclusivos SA (escondidos por padrão, CSS exibe no modo-sa) -->
-      <span class="sa-topbar-badge">⚡ Super Admin</span>
-      <button class="btn-logout sa-only-btn" id="btnSairSA" onclick="sair()"
-        style="display:none;color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
     </div>
   </div>
-
-  <!-- Abas de navegação SA (visível só no modo SA) — apenas Empresas -->
-  <nav class="sa-nav-tabs" id="saNavTabs">
-    <button class="sa-nav-tab active" onclick="mudarAba('empresas')" data-aba="empresas">🏢 Empresas</button>
-  </nav>
-
   <div class="mobile-tabs" id="mobileTabs"></div>
   <div class="layout">
     <nav class="sidebar" id="sidebar">
@@ -831,42 +691,10 @@
           </div>
         </div>
       </div>
-      <!-- ABA: USUÁRIOS SA (superadmin) -->
-      <div id="abaUsuariosSa" style="display:none">
-        <div class="page-header"
-          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-          <div>
-            <div class="page-title">Todos os <span>Usuários</span></div>
-            <div class="page-subtitle">Visão geral de todos os usuários no sistema</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <h2>👥 Usuários por Empresa</h2>
-            <input type="text" id="pesquisaUsuariosSA" placeholder="🔍 Buscar usuário..."
-              oninput="filtrarUsuariosSATab()"
-              style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.85rem;padding:0.45rem 1rem;outline:none;width:240px;" />
-          </div>
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>E-mail</th>
-                  <th>Empresa</th>
-                  <th>Perfil</th>
-                  <th>Situação</th>
-                </tr>
-              </thead>
-              <tbody id="tabelaUsuariosSATab">
-                <tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     </main>
   </div>
+
+  <!-- Modais -->
   <div class="modal-overlay" id="modalAgendamento">
     <div class="modal" style="max-width:500px">
       <h3>📅 Novo Compromisso</h3>
@@ -1059,101 +887,57 @@
   </div>
 
   <div class="modal-overlay" id="modalEmpresa">
-    <div class="modal" style="max-width:620px">
+    <div class="modal" style="max-width:580px">
       <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
       <input type="hidden" id="empId" />
-
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">📋 Dados da Empresa</p>
+      <div
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+        <p
+          style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+          Dados da Empresa</p>
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span style="color:var(--accent)">*</span></label><input type="text" id="empNome" placeholder="Ex: Clínica Vida Plena" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label><input type="text" id="empCnpj" placeholder="00.000.000/0001-00" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail" placeholder="contato@empresa.com" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text" id="empTelefone" placeholder="(00) 00000-0000" /></div>
-          <div class="form-group" style="margin-bottom:0">
-            <label>Slug <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="empSlug" placeholder="clinica-vida-plena"
-              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');document.getElementById('slugPreview').textContent=this.value||'slug'" />
-            <span style="font-size:0.7rem;color:var(--muted)">agendar.html?empresa=<strong id="slugPreview">slug</strong></span>
-          </div>
-          <div class="form-group" style="margin-bottom:0"><label>Vencimento</label><input type="date" id="empVencimento" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empNome"
+              placeholder="Ex: Salão da Maria" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empCnpj"
+              placeholder="00.000.000/0001-00" /></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail"
+              placeholder="contato@empresa.com" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
+              id="empTelefone" placeholder="(00) 00000-0000" /></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
+              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
+              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
+                id="slugPreview">slug</strong></span></div>
+          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
+              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
         </div>
       </div>
-
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">🎨 Identidade Visual</p>
-
-        <!-- Linha 1: Cor primária -->
-        <div class="form-group" style="margin-bottom:0.75rem">
-          <label>Cor primária</label>
-          <div style="display:flex;align-items:center;gap:0.6rem">
-            <input type="color" id="empCor" value="#0d9488"
-              style="height:42px;width:56px;padding:3px;cursor:pointer;border-radius:8px;border:1px solid var(--border);flex-shrink:0"
-              oninput="atualizarPreviewCor(this.value)" />
-            <div id="previewCor" style="flex:1;height:42px;border-radius:8px;background:#0d9488;display:flex;align-items:center;justify-content:center;transition:background 0.2s">
-              <span style="color:#fff;font-size:0.78rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,0.2)">Prévia da cor</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Linha 2: Imagem de fundo -->
-        <div class="form-group" style="margin-bottom:0.75rem">
-          <label>Imagem de fundo (marca d'água)</label>
-          <div style="display:flex;gap:0.5rem;align-items:stretch">
-            <input type="url" id="empFundoUrl" placeholder="https://exemplo.com/imagem.jpg"
-              oninput="atualizarPreviewFundo(this.value)"
-              style="flex:1;min-width:0" />
-            <label style="display:inline-flex;align-items:center;gap:6px;padding:0 1rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.82rem;font-weight:600;color:var(--text);white-space:nowrap;flex-shrink:0;height:42px;transition:background 0.15s"
-              onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background=''">
-              📁 Arquivo
-              <input type="file" id="empFundoFile" accept="image/*" style="display:none"
-                onchange="carregarImagemLocal(this)" />
-            </label>
-          </div>
-          <span style="font-size:0.7rem;color:var(--muted);margin-top:3px;display:block">Cole uma URL ou escolha um arquivo do seu computador</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem">
-          <label style="font-size:0.78rem;font-weight:600;white-space:nowrap">Opacidade</label>
-          <input type="range" id="empOpacidade" min="5" max="40" value="12" style="flex:1;accent-color:var(--accent)"
-            oninput="atualizarOpacidadePreview(this.value)" />
-          <span id="empOpacidadeVal" style="font-size:0.78rem;color:var(--muted);width:36px;text-align:right">12%</span>
-          <input type="hidden" id="empOpacidadeHidden" value="12" />
-        </div>
-        <!-- Preview do layout -->
-        <div style="border-radius:10px;overflow:hidden;border:1px solid var(--border)">
-          <div id="previewTopbar" style="background:#0d9488;padding:8px 14px;display:flex;align-items:center;justify-content:space-between">
-            <span style="color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:13px">AGENDARE</span>
-            <div style="display:flex;gap:4px"><div style="width:18px;height:6px;border-radius:3px;background:rgba(255,255,255,0.35)"></div><div style="width:18px;height:6px;border-radius:3px;background:rgba(255,255,255,0.35)"></div></div>
-          </div>
-          <div style="display:flex;height:56px">
-            <div id="previewSidebar" style="width:80px;padding:6px;border-right:1px solid rgba(13,148,136,0.28)">
-              <div id="previewSidebarItem" style="background:#0d9488;border-radius:5px;padding:4px 6px;color:#fff;font-size:10px;font-weight:600;margin-bottom:3px">📅 Agenda</div>
-              <div style="padding:4px 6px;color:#94a3b8;font-size:10px">📋 Lista</div>
-            </div>
-            <div style="flex:1;padding:8px 10px;position:relative;overflow:hidden">
-              <div id="previewFundoImg" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.12"></div>
-              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:12px;color:#1e293b;position:relative">Agenda <span id="previewAccentText" style="color:#0d9488">do Dia</span></div>
-              <div style="display:flex;gap:4px;margin-top:4px;position:relative">
-                <div id="previewStatCard" style="background:rgba(13,148,136,0.18);border:1px solid rgba(13,148,136,0.28);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;color:#0d9488">3 hoje</div>
-                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;font-size:10px;color:#94a3b8">0 canc.</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div id="secaoAdmin">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-          <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">👑 Administrador Inicial</p>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+          <p
+            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+            👑 Administrador da Empresa</p>
           <div class="form-grid">
-            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome" placeholder="Nome completo" /></div>
-            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail" placeholder="admin@empresa.com" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
+                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
+                placeholder="Nome completo" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
+                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
+                placeholder="admin@empresa.com" /></div>
           </div>
-          <div class="form-group" style="margin-bottom:0"><label>Senha <span style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha" placeholder="Mínimo 6 caracteres" /></div>
+          <div class="form-group" style="margin-bottom:0"><label>Senha <span
+                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
+              placeholder="Mínimo 6 caracteres" /></div>
         </div>
       </div>
-
-      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
         <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
@@ -1164,60 +948,18 @@
   </div>
 
   <div class="modal-overlay" id="modalVerEmpresa">
-    <div class="modal" style="max-width:520px">
+    <div class="modal" style="max-width:480px">
       <h3>🏢 Detalhes da Empresa</h3>
-      <div id="detalheEmpresa" style="margin-bottom:1rem"></div>
-
-      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-        <p style="font-size:0.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.75rem">⚙️ Configurações</p>
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem">
-            <label>Status</label>
-            <select id="editEmpresaStatus">
-              <option value="ativo">✅ Ativo</option>
-              <option value="suspenso">⚠️ Suspenso</option>
-              <option value="cancelado">❌ Cancelado</option>
-            </select>
-          </div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Cor primária</label>
-            <div style="display:flex;align-items:center;gap:0.6rem">
-              <input type="color" id="editEmpresaCor" value="#0d9488"
-                style="height:40px;width:52px;padding:3px;cursor:pointer;border-radius:8px;border:1px solid var(--border);flex-shrink:0"
-                oninput="atualizarPreviewCorEdit(this.value)" />
-              <div id="previewCorEdit" style="flex:1;height:40px;border-radius:8px;background:#0d9488;display:flex;align-items:center;justify-content:center;transition:background 0.2s">
-                <span style="color:#fff;font-size:0.78rem;font-weight:700">Prévia</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="form-group" style="margin-bottom:0.75rem">
-          <label>Imagem de fundo (URL)</label>
-          <input type="url" id="editEmpresaFundo" placeholder="https://..." style="width:100%" oninput="atualizarPreviewFundoEdit(this.value)" />
-        </div>
-        <!-- Mini preview edit -->
-        <div style="border-radius:8px;overflow:hidden;border:1px solid var(--border)">
-          <div id="editLpTopbar" style="background:#0d9488;padding:7px 12px;display:flex;align-items:center;justify-content:space-between">
-            <span style="color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:12px">AGENDARE</span>
-            <div style="width:28px;height:5px;border-radius:3px;background:rgba(255,255,255,0.35)"></div>
-          </div>
-          <div style="display:flex;height:46px">
-            <div id="editLpSidebar" style="width:72px;padding:5px;border-right:1px solid rgba(13,148,136,0.28)">
-              <div id="editLpItem" style="background:#0d9488;border-radius:4px;padding:3px 5px;color:#fff;font-size:10px;font-weight:600">📅 Agenda</div>
-            </div>
-            <div style="flex:1;padding:7px 9px;position:relative;overflow:hidden">
-              <div id="editLpFundo" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;opacity:0.12"></div>
-              <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:11px;color:#1e293b;position:relative">Agenda <span id="editLpAccent" style="color:#0d9488">do Dia</span></div>
-              <div style="margin-top:3px;position:relative"><div id="editLpChip" style="display:inline-block;background:rgba(13,148,136,0.18);border:1px solid rgba(13,148,136,0.28);border-radius:4px;padding:1px 6px;font-size:10px;font-weight:600;color:#0d9488">3 hoje</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
+          <option value="ativo">✅ Ativo</option>
+          <option value="suspenso">⚠️ Suspenso</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select></div>
       <input type="hidden" id="editEmpresaId" />
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
-        <button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar alterações</button>
-      </div>
+      <div class="modal-actions"><button class="btn btn-secondary"
+          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
+          onclick="atualizarEmpresa()">Salvar</button></div>
     </div>
   </div>
 
@@ -1268,24 +1010,29 @@
 
   <script src="js/dashboard.js"></script>
   <script>
-<<<<<<< HEAD
     // Toggle visual do switch "Dia Todo"
+    // Usa setTimeout para garantir execução APÓS o dashboard.js redefinir a função
+    document.addEventListener('DOMContentLoaded', function() {
+      const chk = document.getElementById('chkDiaTodo');
+      if (chk) {
+        chk.addEventListener('change', function() {
+          const track = document.getElementById('toggleDiaTodoTrack');
+          const thumb = document.getElementById('toggleDiaTodoThumb');
+          if (track) track.style.background = chk.checked ? 'var(--accent)' : '#d1d5db';
+          if (thumb) thumb.style.transform = chk.checked ? 'translateX(18px)' : 'translateX(0)';
+          const campos = document.getElementById('camposHora');
+          if (campos) campos.style.display = chk.checked ? 'none' : 'flex';
+        });
+      }
+    });
+
     function toggleDiaTodo(cb) {
       const track = document.getElementById('toggleDiaTodoTrack');
       const thumb = document.getElementById('toggleDiaTodoThumb');
-      if (track && thumb) {
-        if (cb.checked) {
-          track.style.background = 'var(--accent)';
-          thumb.style.transform = 'translateX(18px)';
-        } else {
-          track.style.background = '#d1d5db';
-          thumb.style.transform = 'translateX(0)';
-        }
-      }
+      if (track) track.style.background = cb.checked ? 'var(--accent)' : '#d1d5db';
+      if (thumb) thumb.style.transform = cb.checked ? 'translateX(18px)' : 'translateX(0)';
       const campos = document.getElementById('camposHora');
       if (campos) campos.style.display = cb.checked ? 'none' : 'flex';
-      const campoDataFim = document.getElementById('campoDataFim');
-      if (campoDataFim) campoDataFim.style.opacity = cb.checked ? '0.5' : '1';
     }
 
     // Evento Pessoal dropdown
@@ -1293,245 +1040,6 @@
       const campo = document.getElementById('campoEventoPessoal');
       if (campo) campo.style.display = cb.checked ? 'block' : 'none';
     }
-=======
-  const _SA_API = 'https://agendare-backend-production.up.railway.app/api';
-
-  // ════════════════════════════════════════════════════════
-  // 1. ATIVAÇÃO DO MODO SUPER ADMIN
-  // ════════════════════════════════════════════════════════
-  (function() {
-    const u = JSON.parse(localStorage.getItem('usuario') || 'null');
-    if (!u || u.perfil !== 'superadmin') return;
-
-    document.body.classList.add('modo-sa');
-
-    const empresasEl = document.getElementById('abaEmpresas');
-    if (empresasEl) empresasEl.style.display = 'block';
-
-    const _mudarAbaOriginal = typeof mudarAba === 'function' ? mudarAba : null;
-    window.mudarAba = function(aba) {
-      const abasSA = ['empresas'];
-      if (abasSA.includes(aba)) {
-        const empresasDiv = document.getElementById('abaEmpresas');
-        if (empresasDiv) empresasDiv.style.display = 'block';
-        document.querySelectorAll('.sa-nav-tab').forEach(b => {
-          b.classList.toggle('active', b.dataset.aba === aba);
-        });
-      } else if (_mudarAbaOriginal) {
-        _mudarAbaOriginal(aba);
-      }
-    };
-  })();
-
-  // ════════════════════════════════════════════════════════
-  // 2. EXPAND USUÁRIOS NA LINHA DA EMPRESA
-  // ════════════════════════════════════════════════════════
-  // Sobrescreve renderizarEmpresasSA (chamada pelo dashboard.js)
-  // para adicionar o botão de expandir na linha
-  const _renderEmpresasOriginal = window.renderizarEmpresasSA;
-
-  function _renderEmpresasSAComExpand(lista) {
-    const tbody = document.getElementById('tabelaEmpresas');
-    if (!tbody) return;
-    if (!lista.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhuma empresa encontrada.</td></tr>';
-      return;
-    }
-    const badgeCls = { ativo: 'badge-confirmado', suspenso: 'badge-pendente', cancelado: 'badge-cancelado' };
-    const badgeLabel = { ativo: '✅ Ativo', suspenso: '⚠️ Suspenso', cancelado: '❌ Cancelado' };
-    tbody.innerHTML = lista.map(e => `
-      <tr class="empresa-row" id="row-emp-${e.id}" onclick="toggleUsuariosEmpresa(${e.id}, this)">
-        <td>
-          <button class="empresa-expand-btn" id="expand-btn-${e.id}" title="Ver usuários">▶</button>
-          <strong>${e.nome_fantasia || '—'}</strong>
-        </td>
-        <td style="color:var(--muted);font-size:0.82rem">${e.cnpj || '—'}</td>
-        <td style="font-size:0.82rem">${e.email || '—'}</td>
-        <td><code style="font-size:0.75rem;background:var(--surface2);padding:2px 6px;border-radius:4px">${e.slug || '—'}</code></td>
-        <td><span class="badge ${badgeCls[e.status] || 'badge-confirmado'}">${badgeLabel[e.status] || e.status}</span></td>
-        <td onclick="event.stopPropagation()">
-          <div style="display:flex;gap:4px">
-            <button class="btn btn-secondary btn-sm" onclick="verEmpresa(${e.id})" title="Editar">✏️</button>
-            <button class="btn btn-secondary btn-sm" onclick="verUsuariosEmpresa(${e.id},'${(e.nome_fantasia||'').replace(/'/g,"\\'")}')">👥</button>
-          </div>
-        </td>
-      </tr>
-      <tr class="usuarios-row" id="usuarios-row-${e.id}">
-        <td colspan="6">
-          <div class="usuarios-inner" id="usuarios-inner-${e.id}">
-            <div class="usuario-loading">Carregando usuários...</div>
-          </div>
-        </td>
-      </tr>`).join('');
-  }
-
-  // Patch: quando dashboard.js chama renderizarEmpresasSA, interceptamos
-  const _origFiltrar = window.filtrarEmpresasSA;
-  window.filtrarEmpresasSA = function() {
-    if (typeof _origFiltrar === 'function') _origFiltrar();
-    // Re-aplica o render customizado após o original rodar
-    // (fallback: se não houver função original, renderizamos diretamente)
-  };
-
-  // Hook na tabela: observa quando tabelaEmpresas é populada pelo dashboard.js
-  // e re-renderiza com expand se estivermos no modo SA
-  const _tabelaObs = new MutationObserver(function(mutations) {
-    if (!document.body.classList.contains('modo-sa')) return;
-    const tbody = document.getElementById('tabelaEmpresas');
-    if (!tbody) return;
-    // Só reprocessa se não tiver os botões de expand ainda
-    if (tbody.querySelector('.empresa-expand-btn')) return;
-    // Extrai dados do DOM atual para recriar com expand
-    // Melhor: pega do array global do dashboard.js
-    const lista = window._todasEmpresasSA || window.todasEmpresas || [];
-    if (lista.length) _renderEmpresasSAComExpand(lista);
-  });
-
-  document.addEventListener('DOMContentLoaded', function() {
-    const tbody = document.getElementById('tabelaEmpresas');
-    if (tbody) _tabelaObs.observe(tbody, { childList: true });
-  });
-
-  async function toggleUsuariosEmpresa(empresaId, rowEl) {
-    if (rowEl.classList.contains('empresa-expand-btn')) return; // clique no botão filho
-    const btnExpand = document.getElementById(`expand-btn-${empresaId}`);
-    const usuariosRow = document.getElementById(`usuarios-row-${empresaId}`);
-    const inner = document.getElementById(`usuarios-inner-${empresaId}`);
-    if (!usuariosRow) return;
-
-    const estaAberto = usuariosRow.classList.contains('visivel');
-    if (estaAberto) {
-      usuariosRow.classList.remove('visivel');
-      if (btnExpand) btnExpand.classList.remove('aberto');
-      return;
-    }
-
-    usuariosRow.classList.add('visivel');
-    if (btnExpand) btnExpand.classList.add('aberto');
-    inner.innerHTML = '<div class="usuario-loading">⏳ Carregando usuários...</div>';
-
-    try {
-      const token = localStorage.getItem('token');
-      const r = await fetch(`${_SA_API}/profissionais?empresa_id=${empresaId}`, {
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      const data = await r.json();
-      if (!Array.isArray(data) || !data.length) {
-        inner.innerHTML = '<div class="usuario-loading" style="color:var(--muted2)">Nenhum usuário cadastrado.</div>';
-        return;
-      }
-      const labelPerfil = { admin: '👑 Admin', profissional: '🔍 Analista', superadmin: '⚡ SA' };
-      const badgePerfil = { admin: 'badge-confirmado', profissional: 'badge-pendente' };
-      inner.innerHTML = `
-        <div class="usuarios-inner-header">👥 USUÁRIOS DE ${data[0]?._empresa || ''}</div>
-        ${data.map(u => `
-          <div class="usuario-item">
-            <div class="usuario-avatar" style="background:${u.cor_agenda || '#0d9488'}">${(u.nome||'?').charAt(0).toUpperCase()}</div>
-            <span class="usuario-nome">${u.nome || '—'}</span>
-            <span class="usuario-email">${u.email || '—'}</span>
-            <span class="badge ${badgePerfil[u.perfil] || 'badge-confirmado'}" style="font-size:0.7rem">${labelPerfil[u.perfil] || u.perfil}</span>
-            <span class="badge ${u.ativo !== false ? 'badge-confirmado' : 'badge-cancelado'}" style="font-size:0.7rem">${u.ativo !== false ? '✅ Ativo' : '❌ Inativo'}</span>
-          </div>`).join('')}`;
-    } catch {
-      inner.innerHTML = '<div class="usuario-loading" style="color:var(--error)">Erro ao carregar usuários.</div>';
-    }
-  }
-
-  // ════════════════════════════════════════════════════════
-  // 4. LOGO / MENU EMPRESA → VOLTAR PARA INÍCIO (abaEmpresas)
-  // ════════════════════════════════════════════════════════
-  document.addEventListener('DOMContentLoaded', function() {
-    // Logo já chama voltarInicio() — sobrescrevemos para SA
-    const logoEl = document.querySelector('.logo-top');
-    if (logoEl) {
-      logoEl._origOnclick = logoEl.onclick;
-      logoEl.onclick = function() {
-        if (document.body.classList.contains('modo-sa')) {
-          window.mudarAba('empresas');
-        } else if (logoEl._origOnclick) {
-          logoEl._origOnclick();
-        }
-      };
-    }
-  });
-
-  // ════════════════════════════════════════════════════════
-  // 5. UPLOAD DE IMAGEM LOCAL (converte para base64 / URL blob)
-  // ════════════════════════════════════════════════════════
-  function carregarImagemLocal(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const dataUrl = e.target.result;
-      document.getElementById('empFundoUrl').value = dataUrl;
-      if (typeof atualizarPreviewFundo === 'function') atualizarPreviewFundo(dataUrl);
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ════════════════════════════════════════════════════════
-  // 6. POP-UP DE COBRANÇA (vencimento próximo / em atraso)
-  // ════════════════════════════════════════════════════════
-  let _popupCobrancaTimer = null;
-
-  function verificarVencimento() {
-    const u = JSON.parse(localStorage.getItem('usuario') || 'null');
-    if (!u || u.perfil === 'superadmin') return; // SA não vê popup
-
-    // Busca dados da empresa do usuário
-    const token = localStorage.getItem('token');
-    fetch(`${_SA_API}/empresas/${u.empresa_id || ''}`, {
-      headers: { Authorization: 'Bearer ' + token }
-    })
-    .then(r => r.ok ? r.json() : null)
-    .then(empresa => {
-      if (!empresa || !empresa.vencimento) return;
-
-      const hoje = new Date();
-      hoje.setHours(0,0,0,0);
-      const venc = new Date(empresa.vencimento);
-      venc.setHours(0,0,0,0);
-      const diffDias = Math.ceil((venc - hoje) / 86400000);
-
-      if (diffDias < -5) {
-        // Mais de 5 dias em atraso → bloqueia acesso
-        localStorage.clear();
-        alert('⛔ Acesso suspenso.\n\nSua assinatura está com pagamento em atraso há mais de 5 dias.\nEntre em contato para regularizar.');
-        window.location.href = 'index.html';
-        return;
-      }
-
-      if (diffDias >= -5 && diffDias <= 0) {
-        // Vencido há até 5 dias → mostra popup agora e a cada 10 min
-        const diasAtraso = Math.abs(diffDias);
-        const msg = diasAtraso === 0
-          ? 'Sua assinatura vence hoje. Regularize o pagamento para evitar a suspensão do acesso.'
-          : `Sua assinatura está com ${diasAtraso} dia${diasAtraso > 1 ? 's' : ''} de atraso. Regularize o pagamento para evitar a suspensão do acesso.`;
-        mostrarPopupCobranca(msg);
-        // Agenda repetição a cada 10 minutos
-        _popupCobrancaTimer = setInterval(() => mostrarPopupCobranca(msg), 10 * 60 * 1000);
-      }
-    })
-    .catch(() => {}); // Falha silenciosa
-  }
-
-  function mostrarPopupCobranca(msg) {
-    const popup = document.getElementById('popupCobranca');
-    const msgEl = document.getElementById('popupCobrancaMsg');
-    if (!popup) return;
-    if (msgEl) msgEl.textContent = msg;
-    popup.classList.add('ativo');
-  }
-
-  function fecharPopupCobranca() {
-    const popup = document.getElementById('popupCobranca');
-    if (popup) popup.classList.remove('ativo');
-  }
-
-  // Roda a verificação quando a página carrega
-  document.addEventListener('DOMContentLoaded', verificarVencimento);
->>>>>>> bdee8bcfbd567b1c9c77c2cbbc2f5c86c2c58ee9
   </script>
 
   <!-- Modal Dashboard Stats -->
@@ -1544,18 +1052,6 @@
       </div>
     </div>
   </div>
-  <!-- Pop-up de cobrança (boleto em aberto) -->
-  <div id="popupCobranca">
-    <div class="popup-cobranca-box">
-      <div class="popup-cobranca-icon">⚠️</div>
-      <div class="popup-cobranca-title">Atenção — Boleto em Aberto</div>
-      <div class="popup-cobranca-msg" id="popupCobrancaMsg">
-        Sua assinatura possui um pagamento em aberto. Entre em contato para regularizar e evitar a suspensão do acesso.
-      </div>
-      <button class="btn btn-primary" onclick="fecharPopupCobranca()">Entendi</button>
-    </div>
-  </div>
-
 </body>
 
 </html>
