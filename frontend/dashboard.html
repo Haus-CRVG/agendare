@@ -114,8 +114,7 @@ body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   z-index: 10;
 }
 
@@ -179,6 +178,12 @@ body {
 /* Navegação sidebar */
 .sidebar-section {
   padding: 12px 14px 4px;
+  flex-shrink: 0;
+}
+.sidebar-nav-section {
+  overflow-y: auto;
+  flex-shrink: 0;
+  max-height: 200px;
 }
 .sidebar-section-title, .sidebar-label {
   font-size: 10px; font-weight: 700;
@@ -287,8 +292,14 @@ body {
 .content-area {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 20px;
   background: var(--bg);
+}
+.content-area-padded {
+  padding: 20px;
+}
+/* Aba de agenda ocupa tudo, demais têm padding */
+.aba:not(#abaAgenda) {
+  padding: 20px;
 }
 
 /* Esconde conteúdo de aba */
@@ -630,6 +641,324 @@ tr:hover td { background: var(--accent-bg); }
 
 /* Profissionais grid */
 #listaProfissionais { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; }
+
+/* ── Seção de usuários na sidebar ─────────────────────────── */
+.sidebar-usuarios {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  flex: 1;
+  overflow-y: auto;
+}
+.sidebar-usuarios-title {
+  font-size: 10px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.07em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.usuario-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 4px; border-radius: 5px;
+  cursor: pointer; transition: background 0.12s;
+  margin-bottom: 2px;
+}
+.usuario-item:hover { background: var(--bg); }
+.usuario-item input[type="checkbox"] {
+  width: 14px; height: 14px; flex-shrink: 0;
+  cursor: pointer; accent-color: var(--accent);
+}
+.usuario-avatar {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 9px; font-weight: 800; flex-shrink: 0;
+}
+.usuario-nome {
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1;
+}
+.usuario-item.desativado .usuario-nome { color: var(--text3); text-decoration: line-through; }
+
+/* ── Calendário Grande (visualização mês) ─────────────────── */
+.big-cal-wrapper {
+  display: flex; flex-direction: column;
+  height: 100%; background: var(--surface);
+  border-radius: var(--radius); border: 1px solid var(--border);
+  overflow: hidden;
+}
+.big-cal-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.big-cal-title {
+  font-family: 'Syne', var(--font);
+  font-size: 18px; font-weight: 700; color: var(--text);
+  letter-spacing: -0.3px; min-width: 200px;
+}
+.big-cal-tabs {
+  display: flex; border: 1px solid var(--border2);
+  border-radius: var(--radius); overflow: hidden;
+  margin-left: auto;
+}
+.big-cal-tab {
+  padding: 5px 13px; font: inherit; font-size: 12px; font-weight: 500;
+  border: none; border-left: 1px solid var(--border2);
+  background: var(--surface); color: var(--text2);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.big-cal-tab:first-child { border-left: none; }
+.big-cal-tab:hover { background: var(--bg); color: var(--text); }
+.big-cal-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Grid do calendário grande */
+.big-cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  flex: 1; overflow-y: auto;
+}
+.big-cal-dow {
+  padding: 8px; text-align: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  background: var(--surface2); flex-shrink: 0;
+  position: sticky; top: 0; z-index: 3;
+}
+.big-cal-dow.sun-col { color: var(--sat); }
+.big-cal-dow:last-child { border-right: none; }
+.big-cal-cell {
+  min-height: 120px; padding: 5px 4px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s;
+  vertical-align: top; position: relative;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.big-cal-cell:hover { background: rgba(79,110,247,0.03); }
+.big-cal-cell:nth-child(7n) { border-right: none; }
+.big-cal-cell.fora-mes { background: var(--surface2); cursor: default; }
+.big-cal-cell.fora-mes:hover { background: var(--surface2); }
+.big-cal-cell.hoje-cell { background: rgba(79,110,247,0.04); }
+.big-cal-num {
+  font-size: 12.5px; font-weight: 700; color: var(--text);
+  width: 27px; height: 27px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 3px; flex-shrink: 0; align-self: flex-end;
+}
+.big-cal-num.sat, .big-cal-num.sun { color: var(--sat); }
+.big-cal-cell.fora-mes .big-cal-num { color: var(--muted2); }
+.hoje-cell .big-cal-num { background: var(--accent); color: #fff !important; }
+
+/* Evento no calendário grande */
+.big-cal-ev {
+  font-size: 11px; font-weight: 600; border-radius: 4px;
+  padding: 2px 6px; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; transition: filter 0.1s; flex-shrink: 0;
+  display: flex; align-items: center; gap: 4px;
+}
+.big-cal-ev:hover { filter: brightness(0.88); }
+.big-cal-ev .ev-hora { font-weight: 800; font-size: 10px; opacity: 0.85; }
+.big-cal-ev.dia-todo-ev { border-radius: 0; padding: 2px 8px; margin: 0 -4px 2px -4px; }
+.big-cal-mais {
+  font-size: 10.5px; color: var(--accent); font-weight: 700;
+  cursor: pointer; padding: 1px 4px; flex-shrink: 0;
+}
+.big-cal-mais:hover { text-decoration: underline; }
+
+/* Evento multi-dia (barra contínua) */
+.multi-day-row {
+  display: flex; position: relative;
+  margin-bottom: 2px;
+}
+.big-cal-multiday {
+  height: 20px; display: flex; align-items: center;
+  font-size: 11px; font-weight: 600; color: #fff;
+  padding: 0 6px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: filter 0.1s; border-radius: 0; flex: 1;
+  position: absolute; z-index: 2;
+}
+.big-cal-multiday:hover { filter: brightness(0.88); }
+.big-cal-multiday.start { border-radius: 4px 0 0 4px; padding-left: 8px; }
+.big-cal-multiday.end   { border-radius: 0 4px 4px 0; }
+.big-cal-multiday.start.end { border-radius: 4px; }
+.multiday-spacer { height: 20px; margin-bottom: 2px; pointer-events: none; }
+
+/* Agenda / Dia views dentro do big cal */
+.big-cal-agenda-list { padding: 8px 0; }
+.big-cal-agenda-dia  {
+  display: flex; gap: 12px; padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s;
+}
+.big-cal-agenda-dia:hover { background: var(--accent-bg); }
+.big-cal-agenda-data {
+  width: 52px; flex-shrink: 0; text-align: right;
+}
+.big-cal-agenda-data-num  { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; }
+.big-cal-agenda-data-dia  { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; }
+.big-cal-agenda-data-hoje { color: var(--accent); }
+.big-cal-agenda-evs  { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.big-cal-agenda-ev {
+  font-size: 12px; font-weight: 600;
+  padding: 4px 8px; border-radius: 4px;
+  display: flex; gap: 8px; align-items: center;
+}
+.big-cal-agenda-vazio { color: var(--text3); font-size: 12px; padding: 4px 0; }
+
+/* Semana view no big cal */
+.big-cal-semana-wrapper {
+  display: flex; flex-direction: column;
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden;
+}
+
+/* Dia view no big cal */
+.big-cal-dia-wrapper {
+  display: flex; flex-direction: column;
+  border-radius: 0 0 var(--radius) var(--radius);
+  overflow: hidden; flex: 1;
+}
+.big-cal-dia-horas {
+  display: flex; overflow-y: auto; flex: 1;
+}
+.big-cal-dia-col-horas {
+  width: 52px; flex-shrink: 0; border-right: 1px solid var(--border);
+  background: var(--surface2);
+}
+.big-cal-dia-hora-label {
+  height: 60px; display: flex; align-items: flex-start;
+  padding: 4px 6px 0; font-size: 10px; color: var(--text3);
+  font-family: var(--font-mono); font-weight: 600; border-bottom: 1px solid var(--border);
+}
+.big-cal-dia-col {
+  flex: 1; position: relative;
+}
+.big-cal-dia-slot {
+  height: 60px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.big-cal-dia-slot:hover { background: var(--accent-bg); }
+.big-cal-dia-ev {
+  position: absolute; left: 4px; right: 4px;
+  border-radius: 5px; padding: 3px 6px;
+  cursor: pointer; z-index: 2;
+  overflow: hidden; transition: filter 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+.big-cal-dia-ev:hover { filter: brightness(0.9); }
+
+/* Semana view */
+.big-cal-sem-grid {
+  display: flex; flex: 1;
+}
+.big-cal-sem-col-horas {
+  width: 52px; flex-shrink: 0; border-right: 1px solid var(--border);
+  background: var(--surface2);
+}
+.big-cal-sem-hora-label {
+  height: 60px; display: flex; align-items: flex-start;
+  padding: 4px 6px 0; font-size: 10px; color: var(--text3);
+  font-family: var(--font-mono); font-weight: 600; border-bottom: 1px solid var(--border);
+}
+.big-cal-sem-dias {
+  flex: 1; display: flex; overflow-x: auto;
+}
+.big-cal-sem-dia {
+  flex: 1; min-width: 100px; border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.big-cal-sem-dia:last-child { border-right: none; }
+.big-cal-sem-dia-header {
+  text-align: center; padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface2); cursor: pointer;
+  transition: background 0.12s; flex-shrink: 0;
+  font-size: 11px; color: var(--text3);
+  font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.big-cal-sem-dia-header:hover { background: var(--accent-bg); }
+.big-cal-sem-dia-header.hoje-header { color: var(--accent); }
+.big-cal-sem-dia-num {
+  font-size: 20px; font-weight: 700; line-height: 1.1;
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 2px;
+}
+.big-cal-sem-dia-header.hoje-header .big-cal-sem-dia-num {
+  background: var(--accent); color: #fff;
+}
+.big-cal-sem-dia-body { flex: 1; position: relative; }
+.big-cal-sem-slot {
+  height: 60px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.big-cal-sem-slot:hover { background: var(--accent-bg); }
+.big-cal-sem-ev {
+  position: absolute; left: 2px; right: 2px;
+  border-radius: 4px; padding: 2px 5px;
+  cursor: pointer; z-index: 2; overflow: hidden;
+  transition: filter 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.big-cal-sem-ev:hover { filter: brightness(0.9); }
+.big-cal-ano-wrapper {
+  padding: 16px; overflow-y: auto; flex: 1;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;
+}
+.big-cal-ano-mes {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+}
+.big-cal-ano-mes-title {
+  padding: 8px 12px; font-weight: 700; font-size: 12px;
+  color: var(--text); background: var(--surface2);
+  border-bottom: 1px solid var(--border); cursor: pointer;
+}
+.big-cal-ano-mes-title:hover { color: var(--accent); }
+.big-cal-ano-mini-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); padding: 4px;
+}
+.big-cal-ano-dow {
+  text-align: center; font-size: 9px; font-weight: 700;
+  color: var(--text3); padding: 2px;
+}
+.big-cal-ano-day {
+  text-align: center; font-size: 10.5px; color: var(--text2);
+  padding: 3px 2px; cursor: pointer; border-radius: 50%;
+  width: 24px; height: 24px; margin: 1px auto;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.1s;
+}
+.big-cal-ano-day:hover { background: var(--bg); }
+.big-cal-ano-day.hoje-ano { background: var(--accent); color: #fff; font-weight: 700; }
+.big-cal-ano-day.tem-ev { position: relative; }
+.big-cal-ano-day.tem-ev::after {
+  content: ''; position: absolute; bottom: 1px; left: 50%;
+  transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent);
+}
+.big-cal-ano-day.outro-mes { color: var(--muted2); }
+
+/* Linha de hora atual no big cal */
+.big-cal-agora {
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: var(--error); z-index: 10; border-radius: 1px;
+  pointer-events: none;
+}
+.big-cal-agora::before {
+  content: ''; position: absolute; left: -4px; top: -4px;
+  width: 10px; height: 10px; background: var(--error); border-radius: 50%;
+}
+
+/* Container do big cal dentro do content area */
+#painelBigCal {
+  height: calc(100vh - 130px);
+  display: flex; flex-direction: column;
+}
 </style>
 </head>
 <body>
@@ -717,13 +1046,23 @@ tr:hover td { background: var(--accent-bg); }
       </button>
     </div>
 
+    <!-- Usuários com filtro de visibilidade -->
+    <div class="sidebar-usuarios" id="sidebarUsuarios">
+      <div class="sidebar-usuarios-title">
+        <span>👥</span> Usuários
+      </div>
+      <div id="listaUsuariosCalendario">
+        <div style="color:var(--text3);font-size:11px;padding:4px 0">Carregando...</div>
+      </div>
+    </div>
+
   </aside>
 
   <!-- ── Main ── -->
   <div class="main">
 
     <!-- Toolbar -->
-    <div class="toolbar">
+    <div class="toolbar" id="mainToolbar" style="display:none">
       <div class="toolbar-left">
         <button class="btn-today" onclick="schHoje()">📅 Hoje</button>
         <button class="btn-nav" onclick="schNavegar(-1)">‹</button>
@@ -739,30 +1078,37 @@ tr:hover td { background: var(--accent-bg); }
     </div>
 
     <!-- Conteúdo rolável -->
-    <div class="content-area">
+    <div class="content-area" id="mainContentArea" style="padding:0">
 
-      <!-- ABA: AGENDA -->
-      <div id="abaAgenda" class="aba ativa">
-        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-          <div>
-            <div class="page-title" id="tituloAgendaPagina">Agenda <span>do Dia</span></div>
-            <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
-          </div>
-          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
-        </div>
-        <div class="stats-grid" id="statsAgenda"></div>
-        <!-- Próximos: Kanban -->
-        <div id="painelProximos">
-          <div class="card" style="margin-bottom:1rem">
-            <div class="card-header">
-              <h2>⚡ Próximos Compromissos</h2>
-              <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+      <!-- ABA: AGENDA (Big Calendar) -->
+      <div id="abaAgenda" class="aba ativa" style="height:100%;display:flex;flex-direction:column;padding:0;">
+        <div id="painelBigCal">
+          <div class="big-cal-wrapper">
+            <!-- Header do Big Cal -->
+            <div class="big-cal-header">
+              <button class="btn-today" onclick="bigCalHoje()">📅 Hoje</button>
+              <button class="btn-nav" onclick="bigCalNavegar(-1)">‹</button>
+              <button class="btn-nav" onclick="bigCalNavegar(1)">›</button>
+              <span class="big-cal-title" id="bigCalTitle">—</span>
+              <div class="big-cal-tabs" id="bigCalTabs">
+                <button class="big-cal-tab" id="tabBigDia" onclick="bigCalMudarVis('dia')">Dia</button>
+                <button class="big-cal-tab" id="tabBigSemana" onclick="bigCalMudarVis('semana')">Semana</button>
+                <button class="big-cal-tab active" id="tabBigMes" onclick="bigCalMudarVis('mes')">Mês</button>
+                <button class="big-cal-tab" id="tabBigAno" onclick="bigCalMudarVis('ano')">Ano</button>
+                <button class="big-cal-tab" id="tabBigAgenda" onclick="bigCalMudarVis('agenda')">Agenda</button>
+              </div>
+              <button class="btn btn-primary btn-sm" style="margin-left:8px" onclick="abrirNovoAgendamento()">+ Novo</button>
             </div>
+            <!-- Corpo do Big Cal -->
+            <div id="bigCalBody" style="flex:1;overflow:hidden;display:flex;flex-direction:column;"></div>
           </div>
+        </div>
+        <!-- Manter painelCalendario e painelProximos ocultos (compatibilidade) -->
+        <div id="painelCalendario" style="display:none"></div>
+        <div id="painelProximos" style="display:none">
           <div class="kanban-board" id="kanbanProximos"></div>
         </div>
-        <!-- Scheduler Dia/Semana/Mês -->
-        <div id="painelCalendario" style="display:none"></div>
+        <div class="stats-grid" id="statsAgenda" style="display:none"></div>
       </div>
 
       <!-- ABA: LISTA -->
@@ -1224,7 +1570,7 @@ tr:hover td { background: var(--accent-bg); }
       for (let d = 1; d <= last; d++) {
         const ds = isoDate(y, m, d);
         const isT = ds === todayISO;
-        html += `<div class="mini-day ${isT?'today':''}" onclick="jumpToDate && jumpToDate('${ds}')">${d}</div>`;
+        html += `<div class="mini-day ${isT?'today':''}" onclick="bigCalJumpDate && bigCalJumpDate('${ds}')">${d}</div>`;
       }
       const rem = 42 - first - last;
       for (let i = 1; i <= rem; i++)
@@ -1237,12 +1583,10 @@ tr:hover td { background: var(--accent-bg); }
 
   /* Listener para sincronizar toolbar title com o scheduler */
   document.addEventListener('DOMContentLoaded', function() {
-    // Aguarda o dashboard.js carregar e expor as funções
     setTimeout(function() {
       if (typeof schHoje !== 'function') {
-        // Fallback: redireciona para funções do dashboard existentes
-        window.schHoje    = function() { if(typeof goToday==='function') goToday(); };
-        window.schNavegar = function(d){ if(typeof schNavDia==='function') schNavDia(d); };
+        window.schHoje    = function() { bigCalHoje(); };
+        window.schNavegar = function(d){ bigCalNavegar(d); };
       }
     }, 500);
   });
@@ -1253,16 +1597,547 @@ tr:hover td { background: var(--accent-bg); }
     if (campo) campo.style.display = cb.checked ? 'block' : 'none';
   }
 
-  /* Sincroniza título da toolbar com a visualização ativa */
   function atualizarToolbarTitle(texto) {
     const el = document.getElementById('mainTitle');
     if (el) el.textContent = texto;
   }
 
-  /* Filtro sidebar → repassa para o dashboard.js */
   function filtrarSidebar(val) {
     if (typeof filtrarEventos === 'function') filtrarEventos(val);
   }
+
+  /* ══════════════════════════════════════════════════════════
+     BIG CALENDAR — Calendário principal integrado
+  ══════════════════════════════════════════════════════════ */
+  (function() {
+    const MESES  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const DIASEM = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    const DIASEM_FULL = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const COR_PALETTE = ['#4f6ef7','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#10b981','#f97316','#6366f1'];
+
+    let bcVis  = 'mes'; // dia | semana | mes | ano | agenda
+    let bcDate = new Date();
+    bcDate.setHours(0,0,0,0);
+
+    // Usuários visíveis (mapa userId → true/false)
+    let usuariosVisiveis = {};
+    let todosUsuarios = [];
+
+    function isoDate(d) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+    function parseISO(s) {
+      const [y,m,d] = s.split('-').map(Number);
+      return new Date(y, m-1, d);
+    }
+    function hoje() {
+      const t = new Date(); t.setHours(0,0,0,0); return t;
+    }
+
+    /* ── Busca eventos via API do dashboard.js ─────────────── */
+    function getEventos() {
+      // Tenta buscar os agendamentos já carregados pelo dashboard.js
+      if (window._agendamentos && Array.isArray(window._agendamentos)) {
+        return window._agendamentos;
+      }
+      // Fallback: retorna array vazio (o dashboard.js vai popular)
+      return [];
+    }
+
+    /* ── Cor por usuário ──────────────────────────────────── */
+    function corUsuario(userId) {
+      if (!userId) return COR_PALETTE[0];
+      const idx = todosUsuarios.findIndex(u => u.id == userId);
+      return COR_PALETTE[((idx >= 0 ? idx : 0)) % COR_PALETTE.length];
+    }
+
+    /* ── Filtra eventos por usuários visíveis ─────────────── */
+    function filtrarEventos(evs) {
+      if (!evs || !evs.length) return [];
+      return evs.filter(ev => {
+        const uid = ev.profissional_id || ev.usuario_id || ev.userId || null;
+        if (uid && Object.keys(usuariosVisiveis).length > 0) {
+          return usuariosVisiveis[uid] !== false;
+        }
+        return true;
+      });
+    }
+
+    /* ── Verifica se evento é multi-dia ───────────────────── */
+    function isMultiDia(ev) {
+      if (!ev.data_fim && !ev.dataFim) return false;
+      const ini  = ev.data_inicio || ev.dataInicio || ev.data || '';
+      const fim  = ev.data_fim    || ev.dataFim    || '';
+      return fim && fim !== ini;
+    }
+
+    /* ── Renderiza a lista de usuários na sidebar ──────────── */
+    window.renderUsuariosSidebar = function(usuarios) {
+      todosUsuarios = usuarios || [];
+      const container = document.getElementById('listaUsuariosCalendario');
+      if (!container) return;
+      if (!todosUsuarios.length) {
+        container.innerHTML = '<div style="color:var(--text3);font-size:11px;padding:4px 0">Nenhum usuário</div>';
+        return;
+      }
+      // Init visibilidade
+      todosUsuarios.forEach((u, i) => {
+        if (usuariosVisiveis[u.id] === undefined) usuariosVisiveis[u.id] = true;
+      });
+      container.innerHTML = todosUsuarios.map((u, i) => {
+        const cor  = COR_PALETTE[i % COR_PALETTE.length];
+        const ini  = (u.nome || u.name || '?').charAt(0).toUpperCase();
+        const nome = u.nome || u.name || 'Usuário';
+        const vis  = usuariosVisiveis[u.id] !== false;
+        return `
+          <label class="usuario-item ${vis?'':'desativado'}" id="ui_${u.id}" style="cursor:pointer">
+            <input type="checkbox" ${vis?'checked':''} onchange="toggleUsuarioVis(${u.id}, this.checked)"
+              style="accent-color:${cor};width:14px;height:14px;flex-shrink:0;cursor:pointer"/>
+            <span class="usuario-avatar" style="background:${cor}">${ini}</span>
+            <span class="usuario-nome">${nome}</span>
+          </label>`;
+      }).join('');
+    };
+
+    window.toggleUsuarioVis = function(uid, vis) {
+      usuariosVisiveis[uid] = vis;
+      const item = document.getElementById('ui_'+uid);
+      if (item) item.classList.toggle('desativado', !vis);
+      bigCalRender();
+    };
+
+    /* ══════ RENDERIZAÇÕES ════════════════════════════════════ */
+
+    function bigCalRender() {
+      const body = document.getElementById('bigCalBody');
+      if (!body) return;
+      const evs = filtrarEventos(getEventos());
+      updateTitle();
+      if      (bcVis === 'mes')    renderMes(body, evs);
+      else if (bcVis === 'semana') renderSemana(body, evs);
+      else if (bcVis === 'dia')    renderDia(body, evs);
+      else if (bcVis === 'ano')    renderAno(body, evs);
+      else if (bcVis === 'agenda') renderAgenda(body, evs);
+    }
+    window.bigCalRender = bigCalRender;
+
+    function updateTitle() {
+      const el = document.getElementById('bigCalTitle');
+      if (!el) return;
+      if (bcVis === 'mes') {
+        el.textContent = `${MESES[bcDate.getMonth()]} ${bcDate.getFullYear()}`;
+      } else if (bcVis === 'semana') {
+        const ini = new Date(bcDate); ini.setDate(ini.getDate() - ini.getDay());
+        const fim = new Date(ini);    fim.setDate(fim.getDate() + 6);
+        if (ini.getMonth() === fim.getMonth()) {
+          el.textContent = `${ini.getDate()} – ${fim.getDate()} ${MESES[ini.getMonth()]} ${ini.getFullYear()}`;
+        } else {
+          el.textContent = `${ini.getDate()} ${MESES[ini.getMonth()]} – ${fim.getDate()} ${MESES[fim.getMonth()]}`;
+        }
+      } else if (bcVis === 'dia') {
+        el.textContent = `${DIASEM_FULL[bcDate.getDay()]}, ${bcDate.getDate()} de ${MESES[bcDate.getMonth()]} de ${bcDate.getFullYear()}`;
+      } else if (bcVis === 'ano') {
+        el.textContent = `${bcDate.getFullYear()}`;
+      } else {
+        el.textContent = 'Agenda';
+      }
+    }
+
+    /* ── VIEW MÊS ─────────────────────────────────────────── */
+    function renderMes(body, evs) {
+      const y = bcDate.getFullYear(), m = bcDate.getMonth();
+      const primeiro = new Date(y, m, 1);
+      const ultimo   = new Date(y, m+1, 0);
+      const startDow = primeiro.getDay();
+      const hj = hoje();
+
+      // Montar células
+      const totalCells = Math.ceil((startDow + ultimo.getDate()) / 7) * 7;
+      let cells = [];
+      for (let i = 0; i < totalCells; i++) {
+        const d = new Date(y, m, 1 - startDow + i);
+        cells.push(d);
+      }
+
+      // Separar eventos multi-dia e simples
+      const multiDia = evs.filter(ev => isMultiDia(ev));
+      const simples  = evs.filter(ev => !isMultiDia(ev));
+
+      // Para cada semana, calcular as barras multi-dia
+      const semanas = [];
+      for (let s = 0; s < cells.length / 7; s++) {
+        semanas.push(cells.slice(s*7, s*7+7));
+      }
+
+      let html = '<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">';
+      // Cabeçalho dias da semana
+      html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);flex-shrink:0">';
+      ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].forEach((d,i) => {
+        html += `<div class="big-cal-dow${i===0||i===6?' sun-col':''}">${d}</div>`;
+      });
+      html += '</div>';
+
+      // Grid principal
+      html += '<div style="flex:1;overflow-y:auto;display:flex;flex-direction:column">';
+
+      semanas.forEach(semCells => {
+        html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);flex:1;min-height:120px">';
+        semCells.forEach((d, idx) => {
+          const iso    = isoDate(d);
+          const foraMes = d.getMonth() !== m;
+          const ehHoje  = d.getTime() === hj.getTime();
+          const dow     = d.getDay();
+          const isSat   = dow === 6, isSun = dow === 0;
+
+          // Eventos simples do dia
+          const evsDia = simples.filter(ev => {
+            const di = ev.data_inicio || ev.dataInicio || ev.data || '';
+            return di.startsWith(iso);
+          });
+
+          // Multi-dia que passam por este dia
+          const evsMulti = multiDia.filter(ev => {
+            const ini = ev.data_inicio || ev.dataInicio || ev.data || '';
+            const fim = ev.data_fim    || ev.dataFim    || ini;
+            return iso >= ini.substring(0,10) && iso <= fim.substring(0,10);
+          });
+
+          let cellHtml = `<div class="big-cal-cell${foraMes?' fora-mes':''}${ehHoje?' hoje-cell':''}"
+            onclick="bigCalCliqueData('${iso}')"
+            style="display:flex;flex-direction:column;min-height:120px;overflow:hidden">`;
+
+          // Número do dia
+          cellHtml += `<div style="display:flex;justify-content:flex-end">
+            <div class="big-cal-num${isSat||isSun?' sat':''}${ehHoje?' hoje-num':''}">
+              ${d.getDate()}
+            </div>
+          </div>`;
+
+          // Eventos multi-dia primeiro
+          evsMulti.slice(0,2).forEach(ev => {
+            const ini  = (ev.data_inicio || ev.dataInicio || ev.data || '').substring(0,10);
+            const fim  = (ev.data_fim    || ev.dataFim    || ini).substring(0,10);
+            const isIni  = iso === ini;
+            const isFim  = iso === fim;
+            const isDom  = idx === 0 || iso === ini; // começo da linha
+            const isSab  = idx === 6 || iso === fim; // fim da linha
+            const uid = ev.profissional_id || ev.usuario_id || null;
+            const cor = corUsuario(uid);
+            const titulo = isIni ? (ev.titulo || ev.title || 'Compromisso') : '';
+            const raio = `border-radius:${isDom?'4px':'0'} ${isSab?'4px':'0'} ${isSab?'4px':'0'} ${isDom?'4px':'0'}`;
+            cellHtml += `<div class="big-cal-multiday" style="background:${cor};${raio};position:relative;height:20px;margin-bottom:2px;display:flex;align-items:center;padding:0 6px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:${isDom?'4px 0 0 4px':'0'} ${isSab?'0 4px 4px 0':'0 0 0 0'}"
+              onclick="event.stopPropagation();bigCalAbrirEvento('${ev.id||''}')"
+              title="${ev.titulo||ev.title||''}">
+              ${titulo ? `<span>${titulo}</span>` : ''}
+            </div>`;
+          });
+
+          // Eventos simples
+          evsDia.slice(0, 3).forEach(ev => {
+            const uid = ev.profissional_id || ev.usuario_id || null;
+            const cor = corUsuario(uid);
+            const hora = (ev.hora_inicio || ev.horaInicio || '').substring(0,5);
+            const titulo = ev.titulo || ev.title || 'Compromisso';
+            const bg = cor + '22';
+            cellHtml += `<div class="big-cal-ev" style="background:${bg};color:${cor};border-left:3px solid ${cor}"
+              onclick="event.stopPropagation();bigCalAbrirEvento('${ev.id||''}')"
+              title="${titulo}">
+              ${hora ? `<span class="ev-hora">${hora}</span>` : ''}
+              <span style="overflow:hidden;text-overflow:ellipsis">${titulo}</span>
+            </div>`;
+          });
+
+          const totalEv = evsDia.length + evsMulti.length;
+          if (totalEv > 3) {
+            cellHtml += `<div class="big-cal-mais" onclick="event.stopPropagation();bigCalJumpDia('${iso}')">+${totalEv-3} mais</div>`;
+          }
+
+          cellHtml += '</div>';
+          html += cellHtml;
+        });
+        html += '</div>';
+      });
+
+      html += '</div></div>';
+      body.innerHTML = html;
+    }
+
+    /* ── VIEW SEMANA ──────────────────────────────────────── */
+    function renderSemana(body, evs) {
+      const ini = new Date(bcDate);
+      ini.setDate(ini.getDate() - ini.getDay());
+      const hj = hoje();
+      const dias = [];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(ini); d.setDate(ini.getDate() + i);
+        dias.push(d);
+      }
+      const HORAS = Array.from({length:24},(_,i)=>i);
+
+      let html = `<div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+        <div style="display:flex;border-bottom:1px solid var(--border)">
+          <div style="width:52px;flex-shrink:0;background:var(--surface2);border-right:1px solid var(--border)"></div>`;
+      dias.forEach(d => {
+        const iso = isoDate(d); const isH = d.getTime()===hj.getTime();
+        html += `<div class="big-cal-sem-dia-header${isH?' hoje-header':''}" style="flex:1;min-width:80px;text-align:center;padding:8px 4px;cursor:pointer;border-right:1px solid var(--border);font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;background:var(--surface2)" onclick="bigCalJumpDia('${iso}')">
+          <div style="font-size:11px">${DIASEM[d.getDay()]}</div>
+          <div class="big-cal-sem-dia-num">${d.getDate()}</div>
+        </div>`;
+      });
+      html += `</div>
+        <div style="display:flex;flex:1;overflow-y:auto">
+          <div style="width:52px;flex-shrink:0;background:var(--surface2);border-right:1px solid var(--border)">`;
+      HORAS.forEach(h => {
+        html += `<div style="height:60px;display:flex;align-items:flex-start;padding:4px 6px 0;font-size:10px;color:var(--text3);font-family:var(--font-mono);font-weight:600;border-bottom:1px solid var(--border)">
+          ${String(h).padStart(2,'0')}:00</div>`;
+      });
+      html += '</div>';
+      dias.forEach(d => {
+        const iso = isoDate(d); const isH = d.getTime()===hj.getTime();
+        const evsDia = evs.filter(ev => {
+          const di = (ev.data_inicio||ev.dataInicio||ev.data||'').substring(0,10);
+          return di === iso;
+        });
+        html += `<div style="flex:1;min-width:80px;position:relative;border-right:1px solid var(--border);${isH?'background:rgba(79,110,247,.03)':''}">`;
+        HORAS.forEach(h => {
+          html += `<div style="height:60px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onclick="bigCalCliqueDataHora('${iso}','${String(h).padStart(2,'0')}:00')" onmouseover="this.style.background='var(--accent-bg)'" onmouseout="this.style.background=''"></div>`;
+        });
+        evsDia.forEach(ev => {
+          const uid = ev.profissional_id||ev.usuario_id||null;
+          const cor = corUsuario(uid);
+          const [hIni='08',mIni='00'] = (ev.hora_inicio||ev.horaInicio||'08:00').split(':');
+          const [hFim='09',mFim='00'] = (ev.hora_fim||ev.horaFim||'09:00').split(':');
+          const top  = (parseInt(hIni)*60 + parseInt(mIni)) * 60/60;
+          const dur  = Math.max(30, (parseInt(hFim)*60+parseInt(mFim)) - (parseInt(hIni)*60+parseInt(mIni)));
+          const titulo = ev.titulo||ev.title||'Compromisso';
+          html += `<div style="position:absolute;top:${top}px;left:2px;right:2px;height:${dur}px;background:${cor}22;border-left:3px solid ${cor};border-radius:4px;padding:2px 5px;cursor:pointer;z-index:2;overflow:hidden;font-size:11px;font-weight:600;color:${cor}"
+            onclick="bigCalAbrirEvento('${ev.id||''}')" title="${titulo}">
+            <div style="font-size:10px;opacity:.8">${hIni}:${mIni}</div>
+            ${titulo}
+          </div>`;
+        });
+        html += '</div>';
+      });
+      html += '</div></div>';
+      body.innerHTML = html;
+    }
+
+    /* ── VIEW DIA ─────────────────────────────────────────── */
+    function renderDia(body, evs) {
+      const iso  = isoDate(bcDate);
+      const hj   = hoje();
+      const evsDia = evs.filter(ev => {
+        const di = (ev.data_inicio||ev.dataInicio||ev.data||'').substring(0,10);
+        return di === iso;
+      });
+      const HORAS = Array.from({length:24},(_,i)=>i);
+      let html = `<div style="display:flex;height:100%;overflow-y:auto">
+        <div style="width:52px;flex-shrink:0;background:var(--surface2);border-right:1px solid var(--border)">`;
+      HORAS.forEach(h => {
+        html += `<div style="height:60px;display:flex;align-items:flex-start;padding:4px 6px 0;font-size:10px;color:var(--text3);font-family:var(--font-mono);font-weight:600;border-bottom:1px solid var(--border)">${String(h).padStart(2,'0')}:00</div>`;
+      });
+      html += `</div><div style="flex:1;position:relative">`;
+      HORAS.forEach(h => {
+        html += `<div style="height:60px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s" onclick="bigCalCliqueDataHora('${iso}','${String(h).padStart(2,'0')}:00')" onmouseover="this.style.background='var(--accent-bg)'" onmouseout="this.style.background=''"></div>`;
+      });
+      // Linha de agora
+      if (isoDate(hj) === iso) {
+        const now = new Date(); const topNow = (now.getHours()*60+now.getMinutes());
+        html += `<div style="position:absolute;left:0;right:0;top:${topNow}px;height:2px;background:var(--error);z-index:10;border-radius:1px;pointer-events:none"><div style="position:absolute;left:-4px;top:-4px;width:10px;height:10px;background:var(--error);border-radius:50%"></div></div>`;
+      }
+      evsDia.forEach(ev => {
+        const uid = ev.profissional_id||ev.usuario_id||null;
+        const cor = corUsuario(uid);
+        const [hIni='08',mIni='00'] = (ev.hora_inicio||ev.horaInicio||'08:00').split(':');
+        const [hFim='09',mFim='00'] = (ev.hora_fim||ev.horaFim||'09:00').split(':');
+        const top = (parseInt(hIni)*60+parseInt(mIni));
+        const dur = Math.max(30,(parseInt(hFim)*60+parseInt(mFim))-(parseInt(hIni)*60+parseInt(mIni)));
+        const titulo = ev.titulo||ev.title||'Compromisso';
+        html += `<div style="position:absolute;top:${top}px;left:4px;right:4px;height:${dur}px;background:${cor}22;border-left:4px solid ${cor};border-radius:5px;padding:4px 8px;cursor:pointer;z-index:2;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1)"
+          onclick="bigCalAbrirEvento('${ev.id||''}')" title="${titulo}">
+          <div style="font-size:10px;font-weight:700;color:${cor};opacity:.85;font-family:var(--font-mono)">${hIni}:${mIni} – ${hFim}:${mFim}</div>
+          <div style="font-size:12px;font-weight:700;color:${cor}">${titulo}</div>
+        </div>`;
+      });
+      html += '</div></div>';
+      body.innerHTML = html;
+    }
+
+    /* ── VIEW ANO ─────────────────────────────────────────── */
+    function renderAno(body, evs) {
+      const y = bcDate.getFullYear();
+      const hj = hoje();
+      let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;padding:16px;overflow-y:auto;flex:1">';
+      for (let m = 0; m < 12; m++) {
+        const primeiro = new Date(y,m,1);
+        const ultimo   = new Date(y,m+1,0);
+        const startDow = primeiro.getDay();
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+          <div style="padding:8px 12px;font-weight:700;font-size:12px;color:var(--text);background:var(--surface2);border-bottom:1px solid var(--border);cursor:pointer" onclick="bigCalJumpMes(${y},${m})">${MESES[m]}</div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);padding:4px">`;
+        ['D','S','T','Q','Q','S','S'].forEach((d,i) => {
+          html += `<div style="text-align:center;font-size:9px;font-weight:700;color:var(--text3);padding:2px">${d}</div>`;
+        });
+        for (let i=0;i<startDow;i++) html += '<div></div>';
+        for (let d=1;d<=ultimo.getDate();d++) {
+          const dt  = new Date(y,m,d);
+          const iso = isoDate(dt);
+          const isH = dt.getTime()===hj.getTime();
+          const temEv = evs.some(ev=>(ev.data_inicio||ev.dataInicio||ev.data||'').startsWith(iso));
+          html += `<div style="text-align:center;font-size:10.5px;color:var(--text2);padding:2px;cursor:pointer;border-radius:50%;width:24px;height:24px;margin:1px auto;display:flex;align-items:center;justify-content:center;${isH?'background:var(--accent);color:#fff;font-weight:700':''}${temEv&&!isH?'font-weight:700;color:var(--accent)':''}"
+            onclick="bigCalJumpDia('${iso}')" onmouseover="if(!this.style.background.includes('accent'))this.style.background='var(--bg)'" onmouseout="if(!${isH})this.style.background=''">
+            ${d}</div>`;
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
+    /* ── VIEW AGENDA ──────────────────────────────────────── */
+    function renderAgenda(body, evs) {
+      const hj = hoje();
+      // Agrupar eventos por data (próximos 60 dias)
+      const grupos = {};
+      evs.forEach(ev => {
+        const iso = (ev.data_inicio||ev.dataInicio||ev.data||'').substring(0,10);
+        if (!iso) return;
+        if (!grupos[iso]) grupos[iso] = [];
+        grupos[iso].push(ev);
+      });
+      const datas = Object.keys(grupos).sort();
+      if (!datas.length) {
+        body.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">Nenhum compromisso encontrado.</div>';
+        return;
+      }
+      let html = '<div style="overflow-y:auto;flex:1">';
+      datas.forEach(iso => {
+        const d = parseISO(iso);
+        const isH = d.getTime()===hj.getTime();
+        html += `<div style="display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s" onclick="bigCalJumpDia('${iso}')" onmouseover="this.style.background='var(--accent-bg)'" onmouseout="this.style.background=''">
+          <div style="width:56px;flex-shrink:0;text-align:right">
+            <div style="font-size:24px;font-weight:700;line-height:1;color:${isH?'var(--accent)':'var(--text)'}">${d.getDate()}</div>
+            <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">${DIASEM[d.getDay()]}</div>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:4px">`;
+        grupos[iso].forEach(ev => {
+          const uid = ev.profissional_id||ev.usuario_id||null;
+          const cor = corUsuario(uid);
+          const hora = (ev.hora_inicio||ev.horaInicio||'').substring(0,5);
+          const titulo = ev.titulo||ev.title||'Compromisso';
+          html += `<div style="font-size:12px;font-weight:600;padding:4px 8px;border-radius:4px;background:${cor}22;color:${cor};display:flex;gap:8px;align-items:center;cursor:pointer"
+            onclick="event.stopPropagation();bigCalAbrirEvento('${ev.id||''}')">
+            ${hora?`<span style="font-family:var(--font-mono);font-size:11px;opacity:.85">${hora}</span>`:''}
+            <span>${titulo}</span>
+          </div>`;
+        });
+        html += '</div></div>';
+      });
+      html += '</div>';
+      body.innerHTML = html;
+    }
+
+    /* ── Navegação ────────────────────────────────────────── */
+    window.bigCalNavegar = function(dir) {
+      if (bcVis==='mes') {
+        bcDate.setMonth(bcDate.getMonth()+dir);
+      } else if (bcVis==='semana') {
+        bcDate.setDate(bcDate.getDate()+dir*7);
+      } else if (bcVis==='dia') {
+        bcDate.setDate(bcDate.getDate()+dir);
+      } else if (bcVis==='ano') {
+        bcDate.setFullYear(bcDate.getFullYear()+dir);
+      } else {
+        bcDate.setDate(bcDate.getDate()+dir*30);
+      }
+      bigCalRender();
+      renderMiniCal();
+    };
+
+    window.bigCalHoje = function() {
+      bcDate = new Date(); bcDate.setHours(0,0,0,0);
+      bigCalRender(); renderMiniCal();
+    };
+
+    window.bigCalMudarVis = function(vis) {
+      bcVis = vis;
+      // Atualizar tabs
+      ['Dia','Semana','Mes','Ano','Agenda'].forEach(v => {
+        const el = document.getElementById('tabBig'+v);
+        if (el) el.classList.toggle('active', v.toLowerCase()===vis);
+      });
+      bigCalRender();
+    };
+
+    window.bigCalJumpDate = function(iso) {
+      bcDate = parseISO(iso); bcDate.setHours(0,0,0,0);
+      if (bcVis==='mes') bigCalRender();
+      else { bcVis='dia'; bigCalMudarVis('dia'); }
+      renderMiniCal();
+    };
+
+    window.bigCalJumpDia = function(iso) {
+      bcDate = parseISO(iso); bcDate.setHours(0,0,0,0);
+      bcVis = 'dia'; bigCalMudarVis('dia');
+    };
+
+    window.bigCalJumpMes = function(y, m) {
+      bcDate = new Date(y, m, 1); bcVis='mes'; bigCalMudarVis('mes');
+    };
+
+    window.bigCalCliqueData = function(iso) {
+      if (typeof abrirNovoAgendamento === 'function') {
+        abrirNovoAgendamento(iso);
+      }
+    };
+
+    window.bigCalCliqueDataHora = function(iso, hora) {
+      if (typeof abrirNovoAgendamento === 'function') {
+        abrirNovoAgendamento(iso, hora);
+      }
+    };
+
+    window.bigCalAbrirEvento = function(id) {
+      if (id && typeof abrirEditarAgendamento === 'function') {
+        abrirEditarAgendamento(id);
+      } else if (id && typeof verAgendamento === 'function') {
+        verAgendamento(id);
+      }
+    };
+
+    /* ── Init ────────────────────────────────────────────── */
+    // Aguarda DOM estar pronto e re-renderiza quando agendamentos carregarem
+    document.addEventListener('DOMContentLoaded', function() {
+      bigCalRender();
+      // Hook: sempre que o dashboard.js atualizar os agendamentos, re-renderizar
+      const origSet = Object.getOwnPropertyDescriptor(window, '_agendamentos');
+      let _ags = window._agendamentos || [];
+      Object.defineProperty(window, '_agendamentos', {
+        get() { return _ags; },
+        set(v) {
+          _ags = v;
+          bigCalRender();
+          // Atualizar lista de usuários se houver profissionais
+          if (window._profissionais && window._profissionais.length) {
+            renderUsuariosSidebar(window._profissionais);
+          }
+        },
+        configurable: true
+      });
+      let _profs = window._profissionais || [];
+      Object.defineProperty(window, '_profissionais', {
+        get() { return _profs; },
+        set(v) {
+          _profs = v;
+          renderUsuariosSidebar(v);
+        },
+        configurable: true
+      });
+      // Re-renderizar a cada 60s (linha de agora)
+      setInterval(bigCalRender, 60000);
+    });
+
+  })();
 </script>
 </body>
 </html>
