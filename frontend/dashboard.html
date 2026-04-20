@@ -1,517 +1,754 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Agendare — Painel</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="icon" href="assets/favicon.png" />
-  <link rel="shortcut icon" href="assets/favicon.png" />
-  <style>
-    /* ══════════════════════════════════════════════
-       SCHEDULER CUSTOMIZADO — estilo DHTMLX
-    ══════════════════════════════════════════════ */
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agendare — Painel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css"/>
+<link rel="icon" href="assets/favicon.png"/>
+<link rel="shortcut icon" href="assets/favicon.png"/>
+<style>
+/* ══════════════════════════════════════════════════════════
+   BASE — variáveis do calendário.html (design system limpo)
+══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Toolbar */
-    .sch-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      padding: 0.85rem 1rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius) var(--radius) 0 0;
-      margin-bottom: 0;
-    }
-    .sch-toolbar-titulo {
-      font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: var(--text);
-    }
+:root {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --surface2:  #f7f8fa;
+  --border:    #e2e5ea;
+  --border2:   #d0d4db;
+  --text:      #1a1d23;
+  --text2:     #5a6072;
+  --text3:     #9299a8;
+  --muted:     #9299a8;
+  --muted2:    #b0b7c3;
+  --accent:    #4f6ef7;
+  --accent-bg: rgba(79,110,247,0.08);
+  --error:     #ef4444;
+  --sat:       #d9534f;
+  --sun:       #d9534f;
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius:    6px;
+  --font:      'DM Sans', 'Inter', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 
-    /* Wrapper principal */
-    .sch-wrapper {
-      display: flex;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-      overflow: hidden;
-    }
+  /* Event colors */
+  --c1: #4f6ef7; --c1b: rgba(79,110,247,0.12);
+  --c2: #22c55e; --c2b: rgba(34,197,94,0.12);
+  --c3: #f59e0b; --c3b: rgba(245,158,11,0.12);
+  --c4: #ef4444; --c4b: rgba(239,68,68,0.12);
+  --c5: #8b5cf6; --c5b: rgba(139,92,246,0.12);
+  --c6: #06b6d4; --c6b: rgba(6,182,212,0.12);
+  --c7: #ec4899; --c7b: rgba(236,72,153,0.12);
+}
 
-    /* Coluna de horas (esquerda) */
-    .sch-coluna-horas {
-      flex-shrink: 0;
-      border-right: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    .sch-hora-spacer {
-      height: 0px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sch-linha-hora {
-      position: absolute;
-      left: 0; right: 0;
-      display: flex;
-      align-items: flex-start;
-    }
-    .sch-hora-label {
-      font-size: 0.68rem;
-      color: var(--muted);
-      padding: 2px 6px 0 6px;
-      white-space: nowrap;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    .sch-linha-meio {
-      position: absolute;
-      left: 0; right: 0;
-      border-top: 1px dashed rgba(0,0,0,0.05);
-    }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 13px;
+}
 
-    /* Indicador de agora */
-    .sch-agora {
-      position: absolute;
-      left: 0; right: 0;
-      height: 2px;
-      background: #ef4444;
-      z-index: 10;
-      border-radius: 1px;
-    }
-    .sch-agora::before {
-      content: '';
-      position: absolute;
-      left: -4px; top: -4px;
-      width: 10px; height: 10px;
-      background: #ef4444;
-      border-radius: 50%;
-    }
+/* ── Topbar ─────────────────────────────────────────────── */
+.topbar {
+  height: 50px;
+  min-height: 50px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 20;
+}
+.logo-top {
+  height: 28px;
+  cursor: pointer;
+  display: block;
+}
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text2);
+}
+.topbar-user strong { color: var(--text); }
+.empresa-badge {
+  background: var(--accent-bg);
+  border: 1px solid rgba(79,110,247,0.25);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-    /* Grade de dias */
-    .sch-grade {
-      overflow-x: auto;
-      overflow-y: auto;
-      max-height: 640px;
-    }
-    .sch-header-dias {
-      position: sticky;
-      top: 0;
-      z-index: 5;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-    }
-    .sch-col-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 0.5rem 0.25rem;
-      cursor: pointer;
-      border-right: 1px solid var(--border);
-      transition: background 0.15s;
-      font-size: 0.78rem;
-      color: var(--muted);
-    }
-    .sch-col-header:hover { background: rgba(13,148,136,0.05); }
-    .sch-col-header.sch-hoje { color: var(--accent); }
-    .sch-col-dianum {
-      font-size: 1.1rem;
-      font-weight: 700;
-      line-height: 1.2;
-      width: 32px; height: 32px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-    }
-    .sch-col-dianum.sch-hoje-num {
-      background: var(--accent);
-      color: #fff;
-    }
-    .sch-col-diasem { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+/* ── Layout principal (sidebar + conteúdo) ──────────────── */
+.app-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
 
-    /* Colunas de dias */
-    .sch-col-dia {
-      border-right: 1px solid var(--border);
-      min-width: 100px;
-    }
-    .sch-col-hoje { background: rgba(13,148,136,0.02); }
-    .sch-col-dia:last-child { border-right: none; }
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 10;
+}
 
-    /* Slots clicáveis */
-    .sch-slot {
-      position: absolute;
-      left: 0; right: 0;
-      cursor: pointer;
-      transition: background 0.1s;
-    }
-    .sch-slot:hover { background: rgba(13,148,136,0.07); }
+/* Mini calendar */
+.mini-cal {
+  padding: 16px 14px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.mini-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.mini-cal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.mini-cal-nav { display: flex; gap: 2px; }
+.mini-cal-nav button {
+  width: 22px; height: 22px;
+  border: none; background: none;
+  cursor: pointer; border-radius: 4px;
+  color: var(--text3); font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.mini-cal-nav button:hover { background: var(--bg); color: var(--text); }
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+.mini-day-head {
+  text-align: center; font-size: 10px; font-weight: 600;
+  color: var(--text3); padding: 3px 0;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+.mini-day-head.sun { color: var(--sat); }
+.mini-day {
+  text-align: center; font-size: 11px; color: var(--text2);
+  padding: 3px 2px; border-radius: 50%; cursor: pointer;
+  line-height: 1.8; transition: background 0.1s, color 0.1s;
+  font-variant-numeric: tabular-nums;
+  width: 24px; height: 24px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+}
+.mini-day:hover { background: var(--bg); color: var(--text); }
+.mini-day.today { background: var(--accent); color: #fff; font-weight: 600; }
+.mini-day.selected { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.mini-day.other-month { color: var(--text3); }
+.mini-day.has-event::after {
+  content: ''; display: block;
+  width: 4px; height: 4px;
+  background: var(--accent); border-radius: 50%;
+  margin: 1px auto 0;
+}
 
-    /* Eventos */
-    .sch-evento {
-      position: absolute;
-      border-radius: 6px;
-      padding: 4px 7px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: filter 0.15s, transform 0.1s;
-      z-index: 2;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-    }
-    .sch-evento:hover { filter: brightness(0.94); transform: translateY(-1px); }
-    .sch-ev-hora {
-      font-size: 0.65rem;
-      font-weight: 700;
-      opacity: 0.8;
-      margin-bottom: 1px;
-    }
-    .sch-ev-titulo {
-      font-size: 0.78rem;
-      font-weight: 700;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .sch-ev-prof {
-      font-size: 0.68rem;
-      opacity: 0.75;
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+/* Navegação sidebar */
+.sidebar-section {
+  padding: 12px 14px 4px;
+}
+.sidebar-section-title, .sidebar-label {
+  font-size: 10px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: 0.07em; margin-bottom: 8px;
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: var(--radius);
+  cursor: pointer; transition: background 0.12s;
+  font-size: 12.5px; font-weight: 500;
+  color: var(--text2); border: none; background: none;
+  width: 100%; text-align: left;
+}
+.sidebar-item:hover { background: var(--bg); color: var(--text); }
+.sidebar-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.sidebar-item .icon { font-size: 14px; }
 
-    /* Scheduler Mês */
-    .sch-mes-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 var(--radius) var(--radius);
-      overflow: hidden;
-    }
-    .sch-mes-cabecalho {
-      padding: 0.5rem;
-      text-align: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      background: var(--surface2);
-    }
-    .sch-mes-cabecalho:last-child { border-right: none; }
-    .sch-mes-celula {
-      min-height: 110px;
-      padding: 6px;
-      border-bottom: 1px solid var(--border);
-      border-right: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.15s;
-      vertical-align: top;
-    }
-    .sch-mes-celula:last-child, .sch-mes-celula:nth-child(7n) { border-right: none; }
-    .sch-mes-celula:hover { background: rgba(13,148,136,0.04); }
-    .sch-mes-fora { background: var(--surface2); cursor: default; }
-    .sch-mes-hoje { background: rgba(13,148,136,0.05); }
-    .sch-mes-selecionado { outline: 2px solid var(--accent); outline-offset: -2px; }
-    .sch-mes-num {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 4px;
-      width: 26px; height: 26px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%;
-    }
-    .sch-mes-hoje .sch-mes-num {
-      background: var(--accent);
-      color: #fff;
-    }
-    .sch-mes-ev {
-      font-size: 0.72rem;
-      font-weight: 600;
-      border-radius: 4px;
-      padding: 2px 5px;
-      margin-bottom: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: pointer;
-      transition: filter 0.1s;
-    }
-    .sch-mes-ev:hover { filter: brightness(0.9); }
-    .sch-mes-ev-hora {
-      font-weight: 800;
-      margin-right: 3px;
-      opacity: 0.85;
-    }
-    .sch-mes-mais {
-      font-size: 0.7rem;
-      color: var(--accent);
-      font-weight: 700;
-      cursor: pointer;
-      padding: 1px 4px;
-    }
-    .sch-mes-mais:hover { text-decoration: underline; }
-  </style>
-  <style>
-    .kanban-board {
-      display: flex;
-      gap: 1rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-      align-items: flex-start
-    }
+/* Filtro de busca */
+.sidebar-filter { padding: 10px 14px; }
+.sidebar-filter input {
+  width: 100%; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font: inherit; font-size: 12px; color: var(--text);
+  background: var(--bg); outline: none;
+  transition: border-color 0.15s;
+}
+.sidebar-filter input:focus { border-color: var(--accent); background: #fff; }
+.sidebar-filter input::placeholder { color: var(--text3); }
 
-    .kanban-col {
-      min-width: 220px;
-      max-width: 260px;
-      flex-shrink: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden
-    }
+/* Botão novo na sidebar */
+.sidebar-btn-novo {
+  margin: 8px 14px 10px;
+  padding: 8px 12px;
+  border: none; border-radius: var(--radius);
+  background: var(--accent); color: #fff;
+  font: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.15s;
+  display: flex; align-items: center; gap: 6px;
+}
+.sidebar-btn-novo:hover { opacity: 0.88; }
 
-    .kanban-col-header {
-      padding: 0.75rem 1rem;
-      font-weight: 700;
-      font-size: 0.82rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      border-bottom: 1px solid var(--border)
-    }
+/* ── Main area ───────────────────────────────────────────── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+}
 
-    .kanban-col-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-weight: 800;
-      font-size: 0.75rem;
-      flex-shrink: 0
-    }
+/* ── Toolbar ─────────────────────────────────────────────── */
+.toolbar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface); flex-shrink: 0;
+}
+.toolbar-left { display: flex; align-items: center; gap: 8px; }
+.toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
 
-    .kanban-col-body {
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      min-height: 60px
-    }
+.btn-today {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border2); background: var(--surface);
+  border-radius: var(--radius); font: inherit; font-size: 12px;
+  font-weight: 500; color: var(--text); cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-today:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
 
-    .kanban-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-left: 4px solid #0d9488;
-      border-radius: 8px;
-      padding: 0.6rem 0.75rem;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: box-shadow 0.15s
-    }
+.btn-nav {
+  width: 28px; height: 28px;
+  border: 1px solid var(--border2); background: var(--surface);
+  border-radius: var(--radius); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2); font-size: 14px; transition: all 0.15s;
+}
+.btn-nav:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
 
-    .kanban-card:hover {
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12)
-    }
+.toolbar-title {
+  font-size: 17px; font-weight: 600;
+  letter-spacing: -0.3px; color: var(--text); min-width: 180px;
+  font-family: 'Syne', var(--font);
+}
 
-    .kanban-card-titulo {
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 3px
-    }
+.view-tabs {
+  display: flex;
+  border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden;
+}
+.view-tab {
+  padding: 5px 13px; font: inherit; font-size: 12px; font-weight: 500;
+  border: none; border-left: 1px solid var(--border2);
+  background: var(--surface); color: var(--text2);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.view-tab:first-child { border-left: none; }
+.view-tab:hover { background: var(--bg); color: var(--text); }
+.view-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-    .kanban-card-data {
-      color: var(--muted);
-      font-size: 0.72rem
-    }
+/* ── Content area ────────────────────────────────────────── */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 20px;
+  background: var(--bg);
+}
 
-    .kanban-empty {
-      color: var(--muted);
-      font-size: 0.78rem;
-      text-align: center;
-      padding: 1rem 0.5rem
-    }
+/* Esconde conteúdo de aba */
+.aba { display: none; }
+.aba.ativa { display: block; }
 
-    .cal-dia {
-      position: relative
-    }
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
 
-    .cal-dots {
-      display: flex;
-      justify-content: center;
-      gap: 2px;
-      position: absolute;
-      bottom: 2px;
-      left: 50%;
-      transform: translateX(-50%)
-    }
+/* Cards genéricos */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+}
+.card-header h2 { font-size: 13.5px; font-weight: 600; color: var(--text); }
+.card-body { padding: 16px; }
 
-    .cal-dot {
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      flex-shrink: 0
-    }
+/* Títulos de página */
+.page-title {
+  font-family: 'Syne', var(--font);
+  font-size: 22px; font-weight: 700; color: var(--text);
+  letter-spacing: -0.5px; margin-bottom: 4px;
+}
+.page-title span { color: var(--accent); }
+.page-subtitle { font-size: 12.5px; color: var(--text3); }
+.page-header { margin-bottom: 20px; }
 
-    .btn-vis {
-      transition: all 0.15s
-    }
+/* Kanban */
+.kanban-board {
+  display: flex; gap: 1rem; overflow-x: auto;
+  padding-bottom: 0.5rem; align-items: flex-start;
+}
+.kanban-col {
+  min-width: 220px; max-width: 260px; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; overflow: hidden;
+}
+.kanban-col-header {
+  padding: 10px 14px; font-weight: 700; font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.kanban-col-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 800; font-size: 11px; flex-shrink: 0;
+}
+.kanban-col-body {
+  padding: 10px; display: flex; flex-direction: column;
+  gap: 8px; min-height: 60px;
+}
+.kanban-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px; padding: 8px 10px; font-size: 12px;
+  cursor: pointer; transition: box-shadow 0.15s;
+}
+.kanban-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.10); }
+.kanban-card-titulo { font-weight: 600; color: var(--text); margin-bottom: 3px; }
+.kanban-card-data { color: var(--text3); font-size: 11px; }
+.kanban-empty { color: var(--text3); font-size: 12px; text-align: center; padding: 16px 8px; }
 
-    .btn-vis.ativo {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent)
-    }
+/* ── Scheduler ─────────────────────────────────────────── */
+.sch-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 10px; padding: 10px 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0; margin-bottom: 0;
+}
+.sch-toolbar-titulo {
+  font-family: 'Syne', var(--font);
+  font-weight: 700; font-size: 14px; color: var(--text);
+}
+.sch-wrapper {
+  display: flex; background: var(--surface);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;
+}
+.sch-coluna-horas { flex-shrink: 0; border-right: 1px solid var(--border); background: var(--surface2); }
+.sch-hora-spacer  { height: 0px; border-bottom: 1px solid var(--border); }
+.sch-linha-hora   { position: absolute; left: 0; right: 0; display: flex; align-items: flex-start; }
+.sch-hora-label {
+  font-size: 10px; color: var(--text3); padding: 2px 6px 0 6px;
+  white-space: nowrap; font-weight: 600; letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+}
+.sch-linha-meio   { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(0,0,0,0.05); }
+.sch-agora        { position: absolute; left: 0; right: 0; height: 2px; background: var(--error); z-index: 10; border-radius: 1px; }
+.sch-agora::before {
+  content: ''; position: absolute; left: -4px; top: -4px;
+  width: 10px; height: 10px; background: var(--error); border-radius: 50%;
+}
+.sch-grade       { overflow-x: auto; overflow-y: auto; max-height: 560px; }
+.sch-header-dias { position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--border); }
+.sch-col-header {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 6px 4px; cursor: pointer; border-right: 1px solid var(--border);
+  transition: background 0.15s; font-size: 11px; color: var(--text3);
+}
+.sch-col-header:hover { background: var(--accent-bg); }
+.sch-col-header.sch-hoje { color: var(--accent); }
+.sch-col-dianum {
+  font-size: 16px; font-weight: 700; line-height: 1.2;
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+}
+.sch-col-dianum.sch-hoje-num { background: var(--accent); color: #fff; }
+.sch-col-diasem  { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono); }
+.sch-col-dia     { border-right: 1px solid var(--border); min-width: 100px; }
+.sch-col-hoje    { background: var(--accent-bg); }
+.sch-col-dia:last-child { border-right: none; }
+.sch-slot        { position: absolute; left: 0; right: 0; cursor: pointer; transition: background 0.1s; }
+.sch-slot:hover  { background: var(--accent-bg); }
+.sch-evento {
+  position: absolute; border-radius: 5px; padding: 3px 6px;
+  overflow: hidden; cursor: pointer; transition: filter 0.15s, transform 0.1s;
+  z-index: 2; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.sch-evento:hover { filter: brightness(0.93); transform: translateY(-1px); }
+.sch-ev-hora     { font-size: 10px; font-weight: 700; opacity: 0.8; margin-bottom: 1px; font-family: var(--font-mono); }
+.sch-ev-titulo   { font-size: 11.5px; font-weight: 700; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sch-ev-prof     { font-size: 10.5px; opacity: 0.75; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    #fcCalendario { display: none; } /* removido — usando scheduler customizado */
+/* Scheduler Mês */
+.sch-mes-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  background: var(--surface); border: 1px solid var(--border);
+  border-top: none; border-radius: 0 0 var(--radius) var(--radius); overflow: hidden;
+}
+.sch-mes-cabecalho {
+  padding: 8px; text-align: center; font-size: 10.5px; font-weight: 700;
+  color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+  background: var(--surface2);
+}
+.sch-mes-cabecalho:last-child { border-right: none; }
+.sch-mes-celula {
+  min-height: 110px; padding: 6px;
+  border-bottom: 1px solid var(--border); border-right: 1px solid var(--border);
+  cursor: pointer; transition: background 0.15s; vertical-align: top;
+  overflow: visible !important; position: relative;
+}
+.sch-mes-celula:last-child, .sch-mes-celula:nth-child(7n) { border-right: none; }
+.sch-mes-celula:hover { background: var(--accent-bg); }
+.sch-mes-fora    { background: var(--surface2); cursor: default; }
+.sch-mes-hoje    { background: rgba(79,110,247,0.04); }
+.sch-mes-selecionado { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sch-mes-num {
+  font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 4px;
+  width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+}
+.sch-mes-hoje .sch-mes-num { background: var(--accent); color: #fff; }
+.sch-mes-ev {
+  font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 5px;
+  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer; transition: filter 0.1s;
+}
+.sch-mes-ev:hover { filter: brightness(0.9); }
+.sch-mes-ev-hora { font-weight: 800; margin-right: 3px; opacity: 0.85; }
+.sch-mes-mais {
+  font-size: 10.5px; color: var(--accent); font-weight: 700; cursor: pointer; padding: 1px 4px;
+}
+.sch-mes-mais:hover { text-decoration: underline; }
 
-    .empresa-badge {
-      background: rgba(13, 148, 136, 0.1);
-      border: 1px solid rgba(13, 148, 136, 0.25);
-      border-radius: 8px;
-      padding: 3px 10px;
-      font-size: 0.75rem;
-      color: var(--accent);
-      font-weight: 600;
-      white-space: nowrap;
-      max-width: 160px;
-      overflow: hidden;
-      text-overflow: ellipsis
-    }
-  </style>
-  <style>
-    /* ── Barra contínua de período (estilo Google Calendar) ── */
-    .sch-mes-celula {
-      overflow: visible !important; /* permite barra sangrar */
-      position: relative;
-    }
-    .sch-periodo-barra {
-      display: flex;
-      align-items: center;
-      height: 20px;
-      min-height: 20px;
-      margin-bottom: 2px;
-      cursor: pointer;
-      transition: filter 0.15s;
-      overflow: hidden;
-      position: relative;
-      z-index: 2;
-    }
-    .sch-periodo-barra:hover { filter: brightness(0.88); }
+/* Período */
+.sch-periodo-barra {
+  display: flex; align-items: center; height: 20px; min-height: 20px;
+  margin-bottom: 2px; cursor: pointer; transition: filter 0.15s;
+  overflow: hidden; position: relative; z-index: 2;
+}
+.sch-periodo-barra:hover { filter: brightness(0.88); }
+.sch-evento.periodo-ev, .sch-mes-ev.periodo-ev {
+  background: rgba(245,158,11,0.18) !important;
+  border-left: 3px solid #f59e0b !important; color: #78350f !important;
+}
+.sch-mes-celula.periodo-dia {
+  background: rgba(245,158,11,0.07) !important;
+  outline: 1.5px dashed rgba(245,158,11,0.4) !important; outline-offset: -2px;
+}
+.kanban-card.periodo-ev { border-left-color: #f59e0b !important; background: rgba(245,158,11,0.08) !important; }
+.sch-ev-periodo-badge {
+  display: inline-block; font-size: 9px; font-weight: 800;
+  letter-spacing: 0.06em; background: #f59e0b; color: #fff;
+  border-radius: 4px; padding: 1px 4px; margin-left: 4px;
+  vertical-align: middle; text-transform: uppercase;
+}
 
-    /* ── Eventos de período (férias, atestado, banco de horas) ── */
-    .sch-evento.periodo-ev,
-    .sch-mes-ev.periodo-ev {
-      background: rgba(245,158,11,0.18) !important;
-      border-left: 3px solid #f59e0b !important;
-      color: #78350f !important;
-    }
-    .sch-mes-celula.periodo-dia {
-      background: rgba(245,158,11,0.07) !important;
-      outline: 1.5px dashed rgba(245,158,11,0.4) !important;
-      outline-offset: -2px;
-    }
-    .kanban-card.periodo-ev {
-      border-left-color: #f59e0b !important;
-      background: rgba(245,158,11,0.08) !important;
-    }
-    /* Badge "PERÍODO" nos eventos de férias na visão semana/dia */
-    .sch-ev-periodo-badge {
-      display: inline-block;
-      font-size: 0.58rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      background: #f59e0b;
-      color: #fff;
-      border-radius: 4px;
-      padding: 1px 4px;
-      margin-left: 4px;
-      vertical-align: middle;
-      text-transform: uppercase;
-    }
-  </style>
+/* ── Botões (override do style.css) ───────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius);
+  font: inherit; font-size: 12.5px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+  white-space: nowrap;
+}
+.btn-primary   { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { opacity: 0.88; }
+.btn-secondary { background: var(--surface); color: var(--text2); border-color: var(--border2); }
+.btn-secondary:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 5px 10px; font-size: 11.5px; }
+.btn-icon {
+  width: 30px; height: 30px; border: 1px solid var(--border2);
+  background: var(--surface); border-radius: var(--radius);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all 0.15s;
+}
+.btn-icon:hover { background: var(--bg); border-color: var(--accent); }
+.btn-logout {
+  padding: 5px 10px; border: 1px solid var(--border2);
+  background: var(--surface); border-radius: var(--radius);
+  font: inherit; font-size: 11.5px; font-weight: 600;
+  cursor: pointer; color: var(--text2); transition: all 0.15s;
+}
+.btn-logout:hover { border-color: var(--error); color: var(--error); }
+.btn-vis { transition: all 0.15s; }
+.btn-vis.ativo { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── Formulários ─────────────────────────────────────────── */
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  font: inherit; font-size: 12.5px; color: var(--text);
+  background: var(--surface); outline: none; transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* ── Tabela ──────────────────────────────────────────────── */
+.table-wrapper { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { padding: 10px 14px; text-align: left; font-size: 10.5px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); background: var(--surface2); }
+td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--accent-bg); }
+
+/* ── Modais ──────────────────────────────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface); border-radius: 12px;
+  padding: 24px; width: 90%; max-width: 500px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg); animation: popIn 0.15s ease;
+}
+.modal h3 { font-size: 15px; font-weight: 700; margin-bottom: 16px; color: var(--text); font-family: 'Syne', var(--font); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Alertas ─────────────────────────────────────────────── */
+.alert { padding: 8px 12px; border-radius: var(--radius); font-size: 12px; font-weight: 500; }
+.alert-error   { background: rgba(239,68,68,0.1); color: var(--error); border: 1px solid rgba(239,68,68,0.25); }
+.alert-success { background: rgba(34,197,94,0.1); color: #15803d; border: 1px solid rgba(34,197,94,0.25); }
+
+/* ── Badges status ───────────────────────────────────────── */
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.badge-confirmado { background: rgba(34,197,94,0.12); color: #15803d; }
+.badge-pendente   { background: rgba(245,158,11,0.12); color: #b45309; }
+.badge-cancelado  { background: rgba(239,68,68,0.12); color: var(--error); }
+.badge-concluido  { background: rgba(79,110,247,0.12); color: var(--accent); }
+.badge-faltou     { background: rgba(156,163,175,0.15); color: var(--text3); }
+
+/* ── Spinner ─────────────────────────────────────────────── */
+.spinner {
+  display: none; width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Painel notificações ─────────────────────────────────── */
+.notif-panel {
+  position: fixed; top: 56px; right: 12px; width: 300px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--shadow-lg);
+  z-index: 50; display: none;
+}
+.notif-panel.active { display: block; }
+.notif-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 12.5px; font-weight: 600;
+}
+.notif-panel-body { padding: 10px; max-height: 300px; overflow-y: auto; }
+.notif-empty { text-align: center; padding: 16px; color: var(--text3); font-size: 12px; }
+
+/* ── Notas modal ─────────────────────────────────────────── */
+.notas-modal textarea {
+  width: 100%; height: 160px; resize: none;
+  padding: 10px; border: 1px solid var(--border);
+  border-radius: var(--radius); font: inherit; font-size: 12.5px;
+  color: var(--text); outline: none;
+}
+.notas-modal textarea:focus { border-color: var(--accent); }
+
+/* ── Toast ───────────────────────────────────────────────── */
+#toastContainer {
+  position: fixed; bottom: 20px; right: 20px;
+  display: flex; flex-direction: column; gap: 8px; z-index: 200;
+}
+
+/* Dot calendário visibilidade */
+.cal-dot {
+  width: 13px; height: 13px; border-radius: 3px; flex-shrink: 0;
+  position: relative; cursor: pointer;
+}
+.cal-dot.checked::after {
+  content: '✓'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 9px; font-weight: 700;
+}
+
+/* Mobile tabs (oculto em desktop) */
+.mobile-tabs { display: none; }
+#fcCalendario { display: none; }
+
+/* Vis buttons wrapper */
+.vis-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Profissionais grid */
+#listaProfissionais { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; }
+</style>
 </head>
-
 <body>
-  <div id="toastContainer"></div>
-  <div class="topbar">
-    <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
-    <div class="topbar-user">
-      <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
-      Olá, <strong id="nomeUsuario">...</strong>
-      <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
-      <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif"
-        style="position:relative">🔔</button>
-      <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
-      <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
-      <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
-      <button class="btn-logout" onclick="logoff()">Logoff</button>
-      <button class="btn-logout" onclick="sair()"
-        style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
-    </div>
+
+<div id="toastContainer"></div>
+
+<!-- ══════════════════════
+     TOPBAR
+══════════════════════ -->
+<div class="topbar">
+  <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
+  <div class="topbar-user">
+    <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
+    Olá, <strong id="nomeUsuario">...</strong>
+    <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
+    <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif" style="position:relative">🔔</button>
+    <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
+    <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
+    <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
+    <button class="btn-logout" onclick="logoff()">Logoff</button>
+    <button class="btn-logout" onclick="sair()" style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
   </div>
-  <div class="mobile-tabs" id="mobileTabs"></div>
-  <div class="layout">
-    <nav class="sidebar" id="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-label">Principal</div>
-        <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda"><span class="icon">📅</span>
-          Agenda</button>
-        <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista"><span class="icon">📋</span>
-          Agendamentos</button>
+</div>
+
+<!-- ══════════════════════
+     LAYOUT PRINCIPAL
+══════════════════════ -->
+<div class="app-layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Mini calendário -->
+    <div class="mini-cal">
+      <div class="mini-cal-header">
+        <span class="mini-cal-title" id="miniTitle">—</span>
+        <div class="mini-cal-nav">
+          <button onclick="miniNav(-1)">‹</button>
+          <button onclick="miniNav(1)">›</button>
+        </div>
       </div>
-      <div class="sidebar-section" id="sidebarAdmin" style="display:none">
-        <div class="sidebar-label">Gestão</div>
-        <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
-          <span class="icon">🛠️</span> Serviços
-        </button>
-        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
-          <span class="icon">👥</span> Profissionais
-        </button>
-        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
-          <span class="icon">⚙️</span> Configurações
-        </button>
+      <div class="mini-grid" id="miniGrid"></div>
+    </div>
+
+    <!-- Busca rápida -->
+    <div class="sidebar-filter">
+      <input type="text" placeholder="🔍 Buscar compromisso" id="filterInput" oninput="filtrarSidebar(this.value)"/>
+    </div>
+
+    <!-- Botão novo -->
+    <button class="sidebar-btn-novo" onclick="abrirNovoAgendamento()">
+      ＋ Novo Compromisso
+    </button>
+
+    <!-- Navegação Principal -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Principal</div>
+      <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda">
+        <span class="icon">📅</span> Agenda
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista">
+        <span class="icon">📋</span> Agendamentos
+      </button>
+    </div>
+
+    <!-- Gestão (admin) -->
+    <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+      <div class="sidebar-label">Gestão</div>
+      <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+        <span class="icon">🛠️</span> Serviços
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+        <span class="icon">👥</span> Profissionais
+      </button>
+      <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+        <span class="icon">⚙️</span> Configurações
+      </button>
+    </div>
+
+    <!-- Minha conta -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Minha conta</div>
+      <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade">
+        <span class="icon">🕐</span> Disponibilidade
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main">
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <button class="btn-today" onclick="schHoje()">📅 Hoje</button>
+        <button class="btn-nav" onclick="schNavegar(-1)">‹</button>
+        <button class="btn-nav" onclick="schNavegar(1)">›</button>
+        <span class="toolbar-title" id="mainTitle">—</span>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">Minha conta</div>
-        <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade"><span
-            class="icon">🕐</span> Disponibilidade</button>
+      <div class="toolbar-right vis-btns" id="toolbarVis">
+        <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos" onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
+        <button class="btn btn-secondary btn-sm btn-vis" id="btnVisDia" onclick="mudarVisualizacao('dia')">📅 Dia</button>
+        <button class="btn btn-secondary btn-sm btn-vis" id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆 Semana</button>
+        <button class="btn btn-secondary btn-sm btn-vis" id="btnVisMes" onclick="mudarVisualizacao('mes')">🗓️ Mês</button>
       </div>
-    </nav>
-    <main class="content">
+    </div>
+
+    <!-- Conteúdo rolável -->
+    <div class="content-area">
+
       <!-- ABA: AGENDA -->
-      <div id="abaAgenda">
-        <div class="page-header"
-          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div id="abaAgenda" class="aba ativa">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
           <div>
             <div class="page-title" id="tituloAgendaPagina">Agenda <span>do Dia</span></div>
             <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
           </div>
-          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-            <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos"
-              onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
-            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisDia" onclick="mudarVisualizacao('dia')">📅
-              Dia</button>
-            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆
-              Semana</button>
-            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisMes" onclick="mudarVisualizacao('mes')">🗓️
-              Mês</button>
-            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
-          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
         </div>
         <div class="stats-grid" id="statsAgenda"></div>
         <!-- Próximos: Kanban -->
@@ -524,15 +761,13 @@
           </div>
           <div class="kanban-board" id="kanbanProximos"></div>
         </div>
-        <!-- Scheduler customizado: Dia/Semana/Mês -->
-        <div id="painelCalendario" style="display:none">
-          <!-- O scheduler renderiza aqui com toolbar integrada -->
-        </div>
+        <!-- Scheduler Dia/Semana/Mês -->
+        <div id="painelCalendario" style="display:none"></div>
       </div>
+
       <!-- ABA: LISTA -->
-      <div id="abaLista" style="display:none">
-        <div class="page-header"
-          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div id="abaLista" class="aba">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
           <div>
             <div class="page-title">Todos os <span>Compromissos</span></div>
             <div class="page-subtitle">Busque, filtre e gerencie</div>
@@ -541,13 +776,10 @@
         </div>
         <div class="card" style="margin-bottom:1rem">
           <div class="card-body" style="padding:1rem">
-            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
-              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>De</label><input type="date"
-                  id="filtroInicio" /></div>
-              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Até</label><input type="date"
-                  id="filtroFim" /></div>
-              <div class="form-group" style="margin:0;flex:1;min-width:160px">
-                <label>Status</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>De</label><input type="date" id="filtroInicio"/></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>Até</label><input type="date" id="filtroFim"/></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>Status</label>
                 <select id="filtroStatus">
                   <option value="">Todos</option>
                   <option value="confirmado">Confirmado</option>
@@ -557,10 +789,9 @@
                   <option value="faltou">Faltou</option>
                 </select>
               </div>
-              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Profissional</label><select
-                  id="filtroProf2">
-                  <option value="">Todos</option>
-                </select></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:140px"><label>Profissional</label>
+                <select id="filtroProf2"><option value="">Todos</option></select>
+              </div>
               <button class="btn btn-primary" onclick="carregarLista()">Buscar</button>
             </div>
           </div>
@@ -568,27 +799,17 @@
         <div class="card">
           <div class="table-wrapper">
             <table>
-              <thead>
-                <tr>
-                  <th>Data/Hora</th>
-                  <th>Título</th>
-                  <th>Responsável</th>
-                  <th>Obs.</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
+              <thead><tr><th>Data/Hora</th><th>Título</th><th>Responsável</th><th>Obs.</th><th>Status</th><th>Ações</th></tr></thead>
               <tbody id="tabelaAgendamentos">
-                <tr>
-                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
-                </tr>
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Carregando...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
+
       <!-- ABA: PROFISSIONAIS -->
-      <div id="abaProfissionais" style="display:none">
+      <div id="abaProfissionais" class="aba">
         <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
           <div>
             <div class="page-title">Nossa <span>Equipe</span></div>
@@ -596,115 +817,82 @@
           </div>
           <button class="btn btn-primary" onclick="abrirNovoProfissional()">+ Novo Analista</button>
         </div>
-        <div id="listaProfissionais"
-          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
+        <div id="listaProfissionais"></div>
       </div>
-      <!-- ② ABA SERVIÇOS  -->
-      <div id="abaServicos" style="display:none">
-        <div class="page-header"
-          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+
+      <!-- ABA: SERVIÇOS -->
+      <div id="abaServicos" class="aba">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
           <div>
             <div class="page-title">Nossos <span>Serviços</span></div>
             <div class="page-subtitle">Cadastre os serviços oferecidos pela empresa</div>
           </div>
         </div>
-
-        <!-- Formulário -->
         <div class="card" style="margin-bottom:1.5rem">
-          <div class="card-header">
-            <h2>➕ Novo Serviço</h2>
-          </div>
-          <div class="card-body" style="padding:1rem">
-            <input type="hidden" id="servicoId" />
-            <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:0.75rem;margin-bottom:0.75rem">
-              <div class="form-group" style="margin:0">
-                <label>Nome <span style="color:var(--accent)">*</span></label>
-                <input type="text" id="servicoNome" placeholder="Ex: Consulta, Reunião..." />
-              </div>
-              <div class="form-group" style="margin:0">
-                <label>Descrição</label>
-                <input type="text" id="servicoDescricao" placeholder="Descrição opcional" />
-              </div>
-              <div class="form-group" style="margin:0">
-                <label>Duração (min)</label>
-                <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" />
+          <div class="card-header"><h2>➕ Novo Serviço</h2></div>
+          <div class="card-body">
+            <input type="hidden" id="servicoId"/>
+            <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:10px;margin-bottom:10px">
+              <div class="form-group" style="margin:0"><label>Nome *</label><input type="text" id="servicoNome" placeholder="Ex: Consulta, Reunião..."/></div>
+              <div class="form-group" style="margin:0"><label>Descrição</label><input type="text" id="servicoDescricao" placeholder="Descrição opcional"/></div>
+              <div class="form-group" style="margin:0"><label>Duração (min)</label><input type="number" id="servicoDuracao" placeholder="60" min="5" step="5"/></div>
+            </div>
+            <div style="margin-bottom:10px">
+              <label style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">👥 Profissionais habilitados</label>
+              <div id="servicoProfissionaisCheck" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+                <span style="color:var(--text3);font-size:12px">Carregando...</span>
               </div>
             </div>
-            <!-- Profissionais vinculados -->
-            <div style="margin-bottom:0.75rem">
-              <label style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
-                👥 Profissionais habilitados para este serviço
-              </label>
-              <div id="servicoProfissionaisCheck"
-                style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
-                <span style="color:var(--muted);font-size:0.82rem">Carregando...</span>
-              </div>
-              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar este serviço. Só eles aparecerão no link público.</div>
-            </div>
-            <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
+            <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:10px"></div>
             <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
           </div>
         </div>
-
-        <!-- Tabela -->
         <div class="card">
           <div class="table-wrapper">
             <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Descrição</th>
-                  <th>Duração</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tabelaServicos">
-                <tr>
-                  <td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
-                </tr>
-              </tbody>
+              <thead><tr><th>Nome</th><th>Descrição</th><th>Duração</th><th>Ações</th></tr></thead>
+              <tbody id="tabelaServicos"><tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--text3)">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
+
       <!-- ABA: DISPONIBILIDADE -->
-      <div id="abaDisponibilidade" style="display:none">
+      <div id="abaDisponibilidade" class="aba">
         <div class="page-header">
           <div class="page-title">Minha <span>Disponibilidade</span></div>
           <div class="page-subtitle">Configure seus dias e horários de atendimento</div>
         </div>
         <div class="card">
           <div class="card-body">
-            <div id="formDisponibilidade"></div><button class="btn btn-primary" style="margin-top:1.5rem"
-              onclick="salvarDisponibilidade()">Salvar Disponibilidade</button>
+            <div id="formDisponibilidade"></div>
+            <button class="btn btn-primary" style="margin-top:16px" onclick="salvarDisponibilidade()">Salvar Disponibilidade</button>
           </div>
         </div>
       </div>
+
       <!-- ABA: CONFIGURAÇÕES -->
-      <div id="abaConfiguracoes" style="display:none">
+      <div id="abaConfiguracoes" class="aba">
         <div class="page-header">
           <div class="page-title">⚙️ <span>Configurações</span></div>
           <div class="page-subtitle">Configurações gerais da empresa</div>
         </div>
         <div class="card" style="max-width:600px">
-          <div class="card-header">
-            <h2>Link de Agendamento Público</h2>
-          </div>
+          <div class="card-header"><h2>Link de Agendamento Público</h2></div>
           <div class="card-body">
-            <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Compartilhe este link com seus clientes:
-            </p>
-            <div style="display:flex;gap:0.5rem;"><input type="text" id="linkPublico" readonly
-                style="flex:1;background:var(--surface2);font-family:monospace;font-size:0.82rem;" /><button
-                class="btn btn-primary" onclick="copiarLink()">Copiar</button></div>
-            <div id="linkCopiado" style="display:none;margin-top:0.5rem;" class="alert alert-success">✅ Link copiado!
+            <p style="color:var(--text3);font-size:12.5px;margin-bottom:12px">Compartilhe este link com seus clientes:</p>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="linkPublico" readonly style="flex:1;background:var(--surface2);font-family:var(--font-mono);font-size:12px;"/>
+              <button class="btn btn-primary" onclick="copiarLink()">Copiar</button>
             </div>
+            <div id="linkCopiado" style="display:none;margin-top:8px;" class="alert alert-success">✅ Link copiado!</div>
           </div>
         </div>
       </div>
+
       <!-- ABA: EMPRESAS (superadmin) -->
-      <div id="abaEmpresas" style="display:none">
-        <div class="page-header"
-          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div id="abaEmpresas" class="aba">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
           <div>
             <div class="page-title">Gestão de <span>Empresas</span></div>
             <div class="page-subtitle">Gerencie as empresas cadastradas no Agendare</div>
@@ -712,374 +900,369 @@
           <button class="btn btn-primary" onclick="abrirNovaEmpresa()">+ Nova Empresa</button>
         </div>
         <div class="card">
-          <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
-            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
-              <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar por nome ou CNPJ..."
-                oninput="filtrarEmpresasSA()"
-                style="flex:1;min-width:200px;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.88rem;padding:0.5rem 1rem;outline:none;" />
-              <button class="btn btn-secondary btn-sm"
-                onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresasSA()">✕ Limpar</button>
+          <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar por nome ou CNPJ..." oninput="filtrarEmpresasSA()" style="flex:1;min-width:200px;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:12.5px;padding:7px 12px;outline:none;"/>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresasSA()">✕ Limpar</button>
             </div>
           </div>
           <div class="table-wrapper">
             <table>
-              <thead>
-                <tr>
-                  <th>Empresa</th>
-                  <th>CNPJ</th>
-                  <th>E-mail</th>
-                  <th>Slug</th>
-                  <th>Status</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="tabelaEmpresas">
-                <tr>
-                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
-                </tr>
-              </tbody>
+              <thead><tr><th>Empresa</th><th>CNPJ</th><th>E-mail</th><th>Slug</th><th>Status</th><th>Ações</th></tr></thead>
+              <tbody id="tabelaEmpresas"><tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">Carregando...</td></tr></tbody>
             </table>
           </div>
         </div>
       </div>
-    </main>
-  </div>
 
-  <!-- Modais -->
-  <div class="modal-overlay" id="modalAgendamento">
-    <div class="modal" style="max-width:500px">
-      <h3>📅 Novo Compromisso</h3>
-      <input type="hidden" id="agId" />
-      <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
-          id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
-      <!-- Datas: Início e Fim lado a lado -->
-      <div style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:0.75rem">
-        <div class="form-group" style="margin:0;flex:1"><label>Data Início <span style="color:var(--accent)">*</span></label><input type="date" id="agData" /></div>
-        <div class="form-group" style="margin:0;flex:1" id="campoDataFim"><label>Data Fim</label><input type="date" id="agDataFim" /></div>
-      </div>
+    </div><!-- /content-area -->
+  </div><!-- /main -->
+</div><!-- /app-layout -->
 
-      <!-- Toggle Dia Todo -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.85rem">
-        <span style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">DIA TODO</span>
-        <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
-          <input type="checkbox" id="chkDiaTodo" onchange="toggleDiaTodo(this)" style="opacity:0;width:0;height:0;position:absolute" />
-          <span id="toggleDiaTodoTrack" style="
-            position:absolute;inset:0;
-            background:#d1d5db;
-            border-radius:24px;
-            transition:background 0.2s;
-          "></span>
-          <span id="toggleDiaTodoThumb" style="
-            position:absolute;
-            top:3px;left:3px;
-            width:18px;height:18px;
-            background:#fff;
-            border-radius:50%;
-            box-shadow:0 1px 4px rgba(0,0,0,0.18);
-            transition:transform 0.2s;
-          "></span>
-        </label>
-      </div>
 
-      <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
-        <div class="form-group" style="margin:0;flex:1"><label>Início <span
-              style="color:var(--accent)">*</span></label><input type="time" id="agHoraInicio" /></div>
-        <div class="form-group" style="margin:0;flex:1"><label>Fim <span
-              style="color:var(--accent)">*</span></label><input type="time" id="agHoraFim" /></div>
-      </div>
-      <div class="form-group" style="margin-bottom:0.5rem"><label
-          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
-            id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)"
-            style="accent-color:var(--accent);width:16px;height:16px;" />Adicionar participante?</label></div>
-      <div id="campoParticipante" style="display:none;margin-bottom:1rem">
-        <div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div>
-      </div>
-      <!-- Evento Pessoal -->
-      <div class="form-group" style="margin-bottom:0.5rem">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
-          <input type="checkbox" id="chkEventoPessoal" onchange="toggleEventoPessoal(this)"
-            style="accent-color:var(--accent);width:16px;height:16px;" />
-          🙋 Evento pessoal
-        </label>
-      </div>
-      <div id="campoEventoPessoal" style="display:none;margin-bottom:1rem">
-        <div class="form-group" style="margin:0">
-          <label>Tipo de evento</label>
-          <select id="agTipoEventoPessoal">
-            <option value="">Selecione...</option>
-            <option value="consulta_medica">🏥 Consulta médica</option>
-            <option value="dentista">🦷 Dentista</option>
-            <option value="banco_de_horas">⏱️ Banco de horas</option>
-            <option value="atestado">📄 Atestado</option>
-            <option value="ferias">🌴 Férias</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..."
-          style="resize:none;height:70px;"></textarea></div>
-      <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
-      <div style="margin-bottom:1rem">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.88rem">
-          <input type="checkbox" id="chkConvidarExterno" onchange="toggleConvidarExterno(this)"
-            style="accent-color:var(--accent);width:16px;height:16px;" />
-          ✉️ Convidar alguém externo por e-mail
-        </label>
-        <div id="campoConvidarExterno" style="display:none;margin-top:0.75rem">
-          <div class="form-group" style="margin:0">
-            <label>E-mail do convidado</label>
-            <input type="email" id="emailConvidado" placeholder="pessoa@email.com" />
-          </div>
-        </div>
-      </div>
+<!-- ══════════════════════════════
+     MODAIS (todos do dashboard)
+══════════════════════════════ -->
 
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarAgendamento()"><span id="btnAgendar">Confirmar</span>
-          <div class="spinner" id="spinnerAgendar"></div>
-        </button>
-      </div>
+<!-- Modal: Novo/Editar Agendamento -->
+<div class="modal-overlay" id="modalAgendamento">
+  <div class="modal" style="max-width:500px">
+    <h3>📅 Novo Compromisso</h3>
+    <input type="hidden" id="agId"/>
+    <div class="form-group"><label>Título *</label><input type="text" id="agTitulo" placeholder="Ex: Reunião com cliente..."/></div>
+    <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
+      <div class="form-group" style="margin:0;flex:1"><label>Data Início *</label><input type="date" id="agData"/></div>
+      <div class="form-group" style="margin:0;flex:1" id="campoDataFim"><label>Data Fim</label><input type="date" id="agDataFim"/></div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="modalVerAgendamento">
-    <div class="modal" style="max-width:520px">
-      <h3>📋 Detalhes do Compromisso</h3>
-      <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
-      <div class="form-group"><label>Status</label>
-        <select id="editStatus">
-          <option value="confirmado">✅ Confirmado</option>
-          <option value="concluido">🏁 Concluído</option>
-          <option value="faltou">❌ Faltou</option>
-          <option value="cancelado">🚫 Cancelado</option>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <span style="font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em">DIA TODO</span>
+      <label style="position:relative;display:inline-block;width:42px;height:24px;cursor:pointer">
+        <input type="checkbox" id="chkDiaTodo" onchange="toggleDiaTodo(this)" style="opacity:0;width:0;height:0;position:absolute"/>
+        <span id="toggleDiaTodoTrack" style="position:absolute;inset:0;background:#d1d5db;border-radius:24px;transition:background 0.2s;"></span>
+        <span id="toggleDiaTodoThumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;box-shadow:0 1px 4px rgba(0,0,0,0.18);transition:transform 0.2s;"></span>
+      </label>
+    </div>
+    <div id="camposHora" style="display:flex;gap:10px;align-items:flex-end;margin-bottom:12px">
+      <div class="form-group" style="margin:0;flex:1"><label>Início *</label><input type="time" id="agHoraInicio"/></div>
+      <div class="form-group" style="margin:0;flex:1"><label>Fim *</label><input type="time" id="agHoraFim"/></div>
+    </div>
+    <div class="form-group" style="margin-bottom:6px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0"><input type="checkbox" id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)" style="accent-color:var(--accent);width:16px;height:16px;"/>Adicionar participante?</label></div>
+    <div id="campoParticipante" style="display:none;margin-bottom:12px">
+      <div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div>
+    </div>
+    <div class="form-group" style="margin-bottom:6px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;text-transform:none;letter-spacing:0"><input type="checkbox" id="chkEventoPessoal" onchange="toggleEventoPessoal(this)" style="accent-color:var(--accent);width:16px;height:16px;"/>🙋 Evento pessoal</label>
+    </div>
+    <div id="campoEventoPessoal" style="display:none;margin-bottom:12px">
+      <div class="form-group" style="margin:0"><label>Tipo de evento</label>
+        <select id="agTipoEventoPessoal">
+          <option value="">Selecione...</option>
+          <option value="consulta_medica">🏥 Consulta médica</option>
+          <option value="dentista">🦷 Dentista</option>
+          <option value="banco_de_horas">⏱️ Banco de horas</option>
+          <option value="atestado">📄 Atestado</option>
+          <option value="ferias">🌴 Férias</option>
         </select>
       </div>
-      <input type="hidden" id="editAgId" />
-      <hr style="border-color:var(--border);margin:1.25rem 0" />
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <strong style="font-size:0.88rem">👥 Participantes</strong>
-        <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
-      </div>
-      <div id="formParticipante"
-        style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
-        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
-          <button class="btn btn-secondary btn-sm" id="btnTipoInterno" onclick="setTipoParticipante('interno')"
-            style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">👤 Interno</button>
-          <button class="btn btn-secondary btn-sm" id="btnTipoExterno" onclick="setTipoParticipante('externo')"
-            style="flex:1">🌐 Externo</button>
-        </div>
-        <div id="campoInterno">
-          <div class="form-group" style="margin-bottom:0.5rem"><label>Analista</label><select
-              id="partProfissional"></select></div>
-        </div>
-        <div id="campoExterno" style="display:none">
-          <div class="form-group" style="margin-bottom:0.5rem"><label>Nome *</label><input type="text" id="partNome"
-              placeholder="Nome completo" /></div>
-          <div class="form-group" style="margin-bottom:0.5rem"><label>E-mail *</label><input type="email" id="partEmail"
-              placeholder="email@exemplo.com" /></div>
-        </div>
-        <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:0.5rem"></div>
-        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:0.75rem"
-          onclick="adicionarParticipante()">Enviar convite</button>
-      </div>
-      <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
-        <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
+    </div>
+    <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..." style="resize:none;height:70px;"></textarea></div>
+    <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:8px"></div>
+    <div style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:12.5px"><input type="checkbox" id="chkConvidarExterno" onchange="toggleConvidarExterno(this)" style="accent-color:var(--accent);width:16px;height:16px;"/>✉️ Convidar alguém externo por e-mail</label>
+      <div id="campoConvidarExterno" style="display:none;margin-top:10px">
+        <div class="form-group" style="margin:0"><label>E-mail do convidado</label><input type="email" id="emailConvidado" placeholder="pessoa@email.com"/></div>
       </div>
     </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarAgendamento()"><span id="btnAgendar">Confirmar</span><div class="spinner" id="spinnerAgendar"></div></button>
+    </div>
   </div>
+</div>
 
-  <div class="modal-overlay" id="modalProfissional">
-    <div class="modal" style="max-width:480px">
-      <h3 id="tituloProfissionalModal">👤 Novo Analista</h3>
-      <input type="hidden" id="profId" />
+<!-- Modal: Ver Agendamento -->
+<div class="modal-overlay" id="modalVerAgendamento">
+  <div class="modal" style="max-width:520px">
+    <h3>📋 Detalhes do Compromisso</h3>
+    <div id="detalheAgendamento" style="margin-bottom:20px"></div>
+    <div class="form-group"><label>Status</label>
+      <select id="editStatus">
+        <option value="confirmado">✅ Confirmado</option>
+        <option value="concluido">🏁 Concluído</option>
+        <option value="faltou">❌ Faltou</option>
+        <option value="cancelado">🚫 Cancelado</option>
+      </select>
+    </div>
+    <input type="hidden" id="editAgId"/>
+    <hr style="border-color:var(--border);margin:16px 0"/>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <strong style="font-size:12.5px">👥 Participantes</strong>
+      <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
+    </div>
+    <div id="formParticipante" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn btn-secondary btn-sm" id="btnTipoInterno" onclick="setTipoParticipante('interno')" style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">👤 Interno</button>
+        <button class="btn btn-secondary btn-sm" id="btnTipoExterno" onclick="setTipoParticipante('externo')" style="flex:1">🌐 Externo</button>
+      </div>
+      <div id="campoInterno">
+        <div class="form-group" style="margin-bottom:8px"><label>Analista</label><select id="partProfissional"></select></div>
+      </div>
+      <div id="campoExterno" style="display:none">
+        <div class="form-group" style="margin-bottom:8px"><label>Nome *</label><input type="text" id="partNome" placeholder="Nome completo"/></div>
+        <div class="form-group" style="margin-bottom:8px"><label>E-mail *</label><input type="email" id="partEmail" placeholder="email@exemplo.com"/></div>
+      </div>
+      <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:8px"></div>
+      <button class="btn btn-primary btn-sm" style="width:100%;margin-top:10px" onclick="adicionarParticipante()">Enviar convite</button>
+    </div>
+    <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
+      <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Profissional -->
+<div class="modal-overlay" id="modalProfissional">
+  <div class="modal" style="max-width:480px">
+    <h3 id="tituloProfissionalModal">👤 Novo Analista</h3>
+    <input type="hidden" id="profId"/>
+    <div class="form-grid">
+      <div class="form-group"><label>Nome *</label><input type="text" id="profNome"/></div>
+      <div class="form-group"><label>E-mail *</label><input type="email" id="profEmail"/></div>
+      <div class="form-group"><label>Telefone</label><input type="text" id="profTelefone"/></div>
+      <div class="form-group"><label id="labelSenhaProf">Senha *</label><input type="password" id="profSenha"/></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Perfil</label>
+        <select id="profPerfil">
+          <option value="profissional">🔍 Analista</option>
+          <option value="admin">👑 Administrador</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Cor na agenda</label><input type="color" id="profCor" value="#4f6ef7" style="height:42px;padding:4px;cursor:pointer;width:100%;"/></div>
+    </div>
+    <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:8px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProfissional()"><span id="btnProfText">Cadastrar</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Perfil -->
+<div class="modal-overlay" id="modalPerfil">
+  <div class="modal" style="max-width:420px">
+    <h3>⚙️ Meu Perfil</h3>
+    <div id="perfilInfo" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12.5px;line-height:1.8;"></div>
+    <hr style="border-color:var(--border);margin-bottom:16px"/>
+    <h4 style="font-size:11px;color:var(--text3);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.06em;">ALTERAR SENHA</h4>
+    <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••"/></div>
+    <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP" placeholder="••••••••"/></div>
+    <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:12px"></div>
+    <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:12px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button>
+      <button class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Empresa -->
+<div class="modal-overlay" id="modalEmpresa">
+  <div class="modal" style="max-width:580px">
+    <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
+    <input type="hidden" id="empId"/>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px">
+      <p style="font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px">Dados da Empresa</p>
       <div class="form-grid">
-        <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text"
-            id="profNome" /></div>
-        <div class="form-group"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email"
-            id="profEmail" /></div>
-        <div class="form-group"><label>Telefone</label><input type="text" id="profTelefone" /></div>
-        <div class="form-group"><label id="labelSenhaProf">Senha <span
-              style="color:var(--accent)">*</span></label><input type="password" id="profSenha" /></div>
+        <div class="form-group" style="margin-bottom:10px"><label>Nome Fantasia *</label><input type="text" id="empNome" placeholder="Ex: Salão da Maria"/></div>
+        <div class="form-group" style="margin-bottom:10px"><label>CNPJ ou CPF *</label><input type="text" id="empCnpj" placeholder="00.000.000/0001-00"/></div>
       </div>
       <div class="form-grid">
-        <div class="form-group"><label>Perfil</label><select id="profPerfil">
-            <option value="profissional">🔍 Analista</option>
-            <option value="admin">👑 Administrador</option>
-          </select></div>
-        <div class="form-group"><label>Cor na agenda</label><input type="color" id="profCor" value="#0d9488"
-            style="height:42px;padding:4px;cursor:pointer;width:100%;" /></div>
+        <div class="form-group" style="margin-bottom:10px"><label>E-mail</label><input type="email" id="empEmail" placeholder="contato@empresa.com"/></div>
+        <div class="form-group" style="margin-bottom:10px"><label>Telefone</label><input type="text" id="empTelefone" placeholder="(00) 00000-0000"/></div>
       </div>
-      <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarProfissional()"><span id="btnProfText">Cadastrar</span></button>
+      <div class="form-grid">
+        <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) *</label><input type="text" id="empSlug" placeholder="salao-da-maria" oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')"/><span style="font-size:10.5px;color:var(--text3)">agendar.html?empresa=<strong id="slugPreview">slug</strong></span></div>
+        <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor" value="#4f6ef7" style="height:42px;padding:4px;cursor:pointer;"/></div>
       </div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="modalPerfil">
-    <div class="modal" style="max-width:420px">
-      <h3>⚙️ Meu Perfil</h3>
-      <div id="perfilInfo"
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;">
-      </div>
-      <hr style="border-color:var(--border);margin-bottom:1.5rem" />
-      <h4 style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">ALTERAR SENHA</h4>
-      <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••" />
-      </div>
-      <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP"
-          placeholder="••••••••" /></div>
-      <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
-      <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:1rem"></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button><button
-          class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button></div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modalEmpresa">
-    <div class="modal" style="max-width:580px">
-      <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
-      <input type="hidden" id="empId" />
-      <div
-        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
-        <p
-          style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
-          Dados da Empresa</p>
+    <div id="secaoAdmin">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+        <p style="font-size:10.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px">👑 Administrador da Empresa</p>
         <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empNome"
-              placeholder="Ex: Salão da Maria" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empCnpj"
-              placeholder="00.000.000/0001-00" /></div>
+          <div class="form-group" style="margin-bottom:10px"><label>Nome *</label><input type="text" id="empAdminNome" placeholder="Nome completo"/></div>
+          <div class="form-group" style="margin-bottom:10px"><label>E-mail *</label><input type="email" id="empAdminEmail" placeholder="admin@empresa.com"/></div>
         </div>
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail"
-              placeholder="contato@empresa.com" /></div>
-          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
-              id="empTelefone" placeholder="(00) 00000-0000" /></div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
-                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
-              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
-              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
-                id="slugPreview">slug</strong></span></div>
-          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
-              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
-        </div>
-      </div>
-      <div id="secaoAdmin">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
-          <p
-            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
-            👑 Administrador da Empresa</p>
-          <div class="form-grid">
-            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
-                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
-                placeholder="Nome completo" /></div>
-            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
-                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
-                placeholder="admin@empresa.com" /></div>
-          </div>
-          <div class="form-group" style="margin-bottom:0"><label>Senha <span
-                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
-              placeholder="Mínimo 6 caracteres" /></div>
-        </div>
-      </div>
-      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
-          <div class="spinner" id="spinnerEmpresa"></div>
-        </button>
+        <div class="form-group" style="margin-bottom:0"><label>Senha *</label><input type="password" id="empAdminSenha" placeholder="Mínimo 6 caracteres"/></div>
       </div>
     </div>
-  </div>
-
-  <div class="modal-overlay" id="modalVerEmpresa">
-    <div class="modal" style="max-width:480px">
-      <h3>🏢 Detalhes da Empresa</h3>
-      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
-      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
-          <option value="ativo">✅ Ativo</option>
-          <option value="suspenso">⚠️ Suspenso</option>
-          <option value="cancelado">❌ Cancelado</option>
-        </select></div>
-      <input type="hidden" id="editEmpresaId" />
-      <div class="modal-actions"><button class="btn btn-secondary"
-          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
-          onclick="atualizarEmpresa()">Salvar</button></div>
+    <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:12px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span><div class="spinner" id="spinnerEmpresa"></div></button>
     </div>
   </div>
+</div>
 
-  <div class="notif-panel" id="painelNotificacoes">
-    <div class="notif-panel-header">
-      <span>⚠️ Compromissos em Atraso</span>
-      <button onclick="fecharPainelNotificacoes()"
-        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
+<!-- Modal: Ver Empresa -->
+<div class="modal-overlay" id="modalVerEmpresa">
+  <div class="modal" style="max-width:480px">
+    <h3>🏢 Detalhes da Empresa</h3>
+    <div id="detalheEmpresa" style="margin-bottom:20px"></div>
+    <div class="form-group"><label>Status</label>
+      <select id="editEmpresaStatus">
+        <option value="ativo">✅ Ativo</option>
+        <option value="suspenso">⚠️ Suspenso</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
     </div>
-    <div class="notif-panel-body" id="painelNotifBody">
-      <div class="notif-empty">Carregando...</div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="modalUsuariosSA">
-    <div class="modal" style="max-width:640px">
-      <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
-      <div id="listaUsuariosSA" style="margin:1rem 0"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary"
-          onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
-      </div>
+    <input type="hidden" id="editEmpresaId"/>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharModalVerEmpresa()">Fechar</button>
+      <button class="btn btn-primary" onclick="atualizarEmpresa()">Salvar</button>
     </div>
   </div>
+</div>
 
-  <div class="modal-overlay" id="modalNotas">
-    <div class="modal notas-modal" style="max-width:480px">
-      <h3>📝 Minhas Anotações</h3>
-      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
-      <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button
-          class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
+<!-- Modal: Notas -->
+<div class="modal-overlay" id="modalNotas">
+  <div class="modal notas-modal" style="max-width:480px">
+    <h3>📝 Minhas Anotações</h3>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">🔒 Visível apenas para você.</p>
+    <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button>
     </div>
   </div>
+</div>
 
-  <div class="modal-overlay" id="modalObsStatus">
-    <div class="modal" style="max-width:420px">
-      <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação
-        antes de salvar.</p>
-      <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
-          placeholder="Descreva o que foi feito, motivo do cancelamento..."
-          style="resize:none;height:100px;width:100%;"></textarea></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button
-          class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+<!-- Modal: Obs Status -->
+<div class="modal-overlay" id="modalObsStatus">
+  <div class="modal" style="max-width:420px">
+    <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
+    <p style="font-size:12.5px;color:var(--text3);margin-bottom:12px" id="subtituloObsStatus">Adicione uma observação antes de salvar.</p>
+    <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto" placeholder="Descreva o que foi feito, motivo do cancelamento..." style="resize:none;height:100px;width:100%;"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button>
     </div>
   </div>
+</div>
 
-  <script src="js/dashboard.js"></script>
-  <script>
-    // Evento Pessoal dropdown
-    function toggleEventoPessoal(cb) {
-      const campo = document.getElementById('campoEventoPessoal');
-      if (campo) campo.style.display = cb.checked ? 'block' : 'none';
-    }
-
-
-  </script>
-
-  <!-- Modal Dashboard Stats -->
-  <div class="modal-overlay" id="modalDashboardStats">
-    <div class="modal" style="max-width:700px">
-      <h3 id="dashboardStatsTitle">Compromissos</h3>
-      <div id="dashboardStatsBody" style="margin:1rem 0;max-height:420px;overflow-y:auto"></div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
-      </div>
+<!-- Modal: Usuários SA -->
+<div class="modal-overlay" id="modalUsuariosSA">
+  <div class="modal" style="max-width:640px">
+    <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
+    <div id="listaUsuariosSA" style="margin:12px 0"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
     </div>
   </div>
+</div>
+
+<!-- Modal: Dashboard Stats -->
+<div class="modal-overlay" id="modalDashboardStats">
+  <div class="modal" style="max-width:700px">
+    <h3 id="dashboardStatsTitle">Compromissos</h3>
+    <div id="dashboardStatsBody" style="margin:12px 0;max-height:420px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Painel de notificações -->
+<div class="notif-panel" id="painelNotificacoes">
+  <div class="notif-panel-header">
+    <span>⚠️ Compromissos em Atraso</span>
+    <button onclick="fecharPainelNotificacoes()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px">✕</button>
+  </div>
+  <div class="notif-panel-body" id="painelNotifBody">
+    <div class="notif-empty">Carregando...</div>
+  </div>
+</div>
+
+<!-- ══════════════════════
+     SCRIPTS
+══════════════════════ -->
+<script src="js/dashboard.js"></script>
+<script>
+  /* ── Mini calendário (independente do JS principal) ────── */
+  (function() {
+    const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    let miniDate = new Date();
+    miniDate.setDate(1);
+
+    function isoDate(y,m,d){ return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+    window.miniNav = function(dir) {
+      miniDate.setMonth(miniDate.getMonth() + dir);
+      renderMiniCal();
+    };
+
+    window.renderMiniCal = function() {
+      const y = miniDate.getFullYear(), m = miniDate.getMonth();
+      const titleEl = document.getElementById('miniTitle');
+      const gridEl  = document.getElementById('miniGrid');
+      if (!titleEl || !gridEl) return;
+      titleEl.textContent = `${MESES[m]} ${y}`;
+
+      const today = new Date();
+      const todayISO = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
+      const first = new Date(y, m, 1).getDay();
+      const last  = new Date(y, m+1, 0).getDate();
+      const prevLast = new Date(y, m, 0).getDate();
+
+      let html = ['D','S','T','Q','Q','S','S'].map((d,i) =>
+        `<div class="mini-day-head ${i===0?'sun':''}">${d}</div>`).join('');
+
+      for (let i = first-1; i >= 0; i--)
+        html += `<div class="mini-day other-month">${prevLast - i}</div>`;
+      for (let d = 1; d <= last; d++) {
+        const ds = isoDate(y, m, d);
+        const isT = ds === todayISO;
+        html += `<div class="mini-day ${isT?'today':''}" onclick="jumpToDate && jumpToDate('${ds}')">${d}</div>`;
+      }
+      const rem = 42 - first - last;
+      for (let i = 1; i <= rem; i++)
+        html += `<div class="mini-day other-month">${i}</div>`;
+      gridEl.innerHTML = html;
+    };
+
+    renderMiniCal();
+  })();
+
+  /* Listener para sincronizar toolbar title com o scheduler */
+  document.addEventListener('DOMContentLoaded', function() {
+    // Aguarda o dashboard.js carregar e expor as funções
+    setTimeout(function() {
+      if (typeof schHoje !== 'function') {
+        // Fallback: redireciona para funções do dashboard existentes
+        window.schHoje    = function() { if(typeof goToday==='function') goToday(); };
+        window.schNavegar = function(d){ if(typeof schNavDia==='function') schNavDia(d); };
+      }
+    }, 500);
+  });
+
+  /* Evento Pessoal dropdown */
+  function toggleEventoPessoal(cb) {
+    const campo = document.getElementById('campoEventoPessoal');
+    if (campo) campo.style.display = cb.checked ? 'block' : 'none';
+  }
+
+  /* Sincroniza título da toolbar com a visualização ativa */
+  function atualizarToolbarTitle(texto) {
+    const el = document.getElementById('mainTitle');
+    if (el) el.textContent = texto;
+  }
+
+  /* Filtro sidebar → repassa para o dashboard.js */
+  function filtrarSidebar(val) {
+    if (typeof filtrarEventos === 'function') filtrarEventos(val);
+  }
+</script>
 </body>
-
 </html>
