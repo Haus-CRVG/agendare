@@ -65,7 +65,6 @@ function init() {
     usuario.perfil === 'admin'      ? '👑 Admin'       : '🔍 Analista';
 
   if (usuario.perfil === 'superadmin') {
-    // Super Admin tem página própria — isola do layout do dashboard
     window.location.href = 'superadmin.html';
     return;
   }
