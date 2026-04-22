@@ -65,19 +65,8 @@ function init() {
     usuario.perfil === 'admin'      ? '👑 Admin'       : '🔍 Analista';
 
   if (usuario.perfil === 'superadmin') {
-    ['agenda','lista','disponibilidade'].forEach(aba => {
-      const btn = document.querySelector(`[data-aba="${aba}"]`);
-      if (btn) btn.style.display = 'none';
-    });
-    document.getElementById('sidebarAdmin').style.display = 'none';
-    const secao = document.createElement('div');
-    secao.className = 'sidebar-section';
-    secao.id = 'sidebarSuperAdmin';
-    secao.innerHTML = `<div class="sidebar-label">Super Admin</div>
-      <button class="sidebar-item active" onclick="mudarAba('empresas')" data-aba="empresas">
-        <span class="icon">🏢</span> Empresas</button>`;
-    document.getElementById('sidebar').appendChild(secao);
-    mudarAba('empresas');
+    // Super Admin tem página própria — isola do layout do dashboard
+    window.location.href = 'superadmin.html';
     return;
   }
 
