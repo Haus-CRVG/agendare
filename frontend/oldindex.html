@@ -327,7 +327,8 @@
         localStorage.setItem('token', data.token);
         localStorage.setItem('usuario', JSON.stringify(data.usuario));
         localStorage.setItem('cnpj_salvo', document.getElementById('docInput').value);
-        window.location.href = 'dashboard.html';
+        const dest = data.usuario && data.usuario.perfil === 'superadmin' ? 'dashboard.html' : 'painel.html';
+        window.location.href = dest;
       } catch { erro.textContent = 'Erro de conexão'; erro.style.display = 'block'; }
       finally { document.getElementById('btnLoginText').style.display = 'inline'; document.getElementById('spinnerLogin').style.display = 'none'; }
     }
@@ -346,7 +347,8 @@
         if (!r.ok) { erro.textContent = data.erro || 'Acesso negado'; erro.style.display = 'block'; return; }
         localStorage.setItem('token', data.token);
         localStorage.setItem('usuario', JSON.stringify(data.usuario));
-        window.location.href = 'dashboard.html';
+        const dest = data.usuario && data.usuario.perfil === 'superadmin' ? 'dashboard.html' : 'painel.html';
+        window.location.href = dest;
       } catch { erro.textContent = 'Erro de conexão'; erro.style.display = 'block'; }
       finally { document.getElementById('btnSAText').style.display = 'inline'; document.getElementById('spinnerSA').style.display = 'none'; }
     }
@@ -376,7 +378,8 @@
 
           localStorage.setItem('token', data.token);
           localStorage.setItem('usuario', JSON.stringify(data.usuario));
-          window.location.href = 'dashboard.html';
+          const dest = data.usuario && data.usuario.perfil === 'superadmin' ? 'dashboard.html' : 'painel.html';
+          window.location.href = dest;
 
         } catch {
           alert('Erro de conexão ao validar acesso integrado. Tente novamente.');
@@ -388,7 +391,10 @@
       } else {
         // ── Login normal ──────────────────────────────────────
         const u = JSON.parse(localStorage.getItem('usuario') || 'null');
-        if (u) { window.location.href = 'dashboard.html'; return; }
+        if (u) { 
+          window.location.href = u.perfil === 'superadmin' ? 'dashboard.html' : 'painel.html'; 
+          return; 
+        }
 
         const cnpjSalvo = localStorage.getItem('cnpj_salvo');
         if (cnpjSalvo) {
