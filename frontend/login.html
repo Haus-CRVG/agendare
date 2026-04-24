@@ -5,220 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agendare — Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="assets/favicon.png" />
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg:       #f0f4f8;
-      --surface:  #ffffff;
-      --border:   #e2e8f0;
-      --text:     #1e293b;
-      --muted:    #64748b;
-      --muted2:   #94a3b8;
-      --accent:   #0d9488;
-      --error:    #dc2626;
-      --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
-      --font: 'Inter', sans-serif;
-    }
-
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .login-wrap { width: 100%; max-width: 420px; }
-
-    .login-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 2.5rem;
-      box-shadow: var(--shadow-lg);
-      animation: slideUp 0.4s ease both;
-    }
-
-    .login-logo {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    .login-logo img { max-height: 64px; display: inline-block; }
-    .login-logo p {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 8px;
-    }
-
-    /* ── Form groups ── */
-    .form-group { margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.3rem; }
-    .form-group label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .form-group input {
-      padding: 0.65rem 0.9rem;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      font: inherit;
-      font-size: 0.9rem;
-      color: var(--text);
-      background: #f8fafc;
-      outline: none;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      width: 100%;
-    }
-    .form-group input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(13,148,136,0.12);
-    }
-    .form-group input::placeholder { color: var(--muted2); }
-
-    /* ── Input com ícone de status ── */
-    .input-wrap { position: relative; }
-    .input-wrap input { padding-right: 38px; }
-    .doc-status {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 0.82rem;
-      pointer-events: none;
-    }
-
-    /* ── Cards de feedback ── */
-    .empresa-card {
-      background: rgba(13,148,136,0.06);
-      border: 1px solid rgba(13,148,136,0.25);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 1rem;
-      display: none;
-      font-size: 0.88rem;
-    }
-    .empresa-card strong { color: var(--accent); }
-
-    .empresa-bloqueada {
-      background: rgba(220,38,38,0.06);
-      border: 1px solid rgba(220,38,38,0.25);
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 1rem;
-      display: none;
-      font-size: 0.85rem;
-      color: var(--error);
-    }
-
-    /* ── Botão principal ── */
-    .btn-primary {
-      width: 100%;
-      padding: 0.7rem 1rem;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      font: inherit;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      transition: opacity 0.15s;
-      margin-top: 0.25rem;
-    }
-    .btn-primary:hover { opacity: 0.88; }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
-    .spinner {
-      display: none;
-      width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.35);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-
-    /* ── Alerta de erro ── */
-    .alert-error {
-      background: rgba(220,38,38,0.08);
-      color: var(--error);
-      border: 1px solid rgba(220,38,38,0.25);
-      border-radius: 9px;
-      padding: 0.6rem 0.9rem;
-      font-size: 0.85rem;
-      font-weight: 500;
-      margin-bottom: 0.9rem;
-      display: none;
-    }
-
-    /* ── Divisor ── */
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      margin: 1.5rem 0 1rem;
-    }
-    .divider hr { flex: 1; border: none; border-top: 1px solid var(--border); }
-    .divider span { font-size: 0.72rem; color: var(--muted2); white-space: nowrap; }
-
-    /* ── Link Super Admin ── */
-    .sa-link { text-align: center; margin-top: 1rem; }
-    .sa-link button {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 0.78rem;
-      cursor: pointer;
-      text-decoration: underline;
-      font-family: inherit;
-      transition: color 0.15s;
-    }
-    .sa-link button:hover { color: var(--text); }
-
-    /* ── Modo ── */
-    .modo { display: none; }
-    .modo.active { display: block; animation: slideUp 0.25s ease both; }
-
-    /* ── Loading SSO overlay ── */
-    #ssoLoading {
-      visibility: hidden; opacity: 0;
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 9999;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 1rem;
-      transition: opacity 0.2s;
-    }
-    #ssoLoading.active { visibility: visible; opacity: 1; }
-    .sso-spinner {
-      width: 40px; height: 40px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-  </style>
 </head>
-<body>
+<body class="login-body">
 
-  <!-- SSO Loading -->
+  <!-- SSO Loading Overlay -->
   <div id="ssoLoading">
     <img src="assets/logo-agendare.png" style="height:60px;margin-bottom:0.5rem" alt="Agendare" />
     <div class="sso-spinner"></div>
@@ -237,7 +29,7 @@
         <p id="loginSubtitulo">Informe o CNPJ ou CPF da sua empresa</p>
       </div>
 
-      <!-- ══ MODO EMPRESA ══ -->
+      <!-- MODO EMPRESA -->
       <div id="modoEmpresa" class="modo active">
 
         <div class="form-group">
@@ -267,15 +59,15 @@
             <input type="password" id="senhaInput" placeholder="••••••••"
                    onkeydown="if(event.key==='Enter')fazerLogin()" autocomplete="current-password" />
           </div>
-          <div class="alert-error" id="erroLogin"></div>
-          <button class="btn-primary" onclick="fazerLogin()" id="btnLogin">
+          <div class="alert alert-error" id="erroLogin" style="display:none;margin-bottom:1rem"></div>
+          <button class="btn btn-primary" style="width:100%" onclick="fazerLogin()">
             <span id="btnLoginText">Entrar</span>
             <div class="spinner" id="spinnerLogin"></div>
           </button>
         </div>
       </div>
 
-      <!-- ══ MODO SUPER ADMIN ══ -->
+      <!-- MODO SUPER ADMIN -->
       <div id="modoSA" class="modo">
         <div class="form-group">
           <label>E-mail</label>
@@ -286,14 +78,13 @@
           <input type="password" id="saSenha" placeholder="••••••••"
                  onkeydown="if(event.key==='Enter')fazerLoginSA()" autocomplete="current-password" />
         </div>
-        <div class="alert-error" id="erroSA"></div>
-        <button class="btn-primary" onclick="fazerLoginSA()">
+        <div class="alert alert-error" id="erroSA" style="display:none;margin-bottom:1rem"></div>
+        <button class="btn btn-primary" style="width:100%" onclick="fazerLoginSA()">
           <span id="btnSAText">Entrar como Super Admin</span>
           <div class="spinner" id="spinnerSA"></div>
         </button>
       </div>
 
-      <!-- Alternância de modo -->
       <div class="sa-link">
         <button id="toggleBtn" onclick="toggleModo()">🔑 Acesso Super Admin</button>
       </div>
@@ -304,82 +95,62 @@
 <script>
   const API = 'https://agendare-backend-production.up.railway.app/api';
 
-  let empresaId = null;
-  let modoSA    = false;
-  let docTimer  = null;
+  let empresaId = null, modoSA = false, docTimer = null;
 
-  /* ── Destino correto por perfil ── */
   function destinoPorPerfil(perfil) {
     if (perfil === 'superadmin') return 'superadmin.html';
-    return 'dashboard.html'; // admin / analista / profissional
+    return 'dashboard.html';
   }
 
-  /* ── Alterna entre modo empresa e super admin ── */
   function toggleModo() {
     modoSA = !modoSA;
     document.getElementById('modoEmpresa').classList.toggle('active', !modoSA);
-    document.getElementById('modoSA').classList.toggle('active',  modoSA);
+    document.getElementById('modoSA').classList.toggle('active', modoSA);
     document.getElementById('toggleBtn').textContent =
       modoSA ? '← Voltar ao login normal' : '🔑 Acesso Super Admin';
     document.getElementById('loginSubtitulo').textContent =
       modoSA ? 'Painel administrativo global' : 'Informe o CNPJ ou CPF da sua empresa';
   }
 
-  /* ── Formata CPF/CNPJ enquanto digita (só números) ── */
   function formatarDoc(input) {
     let v = input.value.replace(/\D/g, '').substring(0, 14);
     input.value = v;
     clearTimeout(docTimer);
     const ok = v.length === 11 || v.length === 14;
     document.getElementById('docStatus').textContent = ok ? '🔍' : '';
-    if (ok) {
-      docTimer = setTimeout(() => buscarEmpresa(v), 500);
-    } else {
-      resetarEmpresa();
-    }
+    if (ok) { docTimer = setTimeout(() => buscarEmpresa(v), 500); }
+    else { resetarEmpresa(); }
   }
 
-  /* ── Busca empresa pelo CNPJ/CPF ── */
   async function buscarEmpresa(doc) {
     document.getElementById('docStatus').textContent = '🔍';
     try {
       const r    = await fetch(`${API}/auth/empresa/${doc}`);
       const data = await r.json();
 
-      if (!data.encontrado) {
-        document.getElementById('docStatus').textContent = '❌';
-        resetarEmpresa();
-        return;
-      }
+      if (!data.encontrado) { document.getElementById('docStatus').textContent = '❌'; resetarEmpresa(); return; }
 
       if (data.bloqueado) {
         document.getElementById('docStatus').textContent = '🔒';
-        const motivos = {
-          suspenso:  'Conta suspensa. Entre em contato com o suporte.',
-          cancelado: 'Conta cancelada.'
-        };
-        document.getElementById('empresaMotivo').textContent =
-          motivos[data.motivo] || 'Acesso bloqueado.';
+        const motivos = { suspenso: 'Conta suspensa. Entre em contato.', cancelado: 'Conta cancelada.' };
+        document.getElementById('empresaMotivo').textContent = motivos[data.motivo] || 'Acesso bloqueado.';
         document.getElementById('empresaBloqueada').style.display = 'block';
         document.getElementById('empresaCard').style.display      = 'none';
         document.getElementById('camposLogin').style.display      = 'none';
         return;
       }
 
-      document.getElementById('docStatus').textContent        = '✅';
-      document.getElementById('empresaNome').textContent      = data.nome;
-      document.getElementById('empresaCard').style.display    = 'block';
+      document.getElementById('docStatus').textContent          = '✅';
+      document.getElementById('empresaNome').textContent        = data.nome;
+      document.getElementById('empresaCard').style.display      = 'block';
       document.getElementById('empresaBloqueada').style.display = 'none';
-      document.getElementById('camposLogin').style.display    = 'block';
+      document.getElementById('camposLogin').style.display      = 'block';
       empresaId = data.id;
       setTimeout(() => document.getElementById('emailInput').focus(), 80);
 
-    } catch {
-      document.getElementById('docStatus').textContent = '❌';
-    }
+    } catch { document.getElementById('docStatus').textContent = '❌'; }
   }
 
-  /* ── Limpa estado da empresa ── */
   function resetarEmpresa() {
     empresaId = null;
     document.getElementById('empresaCard').style.display      = 'none';
@@ -387,88 +158,42 @@
     document.getElementById('camposLogin').style.display      = 'none';
   }
 
-  /* ── Login de empresa (admin / profissional) ── */
   async function fazerLogin() {
     const email = document.getElementById('emailInput').value.trim();
     const senha = document.getElementById('senhaInput').value;
     const erro  = document.getElementById('erroLogin');
-
     erro.style.display = 'none';
-
-    if (!email || !senha) {
-      erro.textContent = 'Preencha e-mail e senha.';
-      erro.style.display = 'block'; return;
-    }
-    if (!empresaId) {
-      erro.textContent = 'Selecione uma empresa válida.';
-      erro.style.display = 'block'; return;
-    }
-
+    if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
+    if (!empresaId)       { erro.textContent = 'Selecione uma empresa válida.'; erro.style.display = 'block'; return; }
     setLoading('Login', true);
     try {
-      const r    = await fetch(`${API}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha, empresa_id: empresaId })
-      });
+      const r    = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha, empresa_id: empresaId }) });
       const data = await r.json();
-
-      if (!r.ok) {
-        erro.textContent = data.erro || 'E-mail ou senha incorretos.';
-        erro.style.display = 'block'; return;
-      }
-
+      if (!r.ok) { erro.textContent = data.erro || 'E-mail ou senha incorretos.'; erro.style.display = 'block'; return; }
       salvarSessao(data);
       localStorage.setItem('cnpj_salvo', document.getElementById('docInput').value);
       window.location.href = destinoPorPerfil(data.usuario?.perfil);
-
-    } catch {
-      erro.textContent = 'Erro de conexão. Tente novamente.';
-      erro.style.display = 'block';
-    } finally {
-      setLoading('Login', false);
-    }
+    } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+    finally  { setLoading('Login', false); }
   }
 
-  /* ── Login Super Admin ── */
   async function fazerLoginSA() {
     const email = document.getElementById('saEmail').value.trim();
     const senha = document.getElementById('saSenha').value;
     const erro  = document.getElementById('erroSA');
-
     erro.style.display = 'none';
-
-    if (!email || !senha) {
-      erro.textContent = 'Preencha e-mail e senha.';
-      erro.style.display = 'block'; return;
-    }
-
+    if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
     setLoading('SA', true);
     try {
-      const r    = await fetch(`${API}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, senha })
-      });
+      const r    = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha }) });
       const data = await r.json();
-
-      if (!r.ok) {
-        erro.textContent = data.erro || 'Acesso negado.';
-        erro.style.display = 'block'; return;
-      }
-
+      if (!r.ok) { erro.textContent = data.erro || 'Acesso negado.'; erro.style.display = 'block'; return; }
       salvarSessao(data);
       window.location.href = destinoPorPerfil(data.usuario?.perfil);
-
-    } catch {
-      erro.textContent = 'Erro de conexão. Tente novamente.';
-      erro.style.display = 'block';
-    } finally {
-      setLoading('SA', false);
-    }
+    } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+    finally  { setLoading('SA', false); }
   }
 
-  /* ── Helpers ── */
   function salvarSessao(data) {
     localStorage.setItem('token',   data.token);
     localStorage.setItem('usuario', JSON.stringify(data.usuario));
@@ -477,62 +202,36 @@
   function setLoading(modo, on) {
     const txt  = document.getElementById(`btn${modo}Text`);
     const spin = document.getElementById(`spinner${modo}`);
-    if (txt)  txt.style.display  = on ? 'none'         : 'inline';
-    if (spin) spin.style.display = on ? 'inline-block'  : 'none';
+    if (txt)  txt.style.display  = on ? 'none'        : 'inline';
+    if (spin) spin.style.display = on ? 'inline-block' : 'none';
   }
 
-  /* ══════════════════════════════════════
-     INICIALIZAÇÃO
-  ══════════════════════════════════════ */
   (async () => {
-    const params   = new URLSearchParams(window.location.search);
-    const ssoToken = params.get('sso');
+    const ssoToken = new URLSearchParams(window.location.search).get('sso');
 
-    /* ── SSO via Implanta ── */
     if (ssoToken && ssoToken.length >= 10) {
       history.replaceState({}, '', window.location.pathname);
       document.getElementById('ssoLoading').classList.add('active');
       try {
-        const r    = await fetch(`${API}/sso/validar`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sso_token: ssoToken })
-        });
+        const r    = await fetch(`${API}/sso/validar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sso_token: ssoToken }) });
         const data = await r.json();
-
-        if (!r.ok) {
-          alert('Erro no acesso via integração: ' + (data.erro || 'Token inválido ou expirado.'));
-          return;
-        }
-
+        if (!r.ok) { alert('Erro no acesso via integração: ' + (data.erro || 'Token inválido.')); return; }
         salvarSessao(data);
         window.location.href = destinoPorPerfil(data.usuario?.perfil);
-
-      } catch {
-        alert('Erro de conexão ao validar acesso integrado. Tente novamente.');
-      } finally {
-        document.getElementById('ssoLoading').classList.remove('active');
-      }
+      } catch { alert('Erro de conexão ao validar acesso integrado.'); }
+      finally  { document.getElementById('ssoLoading').classList.remove('active'); }
       return;
     }
 
-    /* ── Já está logado? Redireciona direto ── */
     const u = JSON.parse(localStorage.getItem('usuario') || 'null');
     const t = localStorage.getItem('token');
-    if (u && t) {
-      window.location.href = destinoPorPerfil(u.perfil);
-      return;
-    }
+    if (u && t) { window.location.href = destinoPorPerfil(u.perfil); return; }
 
-    /* ── Preenche CNPJ salvo ── */
     const cnpjSalvo = localStorage.getItem('cnpj_salvo');
     if (cnpjSalvo) {
       const inp    = document.getElementById('docInput');
       const digits = cnpjSalvo.replace(/\D/g, '');
-      if (inp && (digits.length === 11 || digits.length === 14)) {
-        inp.value = digits;
-        buscarEmpresa(digits);
-      }
+      if (inp && (digits.length === 11 || digits.length === 14)) { inp.value = digits; buscarEmpresa(digits); }
     }
   })();
 </script>
