@@ -4,15 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agendare — Login</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="icon" href="assets/favicon.png" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="login-body">
+<body class="login-page">
 
-  <!-- SSO Loading Overlay -->
+  <!-- SSO Loading -->
   <div id="ssoLoading">
-    <img src="assets/logo-agendare.png" style="height:60px;margin-bottom:0.5rem" alt="Agendare" />
+    <img src="assets/logo-agendare.png" style="height:60px;margin-bottom:0.5rem" alt="Agendare"
+         onerror="this.style.display='none'" />
     <div class="sso-spinner"></div>
     <p style="color:var(--muted);font-size:0.88rem">Entrando via integração Implanta…</p>
   </div>
@@ -22,16 +23,12 @@
 
       <div class="login-logo">
         <img src="assets/logo-agendare.png" alt="Agendare"
-             onerror="this.style.display='none';document.getElementById('logoText').style.display='block'" />
-        <div id="logoText" style="display:none;font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--accent)">
-          Agend<span style="color:var(--text)">are</span>
-        </div>
+             onerror="this.outerHTML='<div style=&quot;font-family:Syne,sans-serif;font-size:2rem;font-weight:800;color:var(--accent)&quot;>Agend<span style=&quot;color:var(--text)&quot;>are</span></div>'" />
         <p id="loginSubtitulo">Informe o CNPJ ou CPF da sua empresa</p>
       </div>
 
-      <!-- MODO EMPRESA -->
+      <!-- ══ MODO EMPRESA ══ -->
       <div id="modoEmpresa" class="modo active">
-
         <div class="form-group">
           <label>CNPJ ou CPF</label>
           <div class="input-wrap">
@@ -42,12 +39,8 @@
           </div>
         </div>
 
-        <div class="empresa-card" id="empresaCard">
-          🏢 <strong id="empresaNome"></strong>
-        </div>
-        <div class="empresa-bloqueada" id="empresaBloqueada">
-          🔒 <span id="empresaMotivo"></span>
-        </div>
+        <div class="empresa-card" id="empresaCard">🏢 <strong id="empresaNome"></strong></div>
+        <div class="empresa-bloqueada" id="empresaBloqueada">🔒 <span id="empresaMotivo"></span></div>
 
         <div id="camposLogin" style="display:none">
           <div class="form-group">
@@ -59,15 +52,15 @@
             <input type="password" id="senhaInput" placeholder="••••••••"
                    onkeydown="if(event.key==='Enter')fazerLogin()" autocomplete="current-password" />
           </div>
-          <div class="alert alert-error" id="erroLogin" style="display:none;margin-bottom:1rem"></div>
-          <button class="btn btn-primary" style="width:100%" onclick="fazerLogin()">
+          <div class="erro-box" id="erroLogin"></div>
+          <button class="btn-entrar" onclick="fazerLogin()">
             <span id="btnLoginText">Entrar</span>
             <div class="spinner" id="spinnerLogin"></div>
           </button>
         </div>
       </div>
 
-      <!-- MODO SUPER ADMIN -->
+      <!-- ══ MODO SUPER ADMIN ══ -->
       <div id="modoSA" class="modo">
         <div class="form-group">
           <label>E-mail</label>
@@ -78,8 +71,8 @@
           <input type="password" id="saSenha" placeholder="••••••••"
                  onkeydown="if(event.key==='Enter')fazerLoginSA()" autocomplete="current-password" />
         </div>
-        <div class="alert alert-error" id="erroSA" style="display:none;margin-bottom:1rem"></div>
-        <button class="btn btn-primary" style="width:100%" onclick="fazerLoginSA()">
+        <div class="erro-box" id="erroSA"></div>
+        <button class="btn-entrar" onclick="fazerLoginSA()">
           <span id="btnSAText">Entrar como Super Admin</span>
           <div class="spinner" id="spinnerSA"></div>
         </button>
@@ -88,95 +81,103 @@
       <div class="sa-link">
         <button id="toggleBtn" onclick="toggleModo()">🔑 Acesso Super Admin</button>
       </div>
-
     </div>
   </div>
 
 <script>
   const API = 'https://agendare-backend-production.up.railway.app/api';
-
   let empresaId = null, modoSA = false, docTimer = null;
 
-  function destinoPorPerfil(perfil) {
-    if (perfil === 'superadmin') return 'superadmin.html';
-    return 'dashboard.html';
+  /* destino por perfil */
+  function dest(perfil) {
+    return perfil === 'superadmin' ? 'superadmin.html' : 'dashboard.html';
+    // superadmin → superadmin.html | usuários normais → dashboard.html
   }
 
+  /* alterna modos */
   function toggleModo() {
     modoSA = !modoSA;
     document.getElementById('modoEmpresa').classList.toggle('active', !modoSA);
     document.getElementById('modoSA').classList.toggle('active', modoSA);
-    document.getElementById('toggleBtn').textContent =
-      modoSA ? '← Voltar ao login normal' : '🔑 Acesso Super Admin';
-    document.getElementById('loginSubtitulo').textContent =
-      modoSA ? 'Painel administrativo global' : 'Informe o CNPJ ou CPF da sua empresa';
+    document.getElementById('toggleBtn').textContent = modoSA ? '← Voltar ao login normal' : '🔑 Acesso Super Admin';
+    document.getElementById('loginSubtitulo').textContent = modoSA ? 'Painel administrativo global' : 'Informe o CNPJ ou CPF da sua empresa';
   }
 
+  /* formata doc */
   function formatarDoc(input) {
-    let v = input.value.replace(/\D/g, '').substring(0, 14);
+    let v = input.value.replace(/\D/g,'').substring(0,14);
     input.value = v;
     clearTimeout(docTimer);
     const ok = v.length === 11 || v.length === 14;
     document.getElementById('docStatus').textContent = ok ? '🔍' : '';
-    if (ok) { docTimer = setTimeout(() => buscarEmpresa(v), 500); }
-    else { resetarEmpresa(); }
+    if (ok) docTimer = setTimeout(() => buscarEmpresa(v), 500);
+    else resetarEmpresa();
   }
 
+  /* busca empresa */
   async function buscarEmpresa(doc) {
-    document.getElementById('docStatus').textContent = '🔍';
+    document.getElementById('docStatus').textContent = '⏳';
     try {
-      const r    = await fetch(`${API}/auth/empresa/${doc}`);
-      const data = await r.json();
-
-      if (!data.encontrado) { document.getElementById('docStatus').textContent = '❌'; resetarEmpresa(); return; }
-
-      if (data.bloqueado) {
+      const r = await fetch(`${API}/auth/empresa/${doc}`);
+      const d = await r.json();
+      if (!d.encontrado) { document.getElementById('docStatus').textContent = '❌'; resetarEmpresa(); return; }
+      if (d.bloqueado) {
         document.getElementById('docStatus').textContent = '🔒';
-        const motivos = { suspenso: 'Conta suspensa. Entre em contato.', cancelado: 'Conta cancelada.' };
-        document.getElementById('empresaMotivo').textContent = motivos[data.motivo] || 'Acesso bloqueado.';
+        const m = { suspenso:'Conta suspensa. Entre em contato.', cancelado:'Conta cancelada.' };
+        document.getElementById('empresaMotivo').textContent = m[d.motivo] || 'Acesso bloqueado.';
         document.getElementById('empresaBloqueada').style.display = 'block';
-        document.getElementById('empresaCard').style.display      = 'none';
-        document.getElementById('camposLogin').style.display      = 'none';
+        document.getElementById('empresaCard').style.display = 'none';
+        document.getElementById('camposLogin').style.display = 'none';
         return;
       }
-
-      document.getElementById('docStatus').textContent          = '✅';
-      document.getElementById('empresaNome').textContent        = data.nome;
-      document.getElementById('empresaCard').style.display      = 'block';
+      document.getElementById('docStatus').textContent = '✅';
+      document.getElementById('empresaNome').textContent = d.nome;
+      document.getElementById('empresaCard').style.display = 'block';
       document.getElementById('empresaBloqueada').style.display = 'none';
-      document.getElementById('camposLogin').style.display      = 'block';
-      empresaId = data.id;
+      document.getElementById('camposLogin').style.display = 'block';
+      empresaId = d.id;
       setTimeout(() => document.getElementById('emailInput').focus(), 80);
-
     } catch { document.getElementById('docStatus').textContent = '❌'; }
   }
 
   function resetarEmpresa() {
     empresaId = null;
-    document.getElementById('empresaCard').style.display      = 'none';
-    document.getElementById('empresaBloqueada').style.display = 'none';
-    document.getElementById('camposLogin').style.display      = 'none';
+    ['empresaCard','empresaBloqueada','camposLogin'].forEach(id => document.getElementById(id).style.display = 'none');
   }
 
+  /* loading helper */
+  function setLoading(modo, on) {
+    document.getElementById(`btn${modo}Text`).style.display = on ? 'none' : 'inline';
+    document.getElementById(`spinner${modo}`).style.display = on ? 'inline-block' : 'none';
+  }
+
+  /* salvar sessão */
+  function salvar(data) {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+  }
+
+  /* login empresa */
   async function fazerLogin() {
     const email = document.getElementById('emailInput').value.trim();
     const senha = document.getElementById('senhaInput').value;
     const erro  = document.getElementById('erroLogin');
     erro.style.display = 'none';
     if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
-    if (!empresaId)       { erro.textContent = 'Selecione uma empresa válida.'; erro.style.display = 'block'; return; }
+    if (!empresaId)        { erro.textContent = 'Selecione uma empresa válida.'; erro.style.display = 'block'; return; }
     setLoading('Login', true);
     try {
-      const r    = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha, empresa_id: empresaId }) });
-      const data = await r.json();
-      if (!r.ok) { erro.textContent = data.erro || 'E-mail ou senha incorretos.'; erro.style.display = 'block'; return; }
-      salvarSessao(data);
+      const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha, empresa_id: empresaId }) });
+      const d = await r.json();
+      if (!r.ok) { erro.textContent = d.erro || 'E-mail ou senha incorretos.'; erro.style.display = 'block'; return; }
+      salvar(d);
       localStorage.setItem('cnpj_salvo', document.getElementById('docInput').value);
-      window.location.href = destinoPorPerfil(data.usuario?.perfil);
+      window.location.href = dest(d.usuario?.perfil);
     } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
     finally  { setLoading('Login', false); }
   }
 
+  /* login SA */
   async function fazerLoginSA() {
     const email = document.getElementById('saEmail').value.trim();
     const senha = document.getElementById('saSenha').value;
@@ -185,52 +186,43 @@
     if (!email || !senha) { erro.textContent = 'Preencha e-mail e senha.'; erro.style.display = 'block'; return; }
     setLoading('SA', true);
     try {
-      const r    = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha }) });
-      const data = await r.json();
-      if (!r.ok) { erro.textContent = data.erro || 'Acesso negado.'; erro.style.display = 'block'; return; }
-      salvarSessao(data);
-      window.location.href = destinoPorPerfil(data.usuario?.perfil);
+      const r = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, senha }) });
+      const d = await r.json();
+      if (!r.ok) { erro.textContent = d.erro || 'Acesso negado.'; erro.style.display = 'block'; return; }
+      salvar(d);
+      window.location.href = dest(d.usuario?.perfil);
     } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
     finally  { setLoading('SA', false); }
   }
 
-  function salvarSessao(data) {
-    localStorage.setItem('token',   data.token);
-    localStorage.setItem('usuario', JSON.stringify(data.usuario));
-  }
-
-  function setLoading(modo, on) {
-    const txt  = document.getElementById(`btn${modo}Text`);
-    const spin = document.getElementById(`spinner${modo}`);
-    if (txt)  txt.style.display  = on ? 'none'        : 'inline';
-    if (spin) spin.style.display = on ? 'inline-block' : 'none';
-  }
-
+  /* INIT */
   (async () => {
+    /* SSO */
     const ssoToken = new URLSearchParams(window.location.search).get('sso');
-
     if (ssoToken && ssoToken.length >= 10) {
       history.replaceState({}, '', window.location.pathname);
       document.getElementById('ssoLoading').classList.add('active');
       try {
-        const r    = await fetch(`${API}/sso/validar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sso_token: ssoToken }) });
-        const data = await r.json();
-        if (!r.ok) { alert('Erro no acesso via integração: ' + (data.erro || 'Token inválido.')); return; }
-        salvarSessao(data);
-        window.location.href = destinoPorPerfil(data.usuario?.perfil);
-      } catch { alert('Erro de conexão ao validar acesso integrado.'); }
+        const r = await fetch(`${API}/sso/validar`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ sso_token: ssoToken }) });
+        const d = await r.json();
+        if (!r.ok) { alert('Erro SSO: ' + (d.erro || 'Token inválido.')); return; }
+        salvar(d);
+        window.location.href = dest(d.usuario?.perfil);
+      } catch { alert('Erro de conexão SSO.'); }
       finally  { document.getElementById('ssoLoading').classList.remove('active'); }
       return;
     }
 
+    /* Já logado? */
     const u = JSON.parse(localStorage.getItem('usuario') || 'null');
     const t = localStorage.getItem('token');
-    if (u && t) { window.location.href = destinoPorPerfil(u.perfil); return; }
+    if (u && t) { window.location.href = dest(u.perfil); return; }
 
+    /* CNPJ salvo */
     const cnpjSalvo = localStorage.getItem('cnpj_salvo');
     if (cnpjSalvo) {
-      const inp    = document.getElementById('docInput');
-      const digits = cnpjSalvo.replace(/\D/g, '');
+      const digits = cnpjSalvo.replace(/\D/g,'');
+      const inp = document.getElementById('docInput');
       if (inp && (digits.length === 11 || digits.length === 14)) { inp.value = digits; buscarEmpresa(digits); }
     }
   })();
