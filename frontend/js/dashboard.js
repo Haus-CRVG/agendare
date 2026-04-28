@@ -55,7 +55,7 @@ function aplicarTemaEmpresa(u) {
 function init() {
   token   = localStorage.getItem('token');
   usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
-  if (!token || !usuario) { window.location.href = 'index.html'; return; }
+  if (!token || !usuario) { window.location.href = 'login.html'; return; }
   usuario.id = parseInt(usuario.id);
 
   // Aplica tema da empresa imediatamente ao carregar
@@ -1167,8 +1167,8 @@ function salvarNotas(){
 }
 
 // ── Logoff / Sair ─────────────────────────────────────────
-function logoff(){localStorage.removeItem('token');localStorage.removeItem('usuario');window.location.href='index.html';}
-function sair(){localStorage.clear();window.location.href='index.html';}
+function logoff(){localStorage.removeItem('token');localStorage.removeItem('usuario');window.location.href='login.html';}
+function sair(){localStorage.clear();window.location.href='login.html';}
 function voltarInicio(){mudarAba('agenda');}
 
 // ── Empresas (superadmin) ─────────────────────────────────

@@ -1,732 +1,804 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Agendare — Painel Super Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-  <link rel="icon" href="assets/favicon.png"/>
-  <link rel="stylesheet" href="css/style.css"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendare — Painel</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="shortcut icon" href="assets/favicon.png" />
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+  <style>
+    .kanban-board {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+      align-items: flex-start
+    }
+
+    .kanban-col {
+      min-width: 220px;
+      max-width: 260px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden
+    }
+
+    .kanban-col-header {
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border)
+    }
+
+    .kanban-col-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.75rem;
+      flex-shrink: 0
+    }
+
+    .kanban-col-body {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 60px
+    }
+
+    .kanban-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left: 4px solid #0d9488;
+      border-radius: 8px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: box-shadow 0.15s
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12)
+    }
+
+    .kanban-card-titulo {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 3px
+    }
+
+    .kanban-card-data {
+      color: var(--muted);
+      font-size: 0.72rem
+    }
+
+    .kanban-empty {
+      color: var(--muted);
+      font-size: 0.78rem;
+      text-align: center;
+      padding: 1rem 0.5rem
+    }
+
+    .cal-dia {
+      position: relative
+    }
+
+    .cal-dots {
+      display: flex;
+      justify-content: center;
+      gap: 2px;
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%)
+    }
+
+    .cal-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0
+    }
+
+    .btn-vis {
+      transition: all 0.15s
+    }
+
+    .btn-vis.ativo {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent)
+    }
+
+    #fcCalendario {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1rem;
+      border: 1px solid var(--border)
+    }
+
+    .fc .fc-toolbar-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text)
+    }
+
+    .fc .fc-button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.78rem;
+      padding: 0.3rem 0.6rem;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif
+    }
+
+    .fc .fc-button:hover,
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent)
+    }
+
+    .fc .fc-daygrid-day.fc-day-today {
+      background: rgba(13, 148, 136, 0.06)
+    }
+
+    .fc .fc-daygrid-day-number {
+      color: var(--text);
+      font-size: 0.82rem
+    }
+
+    .fc .fc-col-header-cell-cushion {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none
+    }
+
+    .fc-event {
+      border-radius: 6px !important;
+      border: none !important;
+      font-size: 0.75rem;
+      padding: 2px 4px;
+      cursor: pointer
+    }
+
+    .fc .fc-timegrid-slot {
+      height: 40px
+    }
+
+    .fc .fc-timegrid-axis-cushion {
+      font-size: 0.72rem;
+      color: var(--muted)
+    }
+
+    .empresa-badge {
+      background: rgba(13, 148, 136, 0.1);
+      border: 1px solid rgba(13, 148, 136, 0.25);
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      font-weight: 600;
+      white-space: nowrap;
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis
+    }
+  </style>
 </head>
+
 <body>
-
-<div id="toastArea"></div>
-
-<div class="dashboard">
-
-  <!-- ═══ TOPBAR ═══ -->
+  <div id="toastContainer"></div>
   <div class="topbar">
-    <div class="topbar-brand">
-      <img src="assets/logo-agendare.png" alt="Agendare"
-           onerror="this.style.display='none';document.getElementById('brandName').style.display='flex'"/>
-      <div class="topbar-brand-name" id="brandName" style="display:none">Agend<span>are</span></div>
-    </div>
+    <img src="assets/logo-agendare.png" class="logo-top" onclick="voltarInicio()" title="Ir para início" />
     <div class="topbar-user">
-      <span style="color:var(--accent);font-weight:600;font-size:0.9rem">⚡ Super Admin</span>
-      <span id="nomeAdminSA" style="font-size:0.88rem;color:var(--muted)"></span>
-      <button class="btn-logout" onclick="logout()">Sair</button>
+      <span class="empresa-badge" id="empresaBadge" title="Empresa logada">🏢 ...</span>
+      Olá, <strong id="nomeUsuario">...</strong>
+      <span id="badgePerfil" class="badge badge-confirmado" style="font-size:0.7rem"></span>
+      <button class="btn-icon" onclick="togglePainelNotificacoes()" title="Notificações" id="btnNotif"
+        style="position:relative">🔔</button>
+      <button class="btn-icon" onclick="copiarLink()" title="Link de Agendamento" id="btnLink">🔗</button>
+      <button class="btn-icon" onclick="abrirNotas()" title="Anotações">📝</button>
+      <button class="btn-icon" onclick="abrirPerfil()" title="Perfil">⚙️</button>
+      <button class="btn-logout" onclick="logoff()">Logoff</button>
+      <button class="btn-logout" onclick="sair()"
+        style="color:var(--error);border-color:rgba(239,68,68,0.4)">Sair</button>
     </div>
   </div>
-
-  <!-- ═══ TABS ═══ -->
-  <div class="tabs" style="display:flex">
-    <button class="tab active" id="tabEmpresas" onclick="mudarAba('empresas')">🏢 Empresas</button>
-    <button class="tab" id="tabNova" onclick="mudarAba('nova')">➕ Nova Empresa</button>
-  </div>
-
-  <!-- ═══ CONTEÚDO ═══ -->
-  <div class="content-wrapper">
-
-    <!-- ── ABA: EMPRESAS ── -->
-    <div class="main-content active" id="abaEmpresas">
-      <div class="page-title">Gestão de <span>Empresas</span></div>
-      <p class="page-subtitle">Cadastre e gerencie as empresas do Agendare</p>
-
-      <!-- Stats -->
-      <div class="stats-row" id="statsRow">
-        <div class="stat-card">
-          <div class="stat-num" id="stTotal">—</div>
-          <div class="stat-label">Total</div>
+  <div class="mobile-tabs" id="mobileTabs"></div>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Principal</div>
+        <button class="sidebar-item active" onclick="mudarAba('agenda')" data-aba="agenda"><span class="icon">📅</span>
+          Agenda</button>
+        <button class="sidebar-item" onclick="mudarAba('lista')" data-aba="lista"><span class="icon">📋</span>
+          Agendamentos</button>
+      </div>
+      <div class="sidebar-section" id="sidebarAdmin" style="display:none">
+        <div class="sidebar-label">Gestão</div>
+        <button class="sidebar-item" onclick="mudarAba('servicos')" data-aba="servicos">
+          <span class="icon">🛠️</span> Serviços
+        </button>
+        <button class="sidebar-item" onclick="mudarAba('profissionais')" data-aba="profissionais">
+          <span class="icon">👥</span> Profissionais
+        </button>
+        <button class="sidebar-item" onclick="mudarAba('configuracoes')" data-aba="configuracoes">
+          <span class="icon">⚙️</span> Configurações
+        </button>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-label">Minha conta</div>
+        <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade"><span
+            class="icon">🕐</span> Disponibilidade</button>
+      </div>
+    </nav>
+    <main class="content">
+      <!-- ABA: AGENDA -->
+      <div id="abaAgenda">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title" id="tituloAgendaPagina">Agenda <span>do Dia</span></div>
+            <div class="page-subtitle" id="subtituloAgenda">Carregando...</div>
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm btn-vis ativo" id="btnVisProximos"
+              onclick="mudarVisualizacao('proximos')">⚡ Próximos</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisDia" onclick="mudarVisualizacao('dia')">📅
+              Dia</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisSemana" onclick="mudarVisualizacao('semana')">📆
+              Semana</button>
+            <button class="btn btn-secondary btn-sm btn-vis" id="btnVisMes" onclick="mudarVisualizacao('mes')">🗓️
+              Mês</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" style="color:var(--success)" id="stAtivos">—</div>
-          <div class="stat-label">Ativas</div>
+        <div class="stats-grid" id="statsAgenda"></div>
+        <!-- Próximos: Kanban -->
+        <div id="painelProximos">
+          <div class="card" style="margin-bottom:1rem">
+            <div class="card-header">
+              <h2>⚡ Próximos Compromissos</h2>
+              <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Agendar</button>
+            </div>
+          </div>
+          <div class="kanban-board" id="kanbanProximos"></div>
         </div>
-        <div class="stat-card">
-          <div class="stat-num" style="color:var(--warning)" id="stSuspensos">—</div>
-          <div class="stat-label">Suspensas</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-num" style="color:var(--error)" id="stCancelados">—</div>
-          <div class="stat-label">Canceladas</div>
+        <!-- FullCalendar: Dia/Semana/Mês -->
+        <div id="painelCalendario" style="display:none">
+          <!-- Filtro por profissional acima do calendário -->
+          <div class="card" style="margin-bottom:1rem;padding:0.75rem 1rem">
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Profissional</label>
+              <select id="filtroProfissional" onchange="atualizarFullCalendar()" style="min-width:200px">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <!-- FullCalendar ocupa toda a largura -->
+          <div id="fcCalendario"></div>
         </div>
       </div>
-
-      <div class="table-card">
-        <div class="table-header" style="flex-direction:column;align-items:flex-start;gap:0.9rem">
-          <h2>Empresas Cadastradas</h2>
-          <div class="search-row">
-            <input type="text" class="search-input" id="pesquisaEmpresas"
-              placeholder="Buscar por nome, CNPJ ou slug…"
-              oninput="filtrarEmpresas()"/>
-            <button class="btn-sm btn-secondary"
-              onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresas()">
-              ✕ Limpar
-            </button>
-            <button class="btn-sm btn-primary" onclick="mudarAba('nova')">+ Nova</button>
+      <!-- ABA: LISTA -->
+      <div id="abaLista" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Todos os <span>Compromissos</span></div>
+            <div class="page-subtitle">Busque, filtre e gerencie</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirNovoAgendamento()">+ Novo</button>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-body" style="padding:1rem">
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>De</label><input type="date"
+                  id="filtroInicio" /></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Até</label><input type="date"
+                  id="filtroFim" /></div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px">
+                <label>Status</label>
+                <select id="filtroStatus">
+                  <option value="">Todos</option>
+                  <option value="confirmado">Confirmado</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="cancelado">Cancelado</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="faltou">Faltou</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px"><label>Profissional</label><select
+                  id="filtroProf2">
+                  <option value="">Todos</option>
+                </select></div>
+              <button class="btn btn-primary" onclick="carregarLista()">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data/Hora</th>
+                  <th>Título</th>
+                  <th>Responsável</th>
+                  <th>Obs.</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaAgendamentos">
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- ABA: PROFISSIONAIS -->
+      <div id="abaProfissionais" style="display:none">
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div class="page-title">Nossa <span>Equipe</span></div>
+            <div class="page-subtitle">Gerencie analistas e permissões</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovoProfissional()">+ Novo Analista</button>
+        </div>
+        <div id="listaProfissionais"
+          style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;"></div>
+      </div>
+      <!-- ② ABA SERVIÇOS  -->
+      <div id="abaServicos" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Nossos <span>Serviços</span></div>
+            <div class="page-subtitle">Cadastre os serviços oferecidos pela empresa</div>
           </div>
         </div>
 
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>Empresa</th>
-                <th>CNPJ</th>
-                <th>E-mail</th>
-                <th>Slug</th>
-                <th>Cor</th>
-                <th>Vencimento</th>
-                <th>Status</th>
-                <th style="text-align:center">Usuários</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="tabelaEmpresas">
-              <tr><td colspan="9" class="empty-state">Carregando…</td></tr>
-            </tbody>
-          </table>
+        <!-- Formulário -->
+        <div class="card" style="margin-bottom:1.5rem">
+          <div class="card-header">
+            <h2>➕ Novo Serviço</h2>
+          </div>
+          <div class="card-body" style="padding:1rem">
+            <input type="hidden" id="servicoId" />
+            <div style="display:grid;grid-template-columns:1fr 1fr 120px;gap:0.75rem;margin-bottom:0.75rem">
+              <div class="form-group" style="margin:0">
+                <label>Nome <span style="color:var(--accent)">*</span></label>
+                <input type="text" id="servicoNome" placeholder="Ex: Consulta, Reunião..." />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Descrição</label>
+                <input type="text" id="servicoDescricao" placeholder="Descrição opcional" />
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Duração (min)</label>
+                <input type="number" id="servicoDuracao" placeholder="60" min="5" step="5" />
+              </div>
+            </div>
+            <!-- Profissionais vinculados -->
+            <div style="margin-bottom:0.75rem">
+              <label style="font-size:0.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:0.5rem">
+                👥 Profissionais habilitados para este serviço
+              </label>
+              <div id="servicoProfissionaisCheck"
+                style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+                <span style="color:var(--muted);font-size:0.82rem">Carregando...</span>
+              </div>
+              <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Marque quais profissionais podem realizar este serviço. Só eles aparecerão no link público.</div>
+            </div>
+            <div id="erroServico" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
+            <button class="btn btn-primary" id="btnSalvarServico" onclick="salvarServico()">Salvar Serviço</button>
+          </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Descrição</th>
+                  <th>Duração</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaServicos">
+                <tr>
+                  <td colspan="4" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div><!-- /abaEmpresas -->
+      <!-- ABA: DISPONIBILIDADE -->
+      <div id="abaDisponibilidade" style="display:none">
+        <div class="page-header">
+          <div class="page-title">Minha <span>Disponibilidade</span></div>
+          <div class="page-subtitle">Configure seus dias e horários de atendimento</div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div id="formDisponibilidade"></div><button class="btn btn-primary" style="margin-top:1.5rem"
+              onclick="salvarDisponibilidade()">Salvar Disponibilidade</button>
+          </div>
+        </div>
+      </div>
+      <!-- ABA: CONFIGURAÇÕES -->
+      <div id="abaConfiguracoes" style="display:none">
+        <div class="page-header">
+          <div class="page-title">⚙️ <span>Configurações</span></div>
+          <div class="page-subtitle">Configurações gerais da empresa</div>
+        </div>
+        <div class="card" style="max-width:600px">
+          <div class="card-header">
+            <h2>Link de Agendamento Público</h2>
+          </div>
+          <div class="card-body">
+            <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Compartilhe este link com seus clientes:
+            </p>
+            <div style="display:flex;gap:0.5rem;"><input type="text" id="linkPublico" readonly
+                style="flex:1;background:var(--surface2);font-family:monospace;font-size:0.82rem;" /><button
+                class="btn btn-primary" onclick="copiarLink()">Copiar</button></div>
+            <div id="linkCopiado" style="display:none;margin-top:0.5rem;" class="alert alert-success">✅ Link copiado!
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ABA: EMPRESAS (superadmin) -->
+      <div id="abaEmpresas" style="display:none">
+        <div class="page-header"
+          style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">Gestão de <span>Empresas</span></div>
+            <div class="page-subtitle">Gerencie as empresas cadastradas no Agendare</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovaEmpresa()">+ Nova Empresa</button>
+        </div>
+        <div class="card">
+          <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+              <input type="text" id="pesquisaEmpresas" placeholder="🔍 Buscar por nome ou CNPJ..."
+                oninput="filtrarEmpresasSA()"
+                style="flex:1;min-width:200px;max-width:400px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:inherit;font-size:0.88rem;padding:0.5rem 1rem;outline:none;" />
+              <button class="btn btn-secondary btn-sm"
+                onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresasSA()">✕ Limpar</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>CNPJ</th>
+                  <th>E-mail</th>
+                  <th>Slug</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaEmpresas">
+                <tr>
+                  <td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
-    <!-- ── ABA: NOVA EMPRESA ── -->
-    <div class="main-content" id="abaNova">
-      <div class="page-title">Nova <span>Empresa</span></div>
-      <p class="page-subtitle">Cadastre uma nova empresa no Agendare</p>
+  <!-- Modais -->
+  <div class="modal-overlay" id="modalAgendamento">
+    <div class="modal" style="max-width:500px">
+      <h3>📅 Novo Compromisso</h3>
+      <input type="hidden" id="agId" />
+      <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
+          id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
+      <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label><input type="date"
+          id="agData" /></div>
+      <div class="form-group" style="margin-bottom:0.5rem"><label
+          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
+            id="chkDiaTodo" onchange="toggleDiaTodo(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />Dia todo</label></div>
+      <div id="camposHora" style="display:flex;gap:0.75rem;align-items:flex-end;margin-bottom:1rem">
+        <div class="form-group" style="margin:0;flex:1"><label>Início <span
+              style="color:var(--accent)">*</span></label><input type="time" id="agHoraInicio" /></div>
+        <div class="form-group" style="margin:0;flex:1"><label>Fim <span
+              style="color:var(--accent)">*</span></label><input type="time" id="agHoraFim" /></div>
+      </div>
+      <div class="form-group" style="margin-bottom:0.5rem"><label
+          style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
+            id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />Adicionar participante?</label></div>
+      <div id="campoParticipante" style="display:none;margin-bottom:1rem">
+        <div class="form-group" style="margin:0"><label>Participante</label><select id="agParticipante"></select></div>
+      </div>
+      <div class="form-group"><label>Observações</label><textarea id="agObs" placeholder="Informações adicionais..."
+          style="resize:none;height:70px;"></textarea></div>
+      <div id="erroAgendamento" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div style="margin-bottom:1rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500;font-size:0.88rem">
+          <input type="checkbox" id="chkConvidarExterno" onchange="toggleConvidarExterno(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />
+          ✉️ Convidar alguém externo por e-mail
+        </label>
+        <div id="campoConvidarExterno" style="display:none;margin-top:0.75rem">
+          <div class="form-group" style="margin:0">
+            <label>E-mail do convidado</label>
+            <input type="email" id="emailConvidado" placeholder="pessoa@email.com" />
+          </div>
+        </div>
+      </div>
 
-      <div class="form-section">
-        <div class="form-section-title">📋 Dados da Empresa</div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalAgendamento()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarAgendamento()"><span id="btnAgendar">Confirmar</span>
+          <div class="spinner" id="spinnerAgendar"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalVerAgendamento">
+    <div class="modal" style="max-width:520px">
+      <h3>📋 Detalhes do Compromisso</h3>
+      <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="editStatus">
+          <option value="confirmado">✅ Confirmado</option>
+          <option value="concluido">🏁 Concluído</option>
+          <option value="faltou">❌ Faltou</option>
+          <option value="cancelado">🚫 Cancelado</option>
+        </select>
+      </div>
+      <input type="hidden" id="editAgId" />
+      <hr style="border-color:var(--border);margin:1.25rem 0" />
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <strong style="font-size:0.88rem">👥 Participantes</strong>
+        <button class="btn btn-secondary btn-sm" onclick="toggleAddParticipante()">+ Adicionar</button>
+      </div>
+      <div id="formParticipante"
+        style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem">
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">
+          <button class="btn btn-secondary btn-sm" id="btnTipoInterno" onclick="setTipoParticipante('interno')"
+            style="flex:1;background:var(--accent);color:#fff;border-color:var(--accent)">👤 Interno</button>
+          <button class="btn btn-secondary btn-sm" id="btnTipoExterno" onclick="setTipoParticipante('externo')"
+            style="flex:1">🌐 Externo</button>
+        </div>
+        <div id="campoInterno">
+          <div class="form-group" style="margin-bottom:0.5rem"><label>Analista</label><select
+              id="partProfissional"></select></div>
+        </div>
+        <div id="campoExterno" style="display:none">
+          <div class="form-group" style="margin-bottom:0.5rem"><label>Nome *</label><input type="text" id="partNome"
+              placeholder="Nome completo" /></div>
+          <div class="form-group" style="margin-bottom:0.5rem"><label>E-mail *</label><input type="email" id="partEmail"
+              placeholder="email@exemplo.com" /></div>
+        </div>
+        <div id="erroParticipante" class="alert alert-error" style="display:none;margin-top:0.5rem"></div>
+        <button class="btn btn-primary btn-sm" style="width:100%;margin-top:0.75rem"
+          onclick="adicionarParticipante()">Enviar convite</button>
+      </div>
+      <div id="listaParticipantes" style="display:flex;flex-direction:column;gap:0.5rem;margin-bottom:1rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalVer()">Fechar</button>
+        <button class="btn btn-primary" onclick="pedirObsStatus()">Salvar status</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalProfissional">
+    <div class="modal" style="max-width:480px">
+      <h3 id="tituloProfissionalModal">👤 Novo Analista</h3>
+      <input type="hidden" id="profId" />
+      <div class="form-grid">
+        <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text"
+            id="profNome" /></div>
+        <div class="form-group"><label>E-mail <span style="color:var(--accent)">*</span></label><input type="email"
+            id="profEmail" /></div>
+        <div class="form-group"><label>Telefone</label><input type="text" id="profTelefone" /></div>
+        <div class="form-group"><label id="labelSenhaProf">Senha <span
+              style="color:var(--accent)">*</span></label><input type="password" id="profSenha" /></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Perfil</label><select id="profPerfil">
+            <option value="profissional">🔍 Analista</option>
+            <option value="admin">👑 Administrador</option>
+          </select></div>
+        <div class="form-group"><label>Cor na agenda</label><input type="color" id="profCor" value="#0d9488"
+            style="height:42px;padding:4px;cursor:pointer;width:100%;" /></div>
+      </div>
+      <div id="erroProfissional" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalProfissional()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarProfissional()"><span id="btnProfText">Cadastrar</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalPerfil">
+    <div class="modal" style="max-width:420px">
+      <h3>⚙️ Meu Perfil</h3>
+      <div id="perfilInfo"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.5rem;font-size:0.9rem;line-height:1.8;">
+      </div>
+      <hr style="border-color:var(--border);margin-bottom:1.5rem" />
+      <h4 style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">ALTERAR SENHA</h4>
+      <div class="form-group"><label>Nova senha</label><input type="password" id="novaSenhaP" placeholder="••••••••" />
+      </div>
+      <div class="form-group"><label>Confirmar</label><input type="password" id="confirmarSenhaP"
+          placeholder="••••••••" /></div>
+      <div id="erroPerfil" class="alert alert-error" style="display:none;margin-bottom:1rem"></div>
+      <div id="sucessoPerfil" class="alert alert-success" style="display:none;margin-bottom:1rem"></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharPerfil()">Fechar</button><button
+          class="btn btn-primary" onclick="trocarSenha()">Salvar Senha</button></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalEmpresa">
+    <div class="modal" style="max-width:580px">
+      <h3 id="tituloModalEmpresa">🏢 Nova Empresa</h3>
+      <input type="hidden" id="empId" />
+      <div
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem">
+        <p
+          style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+          Dados da Empresa</p>
         <div class="form-grid">
-          <div class="form-group">
-            <label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="nCnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="formatarDoc(this)"/>
-          </div>
-          <div class="form-group">
-            <label>Nome Fantasia <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="nNome" placeholder="Nome da empresa" oninput="autoSlug()"/>
-          </div>
-          <div class="form-group">
-            <label>E-mail</label>
-            <input type="email" id="nEmail" placeholder="contato@empresa.com"/>
-          </div>
-          <div class="form-group">
-            <label>Telefone</label>
-            <input type="text" id="nTelefone" placeholder="(00) 00000-0000"/>
-          </div>
-          <div class="form-group">
-            <label>Slug (URL pública) <span style="color:var(--accent)">*</span></label>
-            <input type="text" id="nSlug" placeholder="nome-da-empresa"
-              oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'').replace(/\s+/g,'-');document.getElementById('slugPrev').textContent=this.value||'slug'"/>
-            <span class="form-hint">agendar.html?empresa=<strong id="slugPrev">slug</strong></span>
-          </div>
-          <div class="form-group">
-            <label>Cor Primária</label>
-            <div class="cor-row">
-              <input type="color" id="nCor" value="#4f6ef7"
-                oninput="document.getElementById('nCorBall').style.background=this.value"/>
-              <div class="cor-ball" id="nCorBall" style="background:#4f6ef7"></div>
-              <span style="font-size:0.8rem;color:var(--muted)">Cor dos botões e agenda</span>
-            </div>
-          </div>
-          <div class="form-group">
-            <label>Vencimento</label>
-            <input type="date" id="nVencimento"/>
-          </div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Nome Fantasia <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empNome"
+              placeholder="Ex: Salão da Maria" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>CNPJ ou CPF <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empCnpj"
+              placeholder="00.000.000/0001-00" /></div>
         </div>
-
-        <hr class="form-divider"/>
-        <div class="form-section-title">👑 Administrador Inicial</div>
-        <div class="form-grid-3">
-          <div class="form-group">
-            <label>Nome *</label>
-            <input type="text" id="nAdminNome" placeholder="Nome completo"/>
-          </div>
-          <div class="form-group">
-            <label>E-mail *</label>
-            <input type="email" id="nAdminEmail" placeholder="admin@empresa.com"/>
-          </div>
-          <div class="form-group">
-            <label>Senha *</label>
-            <input type="password" id="nAdminSenha" placeholder="••••••••"/>
-          </div>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail</label><input type="email" id="empEmail"
+              placeholder="contato@empresa.com" /></div>
+          <div class="form-group" style="margin-bottom:0.75rem"><label>Telefone</label><input type="text"
+              id="empTelefone" placeholder="(00) 00000-0000" /></div>
         </div>
-
-        <div id="erroNova" class="alert-error" style="display:none;margin-top:1rem"></div>
-        <div id="sucessoNova" class="alert-success" style="display:none;margin-top:1rem"></div>
-
-        <div style="margin-top:1.25rem">
-          <button class="btn btn-primary" onclick="criarEmpresa()">
-            <span id="btnNovaText">Cadastrar Empresa</span>
-            <div class="spinner" id="spinnerNova"></div>
-          </button>
+        <div class="form-grid">
+          <div class="form-group" style="margin-bottom:0"><label>Slug (URL pública) <span
+                style="color:var(--accent)">*</span></label><input type="text" id="empSlug" placeholder="salao-da-maria"
+              oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')" /><span
+              style="font-size:0.72rem;color:var(--muted2)">agendar.html?empresa=<strong
+                id="slugPreview">slug</strong></span></div>
+          <div class="form-group" style="margin-bottom:0"><label>Cor primária</label><input type="color" id="empCor"
+              value="#0d9488" style="height:42px;padding:4px;cursor:pointer;" /></div>
         </div>
       </div>
-    </div><!-- /abaNova -->
-
-  </div><!-- /content-wrapper -->
-</div><!-- /dashboard -->
-
-
-<!-- ═══════════════════════════════════════════
-     MODAL — Editar Empresa
-═══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modalEditar">
-  <div class="modal" style="max-width:620px">
-    <h3>✏️ Editar Empresa</h3>
-    <input type="hidden" id="editId"/>
-    <div class="form-grid">
-      <div class="form-group">
-        <label>CNPJ</label>
-        <input type="text" id="editCnpj" maxlength="18" oninput="formatarDoc(this)"/>
+      <div id="secaoAdmin">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+          <p
+            style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.75rem">
+            👑 Administrador da Empresa</p>
+          <div class="form-grid">
+            <div class="form-group" style="margin-bottom:0.75rem"><label>Nome <span
+                  style="color:var(--accent)">*</span></label><input type="text" id="empAdminNome"
+                placeholder="Nome completo" /></div>
+            <div class="form-group" style="margin-bottom:0.75rem"><label>E-mail <span
+                  style="color:var(--accent)">*</span></label><input type="email" id="empAdminEmail"
+                placeholder="admin@empresa.com" /></div>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label>Senha <span
+                style="color:var(--accent)">*</span></label><input type="password" id="empAdminSenha"
+              placeholder="Mínimo 6 caracteres" /></div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Nome Fantasia</label>
-        <input type="text" id="editNome"/>
+      <div id="erroEmpresa" class="alert alert-error" style="display:none;margin-top:1rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalEmpresa()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarEmpresa()"><span id="btnEmpresaText">Criar Empresa</span>
+          <div class="spinner" id="spinnerEmpresa"></div>
+        </button>
       </div>
-      <div class="form-group">
-        <label>E-mail</label>
-        <input type="email" id="editEmail"/>
-      </div>
-      <div class="form-group">
-        <label>Telefone</label>
-        <input type="text" id="editTelefone"/>
-      </div>
-      <div class="form-group">
-        <label>Slug</label>
-        <input type="text" id="editSlug"
-          oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')"/>
-      </div>
-      <div class="form-group">
-        <label>Vencimento</label>
-        <input type="date" id="editVencimento"/>
-      </div>
-    </div>
-    <div class="form-group" style="margin-top:0.5rem">
-      <label>Cor Primária</label>
-      <div class="cor-row">
-        <input type="color" id="editCor"
-          oninput="document.getElementById('editCorBall').style.background=this.value"/>
-        <div class="cor-ball" id="editCorBall"></div>
-      </div>
-    </div>
-    <div class="form-group" style="margin-top:0.75rem">
-      <label>URL Imagem de Fundo <span style="color:var(--muted2)">(opcional)</span></label>
-      <input type="text" id="editFundo" placeholder="https://…"/>
-    </div>
-    <div class="form-group" style="margin-top:0.75rem">
-      <label>Status</label>
-      <select id="editStatus">
-        <option value="ativo">✅ Ativo</option>
-        <option value="suspenso">⏸️ Suspenso</option>
-        <option value="cancelado">❌ Cancelado</option>
-      </select>
-    </div>
-    <div id="erroEditar" class="alert-error" style="display:none;margin-top:0.75rem"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="fecharModal('modalEditar')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarEmpresa()">Salvar</button>
     </div>
   </div>
-</div>
 
-<!-- ═══════════════════════════════════════════
-     MODAL — Usuários da Empresa
-═══════════════════════════════════════════ -->
-<div class="modal-overlay" id="modalUsuarios">
-  <div class="modal" style="max-width:660px">
-    <h3>👥 Usuários — <span id="tituloEmpresaUsuarios" style="color:var(--accent)"></span></h3>
-    <div id="listaUsuariosModal" style="margin-bottom:1.25rem"></div>
-
-    <hr class="form-divider" style="margin:0 0 1.25rem"/>
-    <div class="form-section-title">➕ Adicionar Usuário</div>
-    <div class="form-grid">
-      <div class="form-group"><label>Nome *</label><input type="text" id="novoUserNome" placeholder="Nome completo"/></div>
-      <div class="form-group"><label>E-mail *</label><input type="email" id="novoUserEmail" placeholder="email@empresa.com"/></div>
-      <div class="form-group"><label>Senha *</label><input type="password" id="novoUserSenha" placeholder="••••••••"/></div>
-      <div class="form-group"><label>Telefone</label><input type="text" id="novoUserTelefone" placeholder="(00) 00000-0000"/></div>
-    </div>
-    <div class="form-group" style="margin-top:0.25rem">
-      <label>Perfil</label>
-      <select id="novoUserPerfil">
-        <option value="profissional">🔍 Analista / Profissional</option>
-        <option value="admin">👑 Administrador</option>
-      </select>
-    </div>
-    <div id="erroNovoUser" class="alert-error" style="display:none;margin-top:0.75rem"></div>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="fecharModal('modalUsuarios')">Fechar</button>
-      <button class="btn btn-primary" onclick="adicionarUsuario()">Adicionar</button>
+  <div class="modal-overlay" id="modalVerEmpresa">
+    <div class="modal" style="max-width:480px">
+      <h3>🏢 Detalhes da Empresa</h3>
+      <div id="detalheEmpresa" style="margin-bottom:1.5rem"></div>
+      <div class="form-group"><label>Status</label><select id="editEmpresaStatus">
+          <option value="ativo">✅ Ativo</option>
+          <option value="suspenso">⚠️ Suspenso</option>
+          <option value="cancelado">❌ Cancelado</option>
+        </select></div>
+      <input type="hidden" id="editEmpresaId" />
+      <div class="modal-actions"><button class="btn btn-secondary"
+          onclick="fecharModalVerEmpresa()">Fechar</button><button class="btn btn-primary"
+          onclick="atualizarEmpresa()">Salvar</button></div>
     </div>
   </div>
-</div>
 
+  <div class="notif-panel" id="painelNotificacoes">
+    <div class="notif-panel-header">
+      <span>⚠️ Compromissos em Atraso</span>
+      <button onclick="fecharPainelNotificacoes()"
+        style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem">✕</button>
+    </div>
+    <div class="notif-panel-body" id="painelNotifBody">
+      <div class="notif-empty">Carregando...</div>
+    </div>
+  </div>
 
-<!-- ═══════════════════════════════════════════
-     JAVASCRIPT
-═══════════════════════════════════════════ -->
-<script>
-'use strict';
-const API = 'https://agendare-backend-production.up.railway.app/api';
+  <div class="modal-overlay" id="modalUsuariosSA">
+    <div class="modal" style="max-width:640px">
+      <h3>👥 Usuários — <span id="tituloEmpresaUsuariosSA" style="color:var(--accent)"></span></h3>
+      <div id="listaUsuariosSA" style="margin:1rem 0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary"
+          onclick="document.getElementById('modalUsuariosSA').classList.remove('active')">Fechar</button>
+      </div>
+    </div>
+  </div>
 
-let token    = null;
-let usuario  = null;
-let empresas = [];          // cache local
-let empresaModalId = null;  // empresa aberta no modal usuários
+  <div class="modal-overlay" id="modalNotas">
+    <div class="modal notas-modal" style="max-width:480px">
+      <h3>📝 Minhas Anotações</h3>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:1rem">🔒 Visível apenas para você.</p>
+      <textarea id="notasTexto" placeholder="Escreva suas anotações aqui..."></textarea>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharNotas()">Fechar</button><button
+          class="btn btn-primary" onclick="salvarNotas()">💾 Salvar</button></div>
+    </div>
+  </div>
 
-/* ══════════════════════════════════════
-   INIT
-══════════════════════════════════════ */
-function init() {
-  token   = localStorage.getItem('token');
-  usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+  <div class="modal-overlay" id="modalObsStatus">
+    <div class="modal" style="max-width:420px">
+      <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação
+        antes de salvar.</p>
+      <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
+          placeholder="Descreva o que foi feito, motivo do cancelamento..."
+          style="resize:none;height:100px;width:100%;"></textarea></div>
+      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button
+          class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+    </div>
+  </div>
 
-  if (!token || !usuario) { location.href = 'login.html'; return; }
-  if (usuario.perfil !== 'superadmin') { location.href = 'login.html'; return; }
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <script src="js/dashboard.js"></script>
 
-  document.getElementById('nomeAdminSA').textContent = usuario.nome || '';
-  carregarEmpresas();
-
-  // Fecha modal clicando fora
-  document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', e => { if (e.target === el) fecharModal(el.id); });
-  });
-}
-
-/* ══════════════════════════════════════
-   UTILITÁRIOS
-══════════════════════════════════════ */
-function logout() { localStorage.clear(); location.href = 'login.html'; }
-
-function fecharModal(id) {
-  document.getElementById(id).classList.remove('active');
-}
-
-/* ── Fetch helper ── */
-async function req(method, path, body) {
-  const r = await fetch(API + path, {
-    method,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if (r.status === 401) { logout(); return null; }
-  return r.json().catch(() => ({}));
-}
-
-/* ── Toast ── */
-function toast(msg, tipo = 'ok') {
-  const el = document.createElement('div');
-  const cores = {
-    ok:   ['rgba(63,185,80,.15)',  'rgba(63,185,80,.4)',  'var(--success)'],
-    err:  ['rgba(248,81,73,.15)', 'rgba(248,81,73,.4)',  'var(--error)'],
-    info: ['rgba(79,142,247,.15)','rgba(79,142,247,.4)', 'var(--accent)'],
-  };
-  const [bg, bord, cor] = cores[tipo] || cores.info;
-  el.style.cssText = `background:${bg};border:1px solid ${bord};color:${cor};padding:0.7rem 1.1rem;border-radius:10px;font-size:0.88rem;font-weight:600;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.5)`;
-  el.textContent = msg;
-  document.getElementById('toastArea').appendChild(el);
-  setTimeout(() => el.remove(), 4000);
-}
-
-/* ── Formatação CNPJ/CPF ── */
-function formatarDoc(input) {
-  let v = input.value.replace(/\D/g,'').slice(0,14);
-  if (v.length <= 11) {
-    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
-    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
-    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
-  } else {
-    if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
-    else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/,'$1.$2.$3/$4');
-    else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2.$3');
-    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,3})/,'$1.$2');
-  }
-  input.value = v;
-}
-
-/* ── Auto-slug ao digitar nome ── */
-function autoSlug() {
-  const nome = document.getElementById('nNome').value;
-  const slug = nome.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  document.getElementById('nSlug').value = slug;
-  document.getElementById('slugPrev').textContent = slug || 'slug';
-}
-
-/* ══════════════════════════════════════
-   ABAS
-══════════════════════════════════════ */
-function mudarAba(aba) {
-  ['empresas','nova'].forEach(a => {
-    document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('active', a === aba);
-    document.getElementById('tab' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('active', a === aba);
-  });
-}
-
-/* ══════════════════════════════════════
-   EMPRESAS — CARREGAR / FILTRAR / RENDER
-══════════════════════════════════════ */
-async function carregarEmpresas() {
-  const tbody = document.getElementById('tabelaEmpresas');
-  tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Carregando…</td></tr>';
-  try {
-    const data = await req('GET', '/empresas');
-    empresas = Array.isArray(data) ? data : [];
-    atualizarStats();
-    renderEmpresas(empresas);
-  } catch {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state" style="color:var(--error)">Erro ao carregar empresas.</td></tr>';
-  }
-}
-
-function atualizarStats() {
-  document.getElementById('stTotal').textContent     = empresas.length;
-  document.getElementById('stAtivos').textContent    = empresas.filter(e => e.status === 'ativo').length;
-  document.getElementById('stSuspensos').textContent = empresas.filter(e => e.status === 'suspenso').length;
-  document.getElementById('stCancelados').textContent= empresas.filter(e => e.status === 'cancelado').length;
-}
-
-function filtrarEmpresas() {
-  const q = document.getElementById('pesquisaEmpresas').value
-    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-  if (!q) { renderEmpresas(empresas); return; }
-  const digits = q.replace(/\D/g,'');
-  renderEmpresas(empresas.filter(e => {
-    const nome = (e.nome_fantasia||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    const slug = (e.slug||'').toLowerCase();
-    const cnpj = (e.cnpj||'').replace(/\D/g,'');
-    return nome.includes(q) || slug.includes(q) || (digits && cnpj.includes(digits));
-  }));
-}
-
-function renderEmpresas(lista) {
-  const tbody = document.getElementById('tabelaEmpresas');
-  if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Nenhuma empresa encontrada.</td></tr>';
-    return;
-  }
-
-  const badgeStatus = {
-    ativo:     '<span class="badge badge-ativo">✅ Ativo</span>',
-    suspenso:  '<span class="badge badge-suspenso">⏸️ Suspenso</span>',
-    cancelado: '<span class="badge badge-cancelado">❌ Cancelado</span>',
-  };
-
-  tbody.innerHTML = lista.map(e => {
-    const nome = e.nome_fantasia || e.nome || '—';
-    const cor  = e.cor_primaria  || '#4f6ef7';
-    const venc = e.vencimento
-      ? new Date(e.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')
-      : '—';
-
-    return `
-    <tr onclick="toggleUsuariosInline(${e.id},'${esc(nome)}',this)">
-      <td><strong style="color:var(--text)">${nome}</strong></td>
-      <td style="font-family:var(--mono);font-size:0.78rem">${e.cnpj||'—'}</td>
-      <td style="font-size:0.82rem">${e.email||'—'}</td>
-      <td><code style="font-size:0.78rem;background:var(--surface2);padding:2px 7px;border-radius:6px;color:var(--accent)">${e.slug||'—'}</code></td>
-      <td><span class="cor-dot" style="background:${cor}" title="${cor}"></span></td>
-      <td style="font-size:0.82rem">${venc}</td>
-      <td>${badgeStatus[e.status] || e.status}</td>
-      <td style="text-align:center">${e.total_usuarios||0}</td>
-      <td onclick="event.stopPropagation()">
-        <div style="display:flex;gap:5px">
-          <button class="btn-icon" title="Editar" onclick="abrirEditar(${e.id})">✏️</button>
-          <button class="btn-icon" title="Usuários" onclick="abrirUsuarios(${e.id},'${esc(nome)}')">👥</button>
-        </div>
-      </td>
-    </tr>
-    <tr id="usersRow_${e.id}" style="display:none">
-      <td colspan="9" style="padding:0">
-        <div class="inline-panel" id="usersPanel_${e.id}">
-          <span style="color:var(--muted);font-size:0.85rem">Carregando…</span>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-function esc(s) { return (s||'').replace(/'/g,"\'").replace(/"/g,'&quot;'); }
-
-/* ══════════════════════════════════════
-   INLINE EXPAND — usuários ao clicar na linha
-══════════════════════════════════════ */
-async function toggleUsuariosInline(id, nome, tr) {
-  const row   = document.getElementById('usersRow_' + id);
-  const panel = document.getElementById('usersPanel_' + id);
-
-  // Fecha outros
-  document.querySelectorAll('[id^="usersRow_"]').forEach(r => {
-    if (r.id !== 'usersRow_' + id) {
-      r.style.display = 'none';
-      r.previousElementSibling?.classList.remove('row-open');
-    }
-  });
-
-  if (row.style.display === 'table-row') {
-    row.style.display = 'none';
-    tr.classList.remove('row-open');
-    return;
-  }
-
-  row.style.display = 'table-row';
-  tr.classList.add('row-open');
-  panel.innerHTML = '<span style="color:var(--muted);font-size:0.85rem">Carregando…</span>';
-
-  try {
-    const lista = await req('GET', `/profissionais?empresa_id=${id}`);
-    if (!Array.isArray(lista) || !lista.length) {
-      panel.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;margin:0">Nenhum usuário cadastrado.</p>';
-      return;
-    }
-    panel.innerHTML = `
-      <div class="inline-panel-title">👥 Usuários de ${nome}</div>
-      <div class="user-chips">
-        ${lista.map(u => {
-          const cor = u.cor_agenda || '#4f6ef7';
-          const ini = (u.nome||'?').charAt(0).toUpperCase();
-          const badge = u.perfil === 'admin'
-            ? '<span class="badge badge-admin">👑 Admin</span>'
-            : '<span class="badge badge-analista">🔍 Analista</span>';
-          return `<div class="user-chip">
-            <div class="user-avatar" style="background:${cor}">${ini}</div>
-            <div class="user-info">
-              <strong>${u.nome}</strong>
-              <small>${u.email||''}</small>
-            </div>
-            ${badge}
-          </div>`;
-        }).join('')}
-      </div>`;
-  } catch {
-    panel.innerHTML = '<p style="color:var(--error);font-size:0.85rem;margin:0">Erro ao carregar.</p>';
-  }
-}
-
-/* ══════════════════════════════════════
-   CRIAR EMPRESA
-══════════════════════════════════════ */
-async function criarEmpresa() {
-  const cnpj  = document.getElementById('nCnpj').value.trim();
-  const nome  = document.getElementById('nNome').value.trim();
-  const email = document.getElementById('nEmail').value.trim();
-  const tel   = document.getElementById('nTelefone').value.trim();
-  const slug  = document.getElementById('nSlug').value.trim();
-  const cor   = document.getElementById('nCor').value;
-  const venc  = document.getElementById('nVencimento').value || null;
-  const aNome = document.getElementById('nAdminNome').value.trim();
-  const aEmail= document.getElementById('nAdminEmail').value.trim();
-  const aSenha= document.getElementById('nAdminSenha').value;
-  const erro  = document.getElementById('erroNova');
-  const suc   = document.getElementById('sucessoNova');
-
-  erro.style.display = 'none'; suc.style.display = 'none';
-
-  if (!cnpj || !nome || !slug) {
-    erro.textContent = 'CNPJ, Nome Fantasia e Slug são obrigatórios.';
-    erro.style.display = 'block'; return;
-  }
-  if (!aNome || !aEmail || !aSenha) {
-    erro.textContent = 'Preencha os dados do administrador inicial.';
-    erro.style.display = 'block'; return;
-  }
-
-  document.getElementById('btnNovaText').textContent = 'Criando…';
-  document.getElementById('spinnerNova').style.display = 'inline-block';
-
-  try {
-    const r = await req('POST', '/empresas', {
-      cnpj: cnpj.replace(/\D/g,''), nome_fantasia: nome,
-      email: email || null, telefone: tel || null,
-      slug, cor_primaria: cor, vencimento: venc,
-      admin_nome: aNome, admin_email: aEmail, admin_senha: aSenha
-    });
-
-    if (!r || r.erro) {
-      erro.textContent = r?.erro || 'Erro ao criar empresa.';
-      erro.style.display = 'block'; return;
-    }
-
-    suc.textContent = `✅ Empresa "${nome}" cadastrada com sucesso!`;
-    suc.style.display = 'block';
-    toast(`✅ Empresa "${nome}" criada!`);
-
-    // Limpar campos
-    ['nCnpj','nNome','nEmail','nTelefone','nSlug','nAdminNome','nAdminEmail','nAdminSenha','nVencimento'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-    document.getElementById('nCor').value = '#4f6ef7';
-    document.getElementById('nCorBall').style.background = '#4f6ef7';
-    document.getElementById('slugPrev').textContent = 'slug';
-
-    setTimeout(() => { suc.style.display = 'none'; mudarAba('empresas'); carregarEmpresas(); }, 2000);
-  } catch {
-    erro.textContent = 'Erro de conexão com o servidor.';
-    erro.style.display = 'block';
-  } finally {
-    document.getElementById('btnNovaText').textContent = 'Cadastrar Empresa';
-    document.getElementById('spinnerNova').style.display = 'none';
-  }
-}
-
-/* ══════════════════════════════════════
-   EDITAR EMPRESA
-══════════════════════════════════════ */
-function abrirEditar(id) {
-  const e = empresas.find(x => x.id === id);
-  if (!e) return;
-
-  document.getElementById('editId').value       = id;
-  document.getElementById('editCnpj').value     = e.cnpj || '';
-  document.getElementById('editNome').value     = e.nome_fantasia || '';
-  document.getElementById('editEmail').value    = e.email || '';
-  document.getElementById('editTelefone').value = e.telefone || '';
-  document.getElementById('editSlug').value     = e.slug || '';
-  document.getElementById('editStatus').value   = e.status || 'ativo';
-  document.getElementById('editFundo').value    = e.imagem_fundo_url || '';
-  document.getElementById('editVencimento').value = e.vencimento ? e.vencimento.substring(0,10) : '';
-
-  const cor = e.cor_primaria || '#4f6ef7';
-  document.getElementById('editCor').value = cor;
-  document.getElementById('editCorBall').style.background = cor;
-
-  document.getElementById('erroEditar').style.display = 'none';
-  document.getElementById('modalEditar').classList.add('active');
-}
-
-async function salvarEmpresa() {
-  const id    = document.getElementById('editId').value;
-  const nome  = document.getElementById('editNome').value.trim();
-  const cnpj  = document.getElementById('editCnpj').value.trim();
-  const email = document.getElementById('editEmail').value.trim();
-  const tel   = document.getElementById('editTelefone').value.trim();
-  const slug  = document.getElementById('editSlug').value.trim();
-  const cor   = document.getElementById('editCor').value;
-  const status= document.getElementById('editStatus').value;
-  const fundo = document.getElementById('editFundo').value.trim() || null;
-  const venc  = document.getElementById('editVencimento').value || null;
-  const erro  = document.getElementById('erroEditar');
-
-  if (!nome) { erro.textContent = 'Nome é obrigatório.'; erro.style.display = 'block'; return; }
-  erro.style.display = 'none';
-
-  try {
-    const r = await req('PATCH', `/empresas/${id}`, {
-      nome_fantasia: nome, cnpj: cnpj.replace(/\D/g,''),
-      email: email||null, telefone: tel||null,
-      slug, cor_primaria: cor, status,
-      imagem_fundo_url: fundo, vencimento: venc
-    });
-    if (r && r.erro) { erro.textContent = r.erro; erro.style.display = 'block'; return; }
-    fecharModal('modalEditar');
-    toast('✅ Empresa atualizada!');
-    carregarEmpresas();
-  } catch {
-    erro.textContent = 'Erro de conexão.'; erro.style.display = 'block';
-  }
-}
-
-/* ══════════════════════════════════════
-   MODAL USUÁRIOS
-══════════════════════════════════════ */
-async function abrirUsuarios(id, nome) {
-  empresaModalId = id;
-  document.getElementById('tituloEmpresaUsuarios').textContent = nome;
-  document.getElementById('erroNovoUser').style.display = 'none';
-  ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f => {
-    document.getElementById(f).value = '';
-  });
-  document.getElementById('novoUserPerfil').value = 'profissional';
-  document.getElementById('modalUsuarios').classList.add('active');
-  await carregarUsuariosModal(id);
-}
-
-async function carregarUsuariosModal(id) {
-  const cont = document.getElementById('listaUsuariosModal');
-  cont.innerHTML = '<p style="color:var(--muted);font-size:0.88rem">Carregando…</p>';
-  try {
-    const lista = await req('GET', `/profissionais?empresa_id=${id}`);
-    if (!Array.isArray(lista) || !lista.length) {
-      cont.innerHTML = '<p style="color:var(--muted);font-size:0.88rem">Nenhum usuário cadastrado.</p>';
-      return;
-    }
-    cont.innerHTML = `
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Nome</th>
-          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">E-mail</th>
-          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Perfil</th>
-          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Status</th>
-        </tr></thead>
-        <tbody>
-          ${lista.map(u => `
-          <tr style="border-bottom:1px solid var(--border-soft)">
-            <td style="padding:8px 10px;font-weight:600;color:var(--text)">${u.nome}</td>
-            <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted)">${u.email||'—'}</td>
-            <td style="padding:8px 10px">
-              <span class="badge ${u.perfil==='admin'?'badge-admin':'badge-analista'}">
-                ${u.perfil==='admin'?'👑 Admin':'🔍 Analista'}
-              </span>
-            </td>
-            <td style="padding:8px 10px">
-              ${u.ativo !== false
-                ? '<span style="color:var(--success)">✅ Ativo</span>'
-                : '<span style="color:var(--error)">❌ Inativo</span>'}
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table>`;
-  } catch {
-    cont.innerHTML = '<p style="color:var(--error);font-size:0.88rem">Erro ao carregar.</p>';
-  }
-}
-
-async function adicionarUsuario() {
-  const nome  = document.getElementById('novoUserNome').value.trim();
-  const email = document.getElementById('novoUserEmail').value.trim();
-  const senha = document.getElementById('novoUserSenha').value;
-  const tel   = document.getElementById('novoUserTelefone').value.trim();
-  const perf  = document.getElementById('novoUserPerfil').value;
-  const erro  = document.getElementById('erroNovoUser');
-  erro.style.display = 'none';
-
-  if (!nome || !email || !senha) {
-    erro.textContent = 'Nome, e-mail e senha são obrigatórios.';
-    erro.style.display = 'block'; return;
-  }
-
-  try {
-    const r = await req('POST', '/profissionais', {
-      nome, email, senha, telefone: tel||null,
-      perfil: perf, empresa_id: empresaModalId
-    });
-    if (r && r.erro) { erro.textContent = r.erro; erro.style.display = 'block'; return; }
-    toast('✅ Usuário adicionado!');
-    await carregarUsuariosModal(empresaModalId);
-    carregarEmpresas();
-    ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f => {
-      document.getElementById(f).value = '';
-    });
-  } catch {
-    erro.textContent = 'Erro de conexão.'; erro.style.display = 'block';
-  }
-}
-
-/* ══════════════════════════════════════
-   START
-══════════════════════════════════════ */
-init();
-</script>
+  <!-- Modal Dashboard Stats -->
+  <div class="modal-overlay" id="modalDashboardStats">
+    <div class="modal" style="max-width:700px">
+      <h3 id="dashboardStatsTitle">Compromissos</h3>
+      <div id="dashboardStatsBody" style="margin:1rem 0;max-height:420px;overflow-y:auto"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharDashboardStats()">Fechar</button>
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>

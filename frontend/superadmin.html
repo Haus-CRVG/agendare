@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agendare — Super Admin</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
   <link rel="icon" href="assets/favicon.png"/>
   <link rel="stylesheet" href="css/style.css"/>
 </head>
@@ -12,159 +12,219 @@
 
 <div id="toastArea"></div>
 
-<!-- TOPBAR -->
-<div class="topbar">
-  <div class="topbar-brand">
-    <img src="assets/logo-agendare.png" class="topbar-logo" alt="Agendare"
-         onerror="this.style.display='none';document.getElementById('saName').style.display='block'"/>
-    <div class="topbar-name" id="saName" style="display:none">Agend<span>are</span></div>
-  </div>
-  <div class="topbar-right">
-    <span class="badge-sa">⚡ Super Admin</span>
-    <span style="color:var(--text2);font-weight:500;font-size:13px" id="nomeAdminEl"></span>
-    <button class="btn-logout" onclick="logout()">Sair</button>
-  </div>
-</div>
+<div class="dashboard">
 
-<!-- TABS -->
-<div class="tabs">
-  <button class="tab active" id="tabEmpresas" onclick="mudarAba('empresas')">🏢 Empresas</button>
-  <button class="tab"        id="tabNova"     onclick="mudarAba('nova')">➕ Nova Empresa</button>
-</div>
-
-<!-- CONTEÚDO -->
-<div class="page">
-
-  <!-- ABA EMPRESAS -->
-  <div class="aba ativa" id="abaEmpresas">
-    <div class="page-title">Gestão de <span>Empresas</span></div>
-    <p class="page-subtitle">Cadastre e gerencie as empresas do Agendare</p>
-
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-num" id="stTotal">—</div><div class="stat-label">Total</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--success)" id="stAtivos">—</div><div class="stat-label">Ativas</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--warning)" id="stSusp">—</div><div class="stat-label">Suspensas</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--error)" id="stCanc">—</div><div class="stat-label">Canceladas</div></div>
+  <!-- ═══ TOPBAR ═══ -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <img src="assets/logo-agendare.png" alt="Agendare"
+           onerror="this.style.display='none';document.getElementById('brandName').style.display='flex'"/>
+      <div class="topbar-brand-name" id="brandName" style="display:none">Agend<span>are</span></div>
     </div>
-
-    <div class="card">
-      <div class="card-header">
-        <h2>Empresas Cadastradas</h2>
-        <button class="btn btn-primary btn-sm" onclick="mudarAba('nova')">+ Nova Empresa</button>
-      </div>
-      <div class="card-toolbar">
-        <div class="search-row">
-          <input type="text" class="search-input" id="pesquisaEmpresas"
-            placeholder="Buscar por nome, CNPJ ou slug…" oninput="filtrarEmpresas()"/>
-          <button class="btn btn-ghost btn-sm"
-            onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresas()">✕ Limpar</button>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Empresa</th><th>CNPJ</th><th>E-mail</th><th>Slug</th>
-              <th>Cor</th><th>Vencimento</th><th>Status</th>
-              <th style="text-align:center">Usuários</th><th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="tabelaEmpresas">
-            <tr><td colspan="9" class="empty-state">Carregando…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="topbar-user">
+      <span style="color:var(--accent);font-weight:600;font-size:0.9rem">⚡ Super Admin</span>
+      <span id="nomeAdminSA" style="font-size:0.88rem;color:var(--muted)"></span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
     </div>
   </div>
 
-  <!-- ABA NOVA EMPRESA -->
-  <div class="aba" id="abaNova">
-    <div class="page-title">Nova <span>Empresa</span></div>
-    <p class="page-subtitle">Cadastre uma nova empresa no Agendare</p>
-    <div class="form-section">
-      <div class="form-section-title">📋 Dados da Empresa</div>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>CNPJ ou CPF *</label>
-          <input type="text" id="nCnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="formatarDoc(this)"/>
+  <!-- ═══ TABS ═══ -->
+  <div class="tabs" style="display:flex">
+    <button class="tab active" id="tabEmpresas" onclick="mudarAba('empresas')">🏢 Empresas</button>
+    <button class="tab" id="tabNova" onclick="mudarAba('nova')">➕ Nova Empresa</button>
+  </div>
+
+  <!-- ═══ CONTEÚDO ═══ -->
+  <div class="content-wrapper">
+
+    <!-- ── ABA: EMPRESAS ── -->
+    <div class="main-content active" id="abaEmpresas">
+      <div class="page-title">Gestão de <span>Empresas</span></div>
+      <p class="page-subtitle">Cadastre e gerencie as empresas do Agendare</p>
+
+      <!-- Stats -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-num" id="stTotal">—</div>
+          <div class="stat-label">Total</div>
         </div>
-        <div class="form-group">
-          <label>Nome Fantasia *</label>
-          <input type="text" id="nNome" placeholder="Nome da empresa" oninput="autoSlug()"/>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--success)" id="stAtivos">—</div>
+          <div class="stat-label">Ativas</div>
         </div>
-        <div class="form-group">
-          <label>E-mail</label>
-          <input type="email" id="nEmail" placeholder="contato@empresa.com"/>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--warning)" id="stSuspensos">—</div>
+          <div class="stat-label">Suspensas</div>
         </div>
-        <div class="form-group">
-          <label>Telefone</label>
-          <input type="text" id="nTelefone" placeholder="(00) 00000-0000"/>
+        <div class="stat-card">
+          <div class="stat-num" style="color:var(--error)" id="stCancelados">—</div>
+          <div class="stat-label">Canceladas</div>
         </div>
-        <div class="form-group">
-          <label>Slug (URL pública) *</label>
-          <input type="text" id="nSlug" placeholder="nome-da-empresa"
-            oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'');document.getElementById('slugPrev').textContent=this.value||'slug'"/>
-          <span class="form-hint">agendar.html?empresa=<strong id="slugPrev">slug</strong></span>
-        </div>
-        <div class="form-group">
-          <label>Cor Primária</label>
-          <div class="cor-row">
-            <input type="color" id="nCor" value="#4f6ef7"
-              oninput="document.getElementById('nCorBall').style.background=this.value"/>
-            <div class="cor-ball" id="nCorBall" style="background:#4f6ef7"></div>
-            <span style="font-size:12px;color:var(--muted)">Cor dos botões e agenda</span>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header" style="flex-direction:column;align-items:flex-start;gap:0.9rem">
+          <h2>Empresas Cadastradas</h2>
+          <div class="search-row">
+            <input type="text" class="search-input" id="pesquisaEmpresas"
+              placeholder="Buscar por nome, CNPJ ou slug…"
+              oninput="filtrarEmpresas()"/>
+            <button class="btn-sm btn-secondary"
+              onclick="document.getElementById('pesquisaEmpresas').value='';filtrarEmpresas()">
+              ✕ Limpar
+            </button>
+            <button class="btn-sm btn-primary" onclick="mudarAba('nova')">+ Nova</button>
           </div>
         </div>
-        <div class="form-group">
-          <label>Vencimento</label>
-          <input type="date" id="nVencimento"/>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>CNPJ</th>
+                <th>E-mail</th>
+                <th>Slug</th>
+                <th>Cor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th style="text-align:center">Usuários</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaEmpresas">
+              <tr><td colspan="9" class="empty-state">Carregando…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
-      <div class="form-divider"></div>
-      <div class="form-section-title">👑 Administrador Inicial</div>
-      <div class="form-grid-3">
-        <div class="form-group"><label>Nome *</label><input type="text" id="nAdminNome" placeholder="Nome completo"/></div>
-        <div class="form-group"><label>E-mail *</label><input type="email" id="nAdminEmail" placeholder="admin@empresa.com"/></div>
-        <div class="form-group"><label>Senha *</label><input type="password" id="nAdminSenha" placeholder="••••••••"/></div>
-      </div>
-      <div id="erroNova"    class="alert alert-error"   style="display:none;margin-top:14px"></div>
-      <div id="sucessoNova" class="alert alert-success" style="display:none;margin-top:14px"></div>
-      <div style="margin-top:16px">
-        <button class="btn btn-primary" onclick="criarEmpresa()">
-          <span id="btnNovaText">Cadastrar Empresa</span>
-          <div class="spinner" id="spinnerNova"></div>
-        </button>
-      </div>
-    </div>
-  </div>
+    </div><!-- /abaEmpresas -->
 
-</div><!-- /page -->
+    <!-- ── ABA: NOVA EMPRESA ── -->
+    <div class="main-content" id="abaNova">
+      <div class="page-title">Nova <span>Empresa</span></div>
+      <p class="page-subtitle">Cadastre uma nova empresa no Agendare</p>
 
-<!-- MODAL EDITAR -->
+      <div class="form-section">
+        <div class="form-section-title">📋 Dados da Empresa</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>CNPJ ou CPF <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="nCnpj" placeholder="00.000.000/0001-00" maxlength="18" oninput="formatarDoc(this)"/>
+          </div>
+          <div class="form-group">
+            <label>Nome Fantasia <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="nNome" placeholder="Nome da empresa" oninput="autoSlug()"/>
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="nEmail" placeholder="contato@empresa.com"/>
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" id="nTelefone" placeholder="(00) 00000-0000"/>
+          </div>
+          <div class="form-group">
+            <label>Slug (URL pública) <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="nSlug" placeholder="nome-da-empresa"
+              oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'').replace(/\s+/g,'-');document.getElementById('slugPrev').textContent=this.value||'slug'"/>
+            <span class="form-hint">agendar.html?empresa=<strong id="slugPrev">slug</strong></span>
+          </div>
+          <div class="form-group">
+            <label>Cor Primária</label>
+            <div class="cor-row">
+              <input type="color" id="nCor" value="#4f6ef7"
+                oninput="document.getElementById('nCorBall').style.background=this.value"/>
+              <div class="cor-ball" id="nCorBall" style="background:#4f6ef7"></div>
+              <span style="font-size:0.8rem;color:var(--muted)">Cor dos botões e agenda</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Vencimento</label>
+            <input type="date" id="nVencimento"/>
+          </div>
+        </div>
+
+        <hr class="form-divider"/>
+        <div class="form-section-title">👑 Administrador Inicial</div>
+        <div class="form-grid-3">
+          <div class="form-group">
+            <label>Nome *</label>
+            <input type="text" id="nAdminNome" placeholder="Nome completo"/>
+          </div>
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" id="nAdminEmail" placeholder="admin@empresa.com"/>
+          </div>
+          <div class="form-group">
+            <label>Senha *</label>
+            <input type="password" id="nAdminSenha" placeholder="••••••••"/>
+          </div>
+        </div>
+
+        <div id="erroNova" class="alert-error" style="display:none;margin-top:1rem"></div>
+        <div id="sucessoNova" class="alert-success" style="display:none;margin-top:1rem"></div>
+
+        <div style="margin-top:1.25rem">
+          <button class="btn btn-primary" onclick="criarEmpresa()">
+            <span id="btnNovaText">Cadastrar Empresa</span>
+            <div class="spinner" id="spinnerNova"></div>
+          </button>
+        </div>
+      </div>
+    </div><!-- /abaNova -->
+
+  </div><!-- /content-wrapper -->
+</div><!-- /dashboard -->
+
+
+<!-- ═══════════════════════════════════════════
+     MODAL — Editar Empresa
+═══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalEditar">
-  <div class="modal" style="max-width:600px">
+  <div class="modal" style="max-width:620px">
     <h3>✏️ Editar Empresa</h3>
     <input type="hidden" id="editId"/>
     <div class="form-grid">
-      <div class="form-group"><label>CNPJ</label><input type="text" id="editCnpj" maxlength="18" oninput="formatarDoc(this)"/></div>
-      <div class="form-group"><label>Nome Fantasia</label><input type="text" id="editNome"/></div>
-      <div class="form-group"><label>E-mail</label><input type="email" id="editEmail"/></div>
-      <div class="form-group"><label>Telefone</label><input type="text" id="editTelefone"/></div>
-      <div class="form-group"><label>Slug</label><input type="text" id="editSlug" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')"/></div>
-      <div class="form-group"><label>Vencimento</label><input type="date" id="editVencimento"/></div>
+      <div class="form-group">
+        <label>CNPJ</label>
+        <input type="text" id="editCnpj" maxlength="18" oninput="formatarDoc(this)"/>
+      </div>
+      <div class="form-group">
+        <label>Nome Fantasia</label>
+        <input type="text" id="editNome"/>
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="editEmail"/>
+      </div>
+      <div class="form-group">
+        <label>Telefone</label>
+        <input type="text" id="editTelefone"/>
+      </div>
+      <div class="form-group">
+        <label>Slug</label>
+        <input type="text" id="editSlug"
+          oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9-]/g,'')"/>
+      </div>
+      <div class="form-group">
+        <label>Vencimento</label>
+        <input type="date" id="editVencimento"/>
+      </div>
     </div>
-    <div class="form-group" style="margin-top:12px">
+    <div class="form-group" style="margin-top:0.5rem">
       <label>Cor Primária</label>
       <div class="cor-row">
-        <input type="color" id="editCor" oninput="document.getElementById('editCorBall').style.background=this.value"/>
+        <input type="color" id="editCor"
+          oninput="document.getElementById('editCorBall').style.background=this.value"/>
         <div class="cor-ball" id="editCorBall"></div>
       </div>
     </div>
-    <div class="form-group" style="margin-top:12px">
-      <label>URL Imagem de Fundo <span style="color:var(--muted)">(opcional)</span></label>
+    <div class="form-group" style="margin-top:0.75rem">
+      <label>URL Imagem de Fundo <span style="color:var(--muted2)">(opcional)</span></label>
       <input type="text" id="editFundo" placeholder="https://…"/>
     </div>
-    <div class="form-group" style="margin-top:12px">
+    <div class="form-group" style="margin-top:0.75rem">
       <label>Status</label>
       <select id="editStatus">
         <option value="ativo">✅ Ativo</option>
@@ -172,20 +232,23 @@
         <option value="cancelado">❌ Cancelado</option>
       </select>
     </div>
-    <div id="erroEditar" class="alert alert-error" style="display:none;margin-top:12px"></div>
+    <div id="erroEditar" class="alert-error" style="display:none;margin-top:0.75rem"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="fecharModal('modalEditar')">Cancelar</button>
+      <button class="btn-cancel" onclick="fecharModal('modalEditar')">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarEmpresa()">Salvar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL USUÁRIOS -->
+<!-- ═══════════════════════════════════════════
+     MODAL — Usuários da Empresa
+═══════════════════════════════════════════ -->
 <div class="modal-overlay" id="modalUsuarios">
   <div class="modal" style="max-width:660px">
     <h3>👥 Usuários — <span id="tituloEmpresaUsuarios" style="color:var(--accent)"></span></h3>
-    <div id="listaUsuariosModal" style="margin-bottom:18px;min-height:40px"></div>
-    <div class="form-divider" style="margin:0 0 16px"></div>
+    <div id="listaUsuariosModal" style="margin-bottom:1.25rem"></div>
+
+    <hr class="form-divider" style="margin:0 0 1.25rem"/>
     <div class="form-section-title">➕ Adicionar Usuário</div>
     <div class="form-grid">
       <div class="form-group"><label>Nome *</label><input type="text" id="novoUserNome" placeholder="Nome completo"/></div>
@@ -193,148 +256,190 @@
       <div class="form-group"><label>Senha *</label><input type="password" id="novoUserSenha" placeholder="••••••••"/></div>
       <div class="form-group"><label>Telefone</label><input type="text" id="novoUserTelefone" placeholder="(00) 00000-0000"/></div>
     </div>
-    <div class="form-group" style="margin-top:10px">
+    <div class="form-group" style="margin-top:0.25rem">
       <label>Perfil</label>
       <select id="novoUserPerfil">
         <option value="profissional">🔍 Analista / Profissional</option>
         <option value="admin">👑 Administrador</option>
       </select>
     </div>
-    <div id="erroNovoUser" class="alert alert-error" style="display:none;margin-top:12px"></div>
+    <div id="erroNovoUser" class="alert-error" style="display:none;margin-top:0.75rem"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="fecharModal('modalUsuarios')">Fechar</button>
+      <button class="btn-cancel" onclick="fecharModal('modalUsuarios')">Fechar</button>
       <button class="btn btn-primary" onclick="adicionarUsuario()">Adicionar</button>
     </div>
   </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
 <script>
 'use strict';
 const API = 'https://agendare-backend-production.up.railway.app/api';
-let token = null, usuarioLogado = null, empresas = [], empresaModalId = null;
 
+let token    = null;
+let usuario  = null;
+let empresas = [];          // cache local
+let empresaModalId = null;  // empresa aberta no modal usuários
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
 function init() {
-  token = localStorage.getItem('token');
-  usuarioLogado = JSON.parse(localStorage.getItem('usuario') || 'null');
-  if (!token || !usuarioLogado) { window.location.href = 'login.html'; return; }
-  if (usuarioLogado.perfil !== 'superadmin') { window.location.href = 'login.html'; return; }
-  document.getElementById('nomeAdminEl').textContent = usuarioLogado.nome || '';
-  document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', function(e) { if (e.target === this) fecharModal(this.id); });
-  });
+  token   = localStorage.getItem('token');
+  usuario = JSON.parse(localStorage.getItem('usuario') || 'null');
+
+  if (!token || !usuario) { location.href = 'login.html'; return; }
+  if (usuario.perfil !== 'superadmin') { location.href = 'login.html'; return; }
+
+  document.getElementById('nomeAdminSA').textContent = usuario.nome || '';
   carregarEmpresas();
+
+  // Fecha modal clicando fora
+  document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) fecharModal(el.id); });
+  });
 }
 
-function logout() { localStorage.clear(); window.location.href = 'login.html'; }
-function fecharModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('active'); }
+/* ══════════════════════════════════════
+   UTILITÁRIOS
+══════════════════════════════════════ */
+function logout() { localStorage.clear(); location.href = 'login.html'; }
 
+function fecharModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+/* ── Fetch helper ── */
 async function req(method, path, body) {
-  try {
-    const r = await fetch(API + path, {
-      method,
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (r.status === 401) { logout(); return null; }
-    return await r.json();
-  } catch(e) { console.error(e); return null; }
+  const r = await fetch(API + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (r.status === 401) { logout(); return null; }
+  return r.json().catch(() => ({}));
 }
 
-function toast(msg, tipo) {
+/* ── Toast ── */
+function toast(msg, tipo = 'ok') {
   const el = document.createElement('div');
-  const s = { ok:'background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d', err:'background:#fef2f2;border:1px solid #fecaca;color:#dc2626', info:'background:var(--accent-bg);border:1px solid var(--accent-bd);color:var(--accent)' };
-  el.style.cssText = (s[tipo||'ok']) + ';padding:10px 16px;border-radius:8px;font-size:13px;font-weight:600;max-width:360px;box-shadow:0 4px 16px rgba(0,0,0,.12)';
+  const cores = {
+    ok:   ['rgba(63,185,80,.15)',  'rgba(63,185,80,.4)',  'var(--success)'],
+    err:  ['rgba(248,81,73,.15)', 'rgba(248,81,73,.4)',  'var(--error)'],
+    info: ['rgba(79,142,247,.15)','rgba(79,142,247,.4)', 'var(--accent)'],
+  };
+  const [bg, bord, cor] = cores[tipo] || cores.info;
+  el.style.cssText = `background:${bg};border:1px solid ${bord};color:${cor};padding:0.7rem 1.1rem;border-radius:10px;font-size:0.88rem;font-weight:600;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.5)`;
   el.textContent = msg;
   document.getElementById('toastArea').appendChild(el);
   setTimeout(() => el.remove(), 4000);
 }
 
+/* ── Formatação CNPJ/CPF ── */
 function formatarDoc(input) {
   let v = input.value.replace(/\D/g,'').slice(0,14);
   if (v.length <= 11) {
-    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
-    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
-    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+    if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
   } else {
-    if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/, '$1.$2.$3/$4-$5');
-    else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/, '$1.$2.$3/$4');
-    else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{0,3})/, '$1.$2.$3');
-    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,3})/, '$1.$2');
+    if (v.length > 12) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{0,2})/,'$1.$2.$3/$4-$5');
+    else if (v.length > 8) v = v.replace(/(\d{2})(\d{3})(\d{3})(\d{0,4})/,'$1.$2.$3/$4');
+    else if (v.length > 5) v = v.replace(/(\d{2})(\d{3})(\d{0,3})/,'$1.$2.$3');
+    else if (v.length > 2) v = v.replace(/(\d{2})(\d{0,3})/,'$1.$2');
   }
   input.value = v;
 }
 
+/* ── Auto-slug ao digitar nome ── */
 function autoSlug() {
-  const slug = document.getElementById('nNome').value.toLowerCase()
+  const nome = document.getElementById('nNome').value;
+  const slug = nome.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   document.getElementById('nSlug').value = slug;
   document.getElementById('slugPrev').textContent = slug || 'slug';
 }
 
+/* ══════════════════════════════════════
+   ABAS
+══════════════════════════════════════ */
 function mudarAba(aba) {
-  document.querySelectorAll('.aba').forEach(el => el.classList.remove('ativa'));
-  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-  const abaId = 'aba' + aba.charAt(0).toUpperCase() + aba.slice(1);
-  const tabId = 'tab' + aba.charAt(0).toUpperCase() + aba.slice(1);
-  const abaEl = document.getElementById(abaId);
-  const tabEl = document.getElementById(tabId);
-  if (abaEl) abaEl.classList.add('ativa');
-  if (tabEl) tabEl.classList.add('active');
+  ['empresas','nova'].forEach(a => {
+    document.getElementById('aba' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('active', a === aba);
+    document.getElementById('tab' + a.charAt(0).toUpperCase() + a.slice(1)).classList.toggle('active', a === aba);
+  });
 }
 
+/* ══════════════════════════════════════
+   EMPRESAS — CARREGAR / FILTRAR / RENDER
+══════════════════════════════════════ */
 async function carregarEmpresas() {
   const tbody = document.getElementById('tabelaEmpresas');
   tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Carregando…</td></tr>';
-  const data = await req('GET', '/empresas');
-  if (!data || !Array.isArray(data)) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state" style="color:var(--error)">Erro ao carregar. Verifique a conexão.</td></tr>';
-    return;
+  try {
+    const data = await req('GET', '/empresas');
+    empresas = Array.isArray(data) ? data : [];
+    atualizarStats();
+    renderEmpresas(empresas);
+  } catch {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state" style="color:var(--error)">Erro ao carregar empresas.</td></tr>';
   }
-  empresas = data;
-  atualizarStats();
-  renderEmpresas(empresas);
 }
 
 function atualizarStats() {
-  document.getElementById('stTotal').textContent  = empresas.length;
-  document.getElementById('stAtivos').textContent = empresas.filter(e => e.status === 'ativo').length;
-  document.getElementById('stSusp').textContent   = empresas.filter(e => e.status === 'suspenso').length;
-  document.getElementById('stCanc').textContent   = empresas.filter(e => e.status === 'cancelado').length;
+  document.getElementById('stTotal').textContent     = empresas.length;
+  document.getElementById('stAtivos').textContent    = empresas.filter(e => e.status === 'ativo').length;
+  document.getElementById('stSuspensos').textContent = empresas.filter(e => e.status === 'suspenso').length;
+  document.getElementById('stCancelados').textContent= empresas.filter(e => e.status === 'cancelado').length;
 }
 
 function filtrarEmpresas() {
-  const q = (document.getElementById('pesquisaEmpresas').value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  const q = document.getElementById('pesquisaEmpresas').value
+    .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   if (!q) { renderEmpresas(empresas); return; }
   const digits = q.replace(/\D/g,'');
   renderEmpresas(empresas.filter(e => {
     const nome = (e.nome_fantasia||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    return nome.includes(q) || (e.slug||'').toLowerCase().includes(q) || (digits && (e.cnpj||'').replace(/\D/g,'').includes(digits));
+    const slug = (e.slug||'').toLowerCase();
+    const cnpj = (e.cnpj||'').replace(/\D/g,'');
+    return nome.includes(q) || slug.includes(q) || (digits && cnpj.includes(digits));
   }));
 }
 
-function esc(s) { return String(s||'').replace(/'/g,"\'"); }
-
 function renderEmpresas(lista) {
   const tbody = document.getElementById('tabelaEmpresas');
-  if (!lista || !lista.length) {
+  if (!lista.length) {
     tbody.innerHTML = '<tr><td colspan="9" class="empty-state">Nenhuma empresa encontrada.</td></tr>';
     return;
   }
-  const bst = { ativo:'<span class="badge badge-ativo">✅ Ativo</span>', suspenso:'<span class="badge badge-suspenso">⏸️ Suspenso</span>', cancelado:'<span class="badge badge-cancelado">❌ Cancelado</span>' };
+
+  const badgeStatus = {
+    ativo:     '<span class="badge badge-ativo">✅ Ativo</span>',
+    suspenso:  '<span class="badge badge-suspenso">⏸️ Suspenso</span>',
+    cancelado: '<span class="badge badge-cancelado">❌ Cancelado</span>',
+  };
+
   tbody.innerHTML = lista.map(e => {
     const nome = e.nome_fantasia || e.nome || '—';
-    const cor  = e.cor_primaria || '#4f6ef7';
-    const venc = e.vencimento ? new Date((e.vencimento.split('T')[0])+'T12:00:00').toLocaleDateString('pt-BR') : '—';
-    return `<tr onclick="toggleInline(${e.id},'${esc(nome)}',this)">
+    const cor  = e.cor_primaria  || '#4f6ef7';
+    const venc = e.vencimento
+      ? new Date(e.vencimento + 'T12:00:00').toLocaleDateString('pt-BR')
+      : '—';
+
+    return `
+    <tr onclick="toggleUsuariosInline(${e.id},'${esc(nome)}',this)">
       <td><strong style="color:var(--text)">${nome}</strong></td>
-      <td style="font-family:var(--mono);font-size:12px">${e.cnpj||'—'}</td>
-      <td style="font-size:12px">${e.email||'—'}</td>
-      <td><code style="font-size:11px;background:var(--accent-bg);color:var(--accent);padding:2px 6px;border-radius:4px">${e.slug||'—'}</code></td>
+      <td style="font-family:var(--mono);font-size:0.78rem">${e.cnpj||'—'}</td>
+      <td style="font-size:0.82rem">${e.email||'—'}</td>
+      <td><code style="font-size:0.78rem;background:var(--surface2);padding:2px 7px;border-radius:6px;color:var(--accent)">${e.slug||'—'}</code></td>
       <td><span class="cor-dot" style="background:${cor}" title="${cor}"></span></td>
-      <td style="font-size:12px">${venc}</td>
-      <td>${bst[e.status]||e.status||'—'}</td>
-      <td style="text-align:center">${e.total_usuarios??0}</td>
+      <td style="font-size:0.82rem">${venc}</td>
+      <td>${badgeStatus[e.status] || e.status}</td>
+      <td style="text-align:center">${e.total_usuarios||0}</td>
       <td onclick="event.stopPropagation()">
         <div style="display:flex;gap:5px">
           <button class="btn-icon" title="Editar" onclick="abrirEditar(${e.id})">✏️</button>
@@ -342,132 +447,285 @@ function renderEmpresas(lista) {
         </div>
       </td>
     </tr>
-    <tr id="row_${e.id}" style="display:none">
+    <tr id="usersRow_${e.id}" style="display:none">
       <td colspan="9" style="padding:0">
-        <div class="inline-users" id="panel_${e.id}"><p style="color:var(--muted);font-size:13px">Carregando…</p></div>
+        <div class="inline-panel" id="usersPanel_${e.id}">
+          <span style="color:var(--muted);font-size:0.85rem">Carregando…</span>
+        </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-async function toggleInline(id, nome, tr) {
-  const row = document.getElementById('row_'+id);
-  const panel = document.getElementById('panel_'+id);
-  if (!row||!panel) return;
-  document.querySelectorAll('[id^="row_"]').forEach(r => {
-    if (r.id !== 'row_'+id) { r.style.display='none'; r.previousElementSibling?.classList.remove('row-open'); }
+function esc(s) { return (s||'').replace(/'/g,"\'").replace(/"/g,'&quot;'); }
+
+/* ══════════════════════════════════════
+   INLINE EXPAND — usuários ao clicar na linha
+══════════════════════════════════════ */
+async function toggleUsuariosInline(id, nome, tr) {
+  const row   = document.getElementById('usersRow_' + id);
+  const panel = document.getElementById('usersPanel_' + id);
+
+  // Fecha outros
+  document.querySelectorAll('[id^="usersRow_"]').forEach(r => {
+    if (r.id !== 'usersRow_' + id) {
+      r.style.display = 'none';
+      r.previousElementSibling?.classList.remove('row-open');
+    }
   });
-  if (row.style.display === 'table-row') { row.style.display='none'; tr.classList.remove('row-open'); return; }
-  row.style.display = 'table-row'; tr.classList.add('row-open');
-  panel.innerHTML = '<p style="color:var(--muted);font-size:13px">Carregando…</p>';
-  const lista = await req('GET', '/profissionais?empresa_id='+id);
-  if (!Array.isArray(lista)||!lista.length) { panel.innerHTML='<p style="color:var(--muted);font-size:13px">Nenhum usuário cadastrado.</p>'; return; }
-  panel.innerHTML = `<div class="inline-users-title">👥 Usuários de ${nome}</div>
-    <div class="user-chips">${lista.map(u=>{
-      const cor=u.cor_agenda||'#4f6ef7';
-      const badge=u.perfil==='admin'?'<span class="badge badge-admin" style="font-size:10px">👑 Admin</span>':'<span class="badge badge-analista" style="font-size:10px">🔍 Analista</span>';
-      return `<div class="user-chip"><div class="user-avatar" style="background:${cor}">${(u.nome||'?').charAt(0).toUpperCase()}</div><span style="font-weight:600;color:var(--text)">${u.nome}</span><span style="font-size:11px;color:var(--muted)">${u.email||''}</span>${badge}</div>`;
-    }).join('')}</div>`;
+
+  if (row.style.display === 'table-row') {
+    row.style.display = 'none';
+    tr.classList.remove('row-open');
+    return;
+  }
+
+  row.style.display = 'table-row';
+  tr.classList.add('row-open');
+  panel.innerHTML = '<span style="color:var(--muted);font-size:0.85rem">Carregando…</span>';
+
+  try {
+    const lista = await req('GET', `/profissionais?empresa_id=${id}`);
+    if (!Array.isArray(lista) || !lista.length) {
+      panel.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;margin:0">Nenhum usuário cadastrado.</p>';
+      return;
+    }
+    panel.innerHTML = `
+      <div class="inline-panel-title">👥 Usuários de ${nome}</div>
+      <div class="user-chips">
+        ${lista.map(u => {
+          const cor = u.cor_agenda || '#4f6ef7';
+          const ini = (u.nome||'?').charAt(0).toUpperCase();
+          const badge = u.perfil === 'admin'
+            ? '<span class="badge badge-admin">👑 Admin</span>'
+            : '<span class="badge badge-analista">🔍 Analista</span>';
+          return `<div class="user-chip">
+            <div class="user-avatar" style="background:${cor}">${ini}</div>
+            <div class="user-info">
+              <strong>${u.nome}</strong>
+              <small>${u.email||''}</small>
+            </div>
+            ${badge}
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch {
+    panel.innerHTML = '<p style="color:var(--error);font-size:0.85rem;margin:0">Erro ao carregar.</p>';
+  }
 }
 
+/* ══════════════════════════════════════
+   CRIAR EMPRESA
+══════════════════════════════════════ */
 async function criarEmpresa() {
-  const cnpj=document.getElementById('nCnpj').value.trim(), nome=document.getElementById('nNome').value.trim();
-  const email=document.getElementById('nEmail').value.trim(), tel=document.getElementById('nTelefone').value.trim();
-  const slug=document.getElementById('nSlug').value.trim(), cor=document.getElementById('nCor').value;
-  const venc=document.getElementById('nVencimento').value||null;
-  const aNome=document.getElementById('nAdminNome').value.trim(), aEmail=document.getElementById('nAdminEmail').value.trim(), aSenha=document.getElementById('nAdminSenha').value;
-  const erro=document.getElementById('erroNova'), suc=document.getElementById('sucessoNova');
-  erro.style.display='none'; suc.style.display='none';
-  if (!cnpj||!nome||!slug) { erro.textContent='CNPJ, Nome Fantasia e Slug são obrigatórios.'; erro.style.display='block'; return; }
-  if (!aNome||!aEmail||!aSenha) { erro.textContent='Preencha os dados do administrador inicial.'; erro.style.display='block'; return; }
-  document.getElementById('btnNovaText').textContent='Criando…';
-  document.getElementById('spinnerNova').style.display='inline-block';
-  const r = await req('POST','/empresas',{ cnpj:cnpj.replace(/\D/g,''), nome_fantasia:nome, email:email||null, telefone:tel||null, slug, cor_primaria:cor, vencimento:venc, admin_nome:aNome, admin_email:aEmail, admin_senha:aSenha });
-  document.getElementById('btnNovaText').textContent='Cadastrar Empresa';
-  document.getElementById('spinnerNova').style.display='none';
-  if (!r||r.erro) { erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
-  suc.textContent='✅ Empresa "'+nome+'" cadastrada com sucesso!'; suc.style.display='block';
-  toast('✅ Empresa "'+nome+'" criada!');
-  ['nCnpj','nNome','nEmail','nTelefone','nSlug','nAdminNome','nAdminEmail','nAdminSenha','nVencimento'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('nCor').value='#4f6ef7'; document.getElementById('nCorBall').style.background='#4f6ef7'; document.getElementById('slugPrev').textContent='slug';
-  setTimeout(()=>{ suc.style.display='none'; mudarAba('empresas'); carregarEmpresas(); },2000);
+  const cnpj  = document.getElementById('nCnpj').value.trim();
+  const nome  = document.getElementById('nNome').value.trim();
+  const email = document.getElementById('nEmail').value.trim();
+  const tel   = document.getElementById('nTelefone').value.trim();
+  const slug  = document.getElementById('nSlug').value.trim();
+  const cor   = document.getElementById('nCor').value;
+  const venc  = document.getElementById('nVencimento').value || null;
+  const aNome = document.getElementById('nAdminNome').value.trim();
+  const aEmail= document.getElementById('nAdminEmail').value.trim();
+  const aSenha= document.getElementById('nAdminSenha').value;
+  const erro  = document.getElementById('erroNova');
+  const suc   = document.getElementById('sucessoNova');
+
+  erro.style.display = 'none'; suc.style.display = 'none';
+
+  if (!cnpj || !nome || !slug) {
+    erro.textContent = 'CNPJ, Nome Fantasia e Slug são obrigatórios.';
+    erro.style.display = 'block'; return;
+  }
+  if (!aNome || !aEmail || !aSenha) {
+    erro.textContent = 'Preencha os dados do administrador inicial.';
+    erro.style.display = 'block'; return;
+  }
+
+  document.getElementById('btnNovaText').textContent = 'Criando…';
+  document.getElementById('spinnerNova').style.display = 'inline-block';
+
+  try {
+    const r = await req('POST', '/empresas', {
+      cnpj: cnpj.replace(/\D/g,''), nome_fantasia: nome,
+      email: email || null, telefone: tel || null,
+      slug, cor_primaria: cor, vencimento: venc,
+      admin_nome: aNome, admin_email: aEmail, admin_senha: aSenha
+    });
+
+    if (!r || r.erro) {
+      erro.textContent = r?.erro || 'Erro ao criar empresa.';
+      erro.style.display = 'block'; return;
+    }
+
+    suc.textContent = `✅ Empresa "${nome}" cadastrada com sucesso!`;
+    suc.style.display = 'block';
+    toast(`✅ Empresa "${nome}" criada!`);
+
+    // Limpar campos
+    ['nCnpj','nNome','nEmail','nTelefone','nSlug','nAdminNome','nAdminEmail','nAdminSenha','nVencimento'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('nCor').value = '#4f6ef7';
+    document.getElementById('nCorBall').style.background = '#4f6ef7';
+    document.getElementById('slugPrev').textContent = 'slug';
+
+    setTimeout(() => { suc.style.display = 'none'; mudarAba('empresas'); carregarEmpresas(); }, 2000);
+  } catch {
+    erro.textContent = 'Erro de conexão com o servidor.';
+    erro.style.display = 'block';
+  } finally {
+    document.getElementById('btnNovaText').textContent = 'Cadastrar Empresa';
+    document.getElementById('spinnerNova').style.display = 'none';
+  }
 }
 
+/* ══════════════════════════════════════
+   EDITAR EMPRESA
+══════════════════════════════════════ */
 function abrirEditar(id) {
-  const e=empresas.find(x=>x.id===id); if(!e)return;
-  document.getElementById('editId').value=id;
-  document.getElementById('editCnpj').value=e.cnpj||'';
-  document.getElementById('editNome').value=e.nome_fantasia||'';
-  document.getElementById('editEmail').value=e.email||'';
-  document.getElementById('editTelefone').value=e.telefone||'';
-  document.getElementById('editSlug').value=e.slug||'';
-  document.getElementById('editStatus').value=e.status||'ativo';
-  document.getElementById('editFundo').value=e.imagem_fundo_url||'';
-  document.getElementById('editVencimento').value=e.vencimento?e.vencimento.substring(0,10):'';
-  const cor=e.cor_primaria||'#4f6ef7';
-  document.getElementById('editCor').value=cor; document.getElementById('editCorBall').style.background=cor;
-  document.getElementById('erroEditar').style.display='none';
+  const e = empresas.find(x => x.id === id);
+  if (!e) return;
+
+  document.getElementById('editId').value       = id;
+  document.getElementById('editCnpj').value     = e.cnpj || '';
+  document.getElementById('editNome').value     = e.nome_fantasia || '';
+  document.getElementById('editEmail').value    = e.email || '';
+  document.getElementById('editTelefone').value = e.telefone || '';
+  document.getElementById('editSlug').value     = e.slug || '';
+  document.getElementById('editStatus').value   = e.status || 'ativo';
+  document.getElementById('editFundo').value    = e.imagem_fundo_url || '';
+  document.getElementById('editVencimento').value = e.vencimento ? e.vencimento.substring(0,10) : '';
+
+  const cor = e.cor_primaria || '#4f6ef7';
+  document.getElementById('editCor').value = cor;
+  document.getElementById('editCorBall').style.background = cor;
+
+  document.getElementById('erroEditar').style.display = 'none';
   document.getElementById('modalEditar').classList.add('active');
 }
 
 async function salvarEmpresa() {
-  const id=document.getElementById('editId').value, nome=document.getElementById('editNome').value.trim();
-  const cnpj=document.getElementById('editCnpj').value.trim(), email=document.getElementById('editEmail').value.trim();
-  const tel=document.getElementById('editTelefone').value.trim(), slug=document.getElementById('editSlug').value.trim();
-  const cor=document.getElementById('editCor').value, status=document.getElementById('editStatus').value;
-  const fundo=document.getElementById('editFundo').value.trim()||null, venc=document.getElementById('editVencimento').value||null;
-  const erro=document.getElementById('erroEditar');
-  if (!nome) { erro.textContent='Nome é obrigatório.'; erro.style.display='block'; return; }
-  erro.style.display='none';
-  const r=await req('PATCH','/empresas/'+id,{ nome_fantasia:nome, cnpj:cnpj.replace(/\D/g,''), email:email||null, telefone:tel||null, slug, cor_primaria:cor, status, imagem_fundo_url:fundo, vencimento:venc });
-  if (!r||r.erro) { erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
-  fecharModal('modalEditar'); toast('✅ Empresa atualizada!'); carregarEmpresas();
+  const id    = document.getElementById('editId').value;
+  const nome  = document.getElementById('editNome').value.trim();
+  const cnpj  = document.getElementById('editCnpj').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const tel   = document.getElementById('editTelefone').value.trim();
+  const slug  = document.getElementById('editSlug').value.trim();
+  const cor   = document.getElementById('editCor').value;
+  const status= document.getElementById('editStatus').value;
+  const fundo = document.getElementById('editFundo').value.trim() || null;
+  const venc  = document.getElementById('editVencimento').value || null;
+  const erro  = document.getElementById('erroEditar');
+
+  if (!nome) { erro.textContent = 'Nome é obrigatório.'; erro.style.display = 'block'; return; }
+  erro.style.display = 'none';
+
+  try {
+    const r = await req('PATCH', `/empresas/${id}`, {
+      nome_fantasia: nome, cnpj: cnpj.replace(/\D/g,''),
+      email: email||null, telefone: tel||null,
+      slug, cor_primaria: cor, status,
+      imagem_fundo_url: fundo, vencimento: venc
+    });
+    if (r && r.erro) { erro.textContent = r.erro; erro.style.display = 'block'; return; }
+    fecharModal('modalEditar');
+    toast('✅ Empresa atualizada!');
+    carregarEmpresas();
+  } catch {
+    erro.textContent = 'Erro de conexão.'; erro.style.display = 'block';
+  }
 }
 
+/* ══════════════════════════════════════
+   MODAL USUÁRIOS
+══════════════════════════════════════ */
 async function abrirUsuarios(id, nome) {
-  empresaModalId=id;
-  document.getElementById('tituloEmpresaUsuarios').textContent=nome;
-  document.getElementById('erroNovoUser').style.display='none';
-  ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f=>document.getElementById(f).value='');
-  document.getElementById('novoUserPerfil').value='profissional';
+  empresaModalId = id;
+  document.getElementById('tituloEmpresaUsuarios').textContent = nome;
+  document.getElementById('erroNovoUser').style.display = 'none';
+  ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f => {
+    document.getElementById(f).value = '';
+  });
+  document.getElementById('novoUserPerfil').value = 'profissional';
   document.getElementById('modalUsuarios').classList.add('active');
   await carregarUsuariosModal(id);
 }
 
 async function carregarUsuariosModal(id) {
-  const cont=document.getElementById('listaUsuariosModal');
-  cont.innerHTML='<p style="color:var(--muted);font-size:13px">Carregando…</p>';
-  const lista=await req('GET','/profissionais?empresa_id='+id);
-  if (!Array.isArray(lista)||!lista.length) { cont.innerHTML='<p style="color:var(--muted);font-size:13px">Nenhum usuário cadastrado.</p>'; return; }
-  cont.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:13px">
-    <thead><tr>
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Nome</th>
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">E-mail</th>
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Perfil</th>
-      <th style="padding:6px 10px;text-align:left;font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Status</th>
-    </tr></thead>
-    <tbody>${lista.map(u=>`<tr>
-      <td style="padding:8px 10px;font-weight:600;color:var(--text)">${u.nome}</td>
-      <td style="padding:8px 10px;color:var(--muted);font-size:12px">${u.email||'—'}</td>
-      <td style="padding:8px 10px"><span class="badge ${u.perfil==='admin'?'badge-admin':'badge-analista'}">${u.perfil==='admin'?'👑 Admin':'🔍 Analista'}</span></td>
-      <td style="padding:8px 10px">${u.ativo!==false?'<span style="color:var(--success);font-weight:600">✅ Ativo</span>':'<span style="color:var(--error);font-weight:600">❌ Inativo</span>'}</td>
-    </tr>`).join('')}</tbody></table>`;
+  const cont = document.getElementById('listaUsuariosModal');
+  cont.innerHTML = '<p style="color:var(--muted);font-size:0.88rem">Carregando…</p>';
+  try {
+    const lista = await req('GET', `/profissionais?empresa_id=${id}`);
+    if (!Array.isArray(lista) || !lista.length) {
+      cont.innerHTML = '<p style="color:var(--muted);font-size:0.88rem">Nenhum usuário cadastrado.</p>';
+      return;
+    }
+    cont.innerHTML = `
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Nome</th>
+          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">E-mail</th>
+          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Perfil</th>
+          <th style="padding:6px 10px;font-size:0.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Status</th>
+        </tr></thead>
+        <tbody>
+          ${lista.map(u => `
+          <tr style="border-bottom:1px solid var(--border-soft)">
+            <td style="padding:8px 10px;font-weight:600;color:var(--text)">${u.nome}</td>
+            <td style="padding:8px 10px;font-size:0.82rem;color:var(--muted)">${u.email||'—'}</td>
+            <td style="padding:8px 10px">
+              <span class="badge ${u.perfil==='admin'?'badge-admin':'badge-analista'}">
+                ${u.perfil==='admin'?'👑 Admin':'🔍 Analista'}
+              </span>
+            </td>
+            <td style="padding:8px 10px">
+              ${u.ativo !== false
+                ? '<span style="color:var(--success)">✅ Ativo</span>'
+                : '<span style="color:var(--error)">❌ Inativo</span>'}
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch {
+    cont.innerHTML = '<p style="color:var(--error);font-size:0.88rem">Erro ao carregar.</p>';
+  }
 }
 
 async function adicionarUsuario() {
-  const nome=document.getElementById('novoUserNome').value.trim(), email=document.getElementById('novoUserEmail').value.trim();
-  const senha=document.getElementById('novoUserSenha').value, tel=document.getElementById('novoUserTelefone').value.trim();
-  const perf=document.getElementById('novoUserPerfil').value, erro=document.getElementById('erroNovoUser');
-  erro.style.display='none';
-  if (!nome||!email||!senha) { erro.textContent='Nome, e-mail e senha são obrigatórios.'; erro.style.display='block'; return; }
-  const r=await req('POST','/profissionais',{ nome, email, senha, telefone:tel||null, perfil:perf, empresa_id:empresaModalId });
-  if (!r||r.erro) { erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
-  toast('✅ Usuário adicionado!');
-  await carregarUsuariosModal(empresaModalId);
-  carregarEmpresas();
-  ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f=>document.getElementById(f).value='');
+  const nome  = document.getElementById('novoUserNome').value.trim();
+  const email = document.getElementById('novoUserEmail').value.trim();
+  const senha = document.getElementById('novoUserSenha').value;
+  const tel   = document.getElementById('novoUserTelefone').value.trim();
+  const perf  = document.getElementById('novoUserPerfil').value;
+  const erro  = document.getElementById('erroNovoUser');
+  erro.style.display = 'none';
+
+  if (!nome || !email || !senha) {
+    erro.textContent = 'Nome, e-mail e senha são obrigatórios.';
+    erro.style.display = 'block'; return;
+  }
+
+  try {
+    const r = await req('POST', '/profissionais', {
+      nome, email, senha, telefone: tel||null,
+      perfil: perf, empresa_id: empresaModalId
+    });
+    if (r && r.erro) { erro.textContent = r.erro; erro.style.display = 'block'; return; }
+    toast('✅ Usuário adicionado!');
+    await carregarUsuariosModal(empresaModalId);
+    carregarEmpresas();
+    ['novoUserNome','novoUserEmail','novoUserSenha','novoUserTelefone'].forEach(f => {
+      document.getElementById(f).value = '';
+    });
+  } catch {
+    erro.textContent = 'Erro de conexão.'; erro.style.display = 'block';
+  }
 }
 
+/* ══════════════════════════════════════
+   START
+══════════════════════════════════════ */
 init();
 </script>
 </body>
