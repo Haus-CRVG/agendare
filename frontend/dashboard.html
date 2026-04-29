@@ -5,13 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agendare — Painel</title>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
-    rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="icon" href="assets/favicon.png" />
   <link rel="shortcut icon" href="assets/favicon.png" />
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
   <style>
     .kanban-board {
       display: flex;
@@ -204,6 +202,215 @@
       overflow: hidden;
       text-overflow: ellipsis
     }
+
+    /* ══════════════════════════════════════════════════════
+       SCHEDULER CUSTOM — Dia / Semana / Mês
+    ══════════════════════════════════════════════════════ */
+
+    /* ── Toolbar ── */
+    .sch-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0;
+      border-bottom: none;
+    }
+    .sch-toolbar-titulo {
+      font-family: 'Syne', var(--font);
+      font-size: 1rem; font-weight: 700; color: var(--text);
+    }
+
+    /* ── Wrapper principal ── */
+    .sch-wrapper {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+      min-height: 500px;
+    }
+
+    /* ── Coluna de horas ── */
+    .sch-coluna-horas {
+      flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .sch-hora-spacer { height: 40px; border-bottom: 1px solid var(--border); }
+    .sch-linha-hora {
+      position: absolute; left: 0; right: 0;
+      border-top: 1px solid var(--border);
+      pointer-events: none;
+    }
+    .sch-linha-meio {
+      position: absolute; left: 0; right: 0;
+      border-top: 1px dashed rgba(0,0,0,0.06);
+      pointer-events: none;
+    }
+    .sch-hora-label {
+      position: absolute; left: 6px; top: -10px;
+      font-size: 0.68rem; font-weight: 600;
+      color: var(--muted2); white-space: nowrap;
+    }
+
+    /* ── Grade de dias ── */
+    .sch-grade { overflow-x: auto; }
+    .sch-header-dias {
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .sch-col-header {
+      padding: 6px 4px; text-align: center;
+      cursor: pointer; transition: background 0.1s;
+    }
+    .sch-col-header:hover { background: var(--surface3); }
+    .sch-col-dianum {
+      display: block; font-size: 1.1rem; font-weight: 700; color: var(--text);
+    }
+    .sch-col-diasem {
+      display: block; font-size: 0.68rem; font-weight: 600;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .sch-col-header.sch-hoje .sch-col-dianum { color: var(--accent); }
+    .sch-hoje-num {
+      background: var(--accent); color: #fff !important;
+      width: 30px; height: 30px; border-radius: 50%;
+      display: inline-flex !important; align-items: center; justify-content: center;
+    }
+
+    /* ── Coluna de dia ── */
+    .sch-col-dia {
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .sch-col-dia:last-child { border-right: none; }
+    .sch-col-hoje { background: rgba(13,148,136,0.03); }
+
+    /* ── Slots clicáveis ── */
+    .sch-slot {
+      position: absolute; left: 0; right: 0;
+      cursor: pointer; z-index: 1;
+      transition: background 0.1s;
+    }
+    .sch-slot:hover { background: rgba(13,148,136,0.06); }
+
+    /* ── Indicador de agora ── */
+    .sch-agora {
+      position: absolute; left: 0; right: 0; height: 2px;
+      background: var(--accent); z-index: 5;
+    }
+    .sch-agora::before {
+      content: ''; position: absolute; left: -4px; top: -4px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── Eventos no scheduler ── */
+    .sch-evento {
+      position: absolute; z-index: 2;
+      border-radius: 6px; padding: 3px 6px;
+      cursor: pointer; overflow: hidden;
+      transition: opacity 0.15s, box-shadow 0.15s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .sch-evento:hover { opacity: 0.88; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .sch-ev-hora   { font-size: 0.68rem; font-weight: 700; opacity: 0.85; }
+    .sch-ev-titulo { font-size: 0.78rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sch-ev-prof   { font-size: 0.68rem; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ══ MÊS ══ */
+    .sch-mes-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 1rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius) var(--radius) 0 0; border-bottom: none;
+    }
+    .sch-mes-titulo {
+      font-family: 'Syne', var(--font);
+      font-size: 1rem; font-weight: 700; color: var(--text);
+    }
+    .sch-mes-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 0 0 var(--radius) var(--radius);
+      overflow: hidden;
+    }
+    .sch-mes-cabecalho {
+      padding: 8px 4px; text-align: center;
+      font-size: 0.68rem; font-weight: 700;
+      text-transform: uppercase; color: var(--muted);
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .sch-mes-celula {
+      min-height: 100px; padding: 4px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+      overflow: hidden;
+    }
+    .sch-mes-celula:hover { background: var(--surface2); }
+    .sch-mes-celula:nth-child(7n) { border-right: none; }
+    .sch-mes-fora { background: var(--surface2); opacity: 0.5; cursor: default; }
+    .sch-mes-hoje { background: rgba(13,148,136,0.05) !important; }
+    .sch-mes-selecionado { background: rgba(13,148,136,0.1) !important; }
+    .sch-mes-num {
+      font-size: 0.82rem; font-weight: 700; color: var(--text2);
+      text-align: right; padding: 2px 4px 4px;
+    }
+    .sch-mes-hoje .sch-mes-num {
+      color: #fff; background: var(--accent);
+      border-radius: 50%; width: 24px; height: 24px;
+      display: inline-flex; align-items: center; justify-content: center;
+      float: right;
+    }
+    .sch-mes-ev {
+      font-size: 0.72rem; font-weight: 600;
+      border-radius: 4px; padding: 2px 5px; margin-bottom: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      cursor: pointer;
+    }
+    .sch-mes-ev-hora { opacity: 0.75; margin-right: 3px; }
+    .sch-mes-mais {
+      font-size: 0.68rem; font-weight: 700; color: var(--muted);
+      padding: 1px 4px; cursor: pointer;
+    }
+    .sch-mes-mais:hover { color: var(--accent); }
+    .sch-periodo-barra {
+      height: 16px; display: flex; align-items: center;
+      margin-bottom: 2px; cursor: pointer;
+      overflow: hidden;
+    }
+
+    /* ── Proteção FullCalendar — impede que style.css sobrescreva o grid ── */
+    .fc table  { border-collapse: separate !important; font-size: 0.85rem !important; white-space: normal !important; }
+    .fc th     { background: transparent !important; text-transform: none !important; letter-spacing: normal !important; font-size: 0.8rem !important; font-weight: 600 !important; color: inherit !important; padding: 8px 4px !important; border-bottom: none !important; }
+    .fc td     { padding: 0 !important; border: none !important; vertical-align: top !important; color: inherit !important; font-size: inherit !important; }
+    .fc tbody tr { cursor: default !important; }
+    .fc tbody tr:hover td { background: transparent !important; }
+
+    /* Wrapper do FullCalendar */
+    #calendarFC {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      box-shadow: var(--shadow);
+    }
+    .fc .fc-toolbar-title { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 700; color: var(--text); }
+    .fc .fc-button { font-family: inherit !important; font-size: 0.82rem !important; font-weight: 600 !important; border-radius: 8px !important; padding: 5px 12px !important; }
+    .fc .fc-button-primary { background-color: var(--accent) !important; border-color: var(--accent) !important; }
+    .fc .fc-button-primary:not(.fc-button-active):hover { opacity: 0.85 !important; }
+    .fc .fc-button-primary.fc-button-active { background-color: var(--accent-hover, #0f766e) !important; border-color: var(--accent-hover, #0f766e) !important; }
+    .fc .fc-daygrid-day-number { color: var(--text2) !important; font-size: 0.8rem !important; }
+    .fc .fc-col-header-cell-cushion { color: var(--muted) !important; font-weight: 700 !important; font-size: 0.75rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; }
+    .fc-event { border-radius: 5px !important; font-size: 0.78rem !important; font-weight: 500 !important; }
+    .fc .fc-daygrid-day.fc-day-today { background: rgba(13,148,136,0.06) !important; }
+    .fc .fc-timegrid-slot { height: 40px !important; }
   </style>
 </head>
 
