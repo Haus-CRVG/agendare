@@ -725,13 +725,18 @@
 
   <!-- Modais -->
   <div class="modal-overlay" id="modalAgendamento">
-    <div class="modal" style="max-width:500px">
+    <div class="modal" style="max-width:520px">
       <h3>📅 Novo Compromisso</h3>
       <input type="hidden" id="agId" />
       <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
           id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
-      <div class="form-group"><label>Data <span style="color:var(--accent)">*</span></label><input type="date"
-          id="agData" /></div>
+
+      <!-- Datas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+        <div class="form-group"><label>Data início <span style="color:var(--accent)">*</span></label><input type="date" id="agData" /></div>
+        <div class="form-group"><label>Data fim <span style="color:var(--muted);font-size:0.75rem">(opcional)</span></label><input type="date" id="agDataFim" /></div>
+      </div>
+
       <div class="form-group" style="margin-bottom:0.5rem"><label
           style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
             id="chkDiaTodo" onchange="toggleDiaTodo(this)"
@@ -742,6 +747,32 @@
         <div class="form-group" style="margin:0;flex:1"><label>Fim <span
               style="color:var(--accent)">*</span></label><input type="time" id="agHoraFim" /></div>
       </div>
+
+      <!-- Evento pessoal -->
+      <div class="form-group" style="margin-bottom:0.5rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="chkEventoPessoal" onchange="toggleEventoPessoal(this)"
+            style="accent-color:var(--accent);width:16px;height:16px;" />
+          🏖️ Evento pessoal / ausência
+        </label>
+      </div>
+      <div id="campoEventoPessoal" style="display:none;margin-bottom:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.75rem">
+        <div class="form-group" style="margin:0">
+          <label>Tipo de ausência</label>
+          <select id="agTipoEventoPessoal">
+            <option value="">Selecione...</option>
+            <option value="ferias">🏖️ Férias</option>
+            <option value="banco_horas">⏱️ Banco de horas</option>
+            <option value="atestado">🏥 Atestado médico</option>
+            <option value="licenca">📋 Licença</option>
+            <option value="folga">😴 Folga</option>
+            <option value="treinamento">📚 Treinamento</option>
+            <option value="viagem">✈️ Viagem a trabalho</option>
+            <option value="outro">📌 Outro</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group" style="margin-bottom:0.5rem"><label
           style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500"><input type="checkbox"
             id="chkAddParticipante" onchange="toggleAddParticipanteNovo(this)"
@@ -983,13 +1014,17 @@
   <div class="modal-overlay" id="modalObsStatus">
     <div class="modal" style="max-width:420px">
       <h3 id="tituloObsStatus">📝 O que foi feito?</h3>
-      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus">Adicione uma observação
-        antes de salvar.</p>
-      <div class="form-group"><label>Observação</label><textarea id="obsStatusTexto"
-          placeholder="Descreva o que foi feito, motivo do cancelamento..."
-          style="resize:none;height:100px;width:100%;"></textarea></div>
-      <div class="modal-actions"><button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button><button
-          class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button></div>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem" id="subtituloObsStatus"></p>
+      <div class="form-group">
+        <label id="labelObsStatus">Observação <span id="obsStatusObrig" style="color:var(--accent)"></span></label>
+        <textarea id="obsStatusTexto" placeholder="Descreva o que foi feito, motivo do cancelamento..."
+          style="resize:none;height:110px;width:100%;"></textarea>
+      </div>
+      <div id="erroObsStatus" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button>
+        <button class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button>
+      </div>
     </div>
   </div>
 

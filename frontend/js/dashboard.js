@@ -293,7 +293,7 @@ function renderSchedulerGrade(container) {
       const prof      = profissionais.find(p => p.id === ag.profissional_id);
       const cor       = corProf(prof);
       const atrasado  = !['concluido','cancelado'].includes(ag.status) && fim < agora;
-      const ehPeriodo = !!ag.data_fim_periodo || !!ag.evento_pessoal;
+      const ehPeriodo = !!ag.evento_pessoal || (ag.dia_todo && ag.data_fim && toDS(ag.data_fim) !== toDS(ag.data_inicio));
       const corFundo  = atrasado ? '#fef2f2' : ehPeriodo ? 'rgba(245,158,11,0.13)' : hexToRgba(cor, 0.12);
       const corBorda  = atrasado ? '#ef4444' : ehPeriodo ? '#f59e0b' : cor;
       const largPct   = (100 / totalCols);
@@ -392,26 +392,24 @@ function renderSchedulerMes(container) {
   const titulo = `${MESES[mes]} ${ano}`;
 
   // ── Pré-processa eventos de período para a barra contínua ──────────────
-  // Normaliza data de um agendamento para string YYYY-MM-DD no fuso SP
+  // Eventos com período multidia: dia_todo com data_fim diferente de data_inicio
   const toDS = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone:'America/Sao_Paulo' });
 
-  // Eventos com período multidia (data_fim_periodo é string YYYY-MM-DD pura)
-  const eventosPeriodo = schedulerData.filter(a => a.data_fim_periodo);
+  const ehMultiDia = a => a.dia_todo && a.data_fim && toDS(a.data_fim) !== toDS(a.data_inicio);
+  const eventosPeriodo = schedulerData.filter(ehMultiDia);
 
   // Monta mapa: ds -> lista de barras de período que cruzam esse dia
-  // Cada entrada: { ag, isInicio, isFim, isIntermedio }
   const barrasPorDia = {};
   eventosPeriodo.forEach(a => {
     const dsIni = toDS(a.data_inicio);
-    const dsFim = a.data_fim_periodo; // já é YYYY-MM-DD puro
-    // Gera todos os dias do período dentro deste mês
+    const dsFim = toDS(a.data_fim); // usa data_fim diretamente
     let cur = new Date(dsIni + 'T12:00:00');
     const endDate = new Date(dsFim + 'T12:00:00');
     while (cur <= endDate) {
       const ds = cur.toLocaleDateString('en-CA');
       if (!barrasPorDia[ds]) barrasPorDia[ds] = [];
       barrasPorDia[ds].push({
-        ag,
+        a,
         isInicio: ds === dsIni,
         isFim:    ds === dsFim,
       });
@@ -431,28 +429,28 @@ function renderSchedulerMes(container) {
     const ehSel  = ds === dataSelecionada;
     const diaDaSemana = new Date(ds + 'T12:00:00').getDay(); // 0=dom
 
-    // Eventos normais do dia (excluindo os de período, que viram barra)
+    // Eventos normais do dia (excluindo multi-dia, que viram barra)
     const evsDia = schedulerData.filter(a => {
-      if (a.data_fim_periodo) return false; // período vira barra separada
+      if (ehMultiDia(a)) return false; // multi-dia vira barra
       const dd = toDS(a.data_inicio);
       return dd === ds;
     });
 
     // Barras de período que passam por este dia
     const barrasHoje = barrasPorDia[ds] || [];
-    const barrasHtml = barrasHoje.map(({ ag, isInicio, isFim }) => {
-      const prof = profissionais.find(p => p.id === ag.profissional_id);
+    const barrasHtml = barrasHoje.map(({ a, isInicio, isFim }) => {
+      const prof = profissionais.find(p => p.id === a.profissional_id);
       const cor  = corProf(prof);
-      // Bordas arredondadas só nas pontas
       const borderRadius = isInicio && isFim ? '6px' : isInicio ? '6px 0 0 6px' : isFim ? '0 6px 6px 0' : '0';
-      // Margem negativa para a barra sangrar até a borda da célula
       const marginLeft  = isInicio ? '2px' : '-1px';
       const marginRight = isFim    ? '2px' : '-1px';
-      const label = isInicio ? `<span style="font-size:0.72rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:6px">${ag.cliente_nome}</span>` : '';
+      const label = isInicio
+        ? `<span style="font-size:0.72rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:6px;color:#fff">${a.cliente_nome}</span>`
+        : '';
       return `<div class="sch-periodo-barra"
-        style="background:${cor};border-radius:${borderRadius};margin-left:${marginLeft};margin-right:${marginRight};color:#fff;"
-        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${ag.id})"
-        title="${ag.cliente_nome}">
+        style="background:${cor};border-radius:${borderRadius};margin-left:${marginLeft};margin-right:${marginRight};height:18px;display:flex;align-items:center;"
+        onclick="event.stopPropagation();abrirVerAgendamentoKanban(${a.id})"
+        title="${a.cliente_nome}">
         ${label}
       </div>`;
     }).join('');
@@ -903,6 +901,14 @@ function abrirNovoAgendamento() {
 function fecharModalAgendamento(){document.getElementById('modalAgendamento').classList.remove('active');}
 function toggleDiaTodo(chk){document.getElementById('camposHora').style.display=chk.checked?'none':'flex';}
 function toggleAddParticipanteNovo(chk){document.getElementById('campoParticipante').style.display=chk.checked?'block':'none';}
+function toggleEventoPessoal(chk){
+  document.getElementById('campoEventoPessoal').style.display=chk.checked?'block':'none';
+  // Evento pessoal normalmente é dia todo
+  if(chk.checked){
+    document.getElementById('chkDiaTodo').checked=true;
+    document.getElementById('camposHora').style.display='none';
+  }
+}
 
 async function salvarAgendamento() {
   const titulo=document.getElementById('agTitulo').value.trim();
@@ -929,34 +935,38 @@ async function salvarAgendamento() {
   document.getElementById('btnAgendar').style.display='none';
   document.getElementById('spinnerAgendar').style.display='inline-block';
   try {
-    // Usa offset real do browser para evitar bug de "dia anterior"
-    const tzOffset = -new Date().getTimezoneOffset();
-    const tzSign   = tzOffset >= 0 ? '+' : '-';
-    const tzHH     = String(Math.floor(Math.abs(tzOffset)/60)).padStart(2,'0');
-    const tzMM     = String(Math.abs(tzOffset)%60).padStart(2,'0');
-    const tz       = `${tzSign}${tzHH}:${tzMM}`;
+    let data_inicio, data_fim;
 
-    const data_inicio = diaTodo ? `${data}T00:00:00${tz}` : `${data}T${horaIni}:00${tz}`;
-    // Se tem dataFim de período: usa ela como data_fim, senão comportamento original
-    const dataFimReal = dataFimInput || data;
-    const data_fim    = diaTodo ? `${dataFimReal}T23:59:59${tz}` : `${data}T${horaFim}:00${tz}`;
+    if (diaTodo) {
+      // Eventos de dia todo: envia datas puras sem conversão de timezone
+      // Isso evita o bug de "dia anterior" causado pela conversão UTC
+      const dataFimReal = dataFimInput || data;
+      data_inicio = `${data}T12:00:00.000Z`;
+      data_fim    = `${dataFimReal}T12:00:00.000Z`;
+    } else {
+      const tzOffset = -new Date().getTimezoneOffset();
+      const tzSign   = tzOffset >= 0 ? '+' : '-';
+      const tzHH     = String(Math.floor(Math.abs(tzOffset)/60)).padStart(2,'0');
+      const tzMM     = String(Math.abs(tzOffset)%60).padStart(2,'0');
+      const tz       = `${tzSign}${tzHH}:${tzMM}`;
+      data_inicio = `${data}T${horaIni}:00${tz}`;
+      data_fim    = `${data}T${horaFim}:00${tz}`;
+    }
 
     const emailConvidado = document.getElementById('chkConvidarExterno')?.checked
       ? (document.getElementById('emailConvidado')?.value?.trim() || null) : null;
 
     const payload = {
-      empresa_id:usuario.empresa_id,
-      profissional_id:usuario.id,
-      cliente_nome:titulo,
+      empresa_id:      usuario.empresa_id,
+      profissional_id: usuario.id,
+      cliente_nome:    titulo,
       data_inicio,
       data_fim,
-      dia_todo:diaTodo,
-      observacoes:obs||null,
-      email_convidado:emailConvidado,
-      // Campos de período pessoal
-      evento_pessoal: eventoPessoal || null,
-      tipo_evento: tipoEvento || null,
-      data_fim_periodo: (dataFimInput && dataFimInput !== data) ? dataFimInput : null
+      dia_todo:        diaTodo,
+      observacoes:     obs || null,
+      email_convidado: emailConvidado,
+      evento_pessoal:  eventoPessoal || null,
+      tipo_evento:     tipoEvento || null
     };
 
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
@@ -1132,16 +1142,40 @@ function pedirObsStatus(){
   const status=document.getElementById('editStatus').value;
   const labels={concluido:'🏁 Concluído',cancelado:'🚫 Cancelado',faltou:'❌ Faltou',confirmado:'✅ Confirmado'};
   _statusPendente=status;
-  document.getElementById('tituloObsStatus').textContent=`Mudar para: ${labels[status]||status}`;
-  document.getElementById('subtituloObsStatus').textContent='Adicione uma observação antes de salvar (opcional).';
-  document.getElementById('obsStatusTexto').value='';
+
+  const obrigatorio = status==='cancelado' || status==='concluido';
+  const config = {
+    cancelado: { titulo:'🚫 Cancelar compromisso', subtitulo:'Informe o motivo do cancelamento.', placeholder:'Ex: Cliente desmarcou, conflito de agenda...' },
+    concluido: { titulo:'🏁 Concluir compromisso',  subtitulo:'Descreva o que foi realizado.',    placeholder:'Ex: Reunião concluída, assuntos discutidos...' },
+    faltou:    { titulo:'❌ Registrar falta',         subtitulo:'Adicione uma observação (opcional).', placeholder:'Observação sobre a falta...' },
+    confirmado:{ titulo:'✅ Confirmar compromisso',   subtitulo:'Observação opcional.',              placeholder:'Informações adicionais...' },
+  };
+  const c = config[status] || { titulo:`Mudar para: ${labels[status]||status}`, subtitulo:'Observação opcional.', placeholder:'Observação...' };
+
+  document.getElementById('tituloObsStatus').textContent = c.titulo;
+  document.getElementById('subtituloObsStatus').textContent = c.subtitulo;
+  document.getElementById('obsStatusTexto').placeholder = c.placeholder;
+  document.getElementById('obsStatusTexto').value = '';
+  document.getElementById('obsStatusObrig').textContent = obrigatorio ? '*' : '';
+  document.getElementById('erroObsStatus').style.display = 'none';
   document.getElementById('modalObsStatus').classList.add('active');
 }
 function fecharObsStatus(){document.getElementById('modalObsStatus').classList.remove('active');_statusPendente=null;}
 async function confirmarAtualizarStatus(){
   const obs=document.getElementById('obsStatusTexto').value.trim();
-  const id=document.getElementById('editAgId').value;
   const status=_statusPendente||document.getElementById('editStatus').value;
+  const erro=document.getElementById('erroObsStatus');
+  erro.style.display='none';
+
+  // Obrigatório para cancelado e concluido
+  if((status==='cancelado'||status==='concluido')&&!obs){
+    erro.textContent = status==='cancelado'
+      ? 'Informe o motivo do cancelamento.' : 'Descreva o que foi realizado.';
+    erro.style.display='block';
+    return;
+  }
+
+  const id=document.getElementById('editAgId').value;
   try{
     const body={status};if(obs)body.observacoes=obs;
     const r=await fetch(`${API}/agendamentos/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
@@ -1169,7 +1203,7 @@ function salvarNotas(){
 // ── Logoff / Sair ─────────────────────────────────────────
 function logoff(){localStorage.removeItem('token');localStorage.removeItem('usuario');window.location.href='login.html';}
 function sair(){localStorage.clear();window.location.href='login.html';}
-function voltarInicio(){mudarAba('agenda');}
+function voltarInicio(){ mudarAba('agenda'); mudarVisualizacao('proximos'); }
 
 // ── Empresas (superadmin) ─────────────────────────────────
 let todasEmpresas=[];
