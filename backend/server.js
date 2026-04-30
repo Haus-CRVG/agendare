@@ -10,6 +10,7 @@ const PORT = process.env.PORT || 3002;
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
+
 // ── Rotas da API ──────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/empresas',      require('./routes/empresas'));
