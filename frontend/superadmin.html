@@ -395,7 +395,7 @@ let token = null, usuarioLogado = null, empresas = [], empresaModalId = null;
 function init() {
   token = localStorage.getItem('token');
   usuarioLogado = JSON.parse(localStorage.getItem('usuario') || 'null');
-  if (!token || !usuarioLogado) { window.location.href = 'index.html'; return; }
+  if (!token || !usuarioLogado) { window.location.href = 'login.html'; return; }
   if (usuarioLogado.perfil !== 'superadmin') { window.location.href = 'dashboard.html'; return; }
   document.getElementById('nomeAdminEl').textContent = usuarioLogado.nome || '';
   document.querySelectorAll('.modal-overlay').forEach(el => {
@@ -404,7 +404,7 @@ function init() {
   carregarEmpresas();
 }
 
-function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 function fecharModal(id) { const el = document.getElementById(id); if (el) el.classList.remove('active'); }
 
 async function req(method, path, body) {

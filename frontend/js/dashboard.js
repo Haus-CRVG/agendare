@@ -59,6 +59,11 @@ function init() {
   usuario.id = parseInt(usuario.id);
 
   aplicarTemaEmpresa(usuario);
+
+  // Fix 1: exibe nome completo do usuário
+  const elNome = document.getElementById('nomeUsuario');
+  if (elNome) elNome.textContent = usuario.nome || '—';
+
   document.getElementById('badgePerfil').textContent =
     usuario.perfil === 'superadmin' ? '⚡ Super Admin' :
     usuario.perfil === 'admin'      ? '👑 Admin'       : '🔍 Analista';
@@ -77,9 +82,7 @@ function init() {
     badge.title = nomeEmp;
   }
 
-  // Carrega módulos ativos da empresa
   carregarModulos();
-
   montarAbasMobile();
   carregarProfissionaisFiltro().then(() => {
     mudarAba('agenda');
@@ -93,16 +96,27 @@ async function carregarModulos() {
     const mods = await apiFetch('/modulos/minha-empresa');
     if (!Array.isArray(mods)) return;
     window._modulosAtivos = mods;
-    const temModulo = m => mods.includes(m);
-    // Mostra seção de módulos se houver ao menos 1
-    const temAlgum = ['clientes','produtos'].some(temModulo);
+    const tem = m => mods.includes(m);
+
+    // Módulos que aparecem na sidebar
+    const menuMap = {
+      clientes:   'menuClientes',
+      produtos:   'menuProdutos',
+      financeiro: 'menuFinanceiro',
+      relatorios: 'menuRelatorios',
+    };
+    let temAlgum = false;
+    Object.entries(menuMap).forEach(([mod, menuId]) => {
+      const el = document.getElementById(menuId);
+      if (el) {
+        const ativo = tem(mod);
+        el.style.display = ativo ? 'flex' : 'none';
+        if (ativo) temAlgum = true;
+      }
+    });
+
     const secao = document.getElementById('sidebarModulos');
     if (secao) secao.style.display = temAlgum ? 'block' : 'none';
-    // Mostra itens individuais
-    if (document.getElementById('menuClientes'))
-      document.getElementById('menuClientes').style.display = temModulo('clientes') ? 'flex' : 'none';
-    if (document.getElementById('menuProdutos'))
-      document.getElementById('menuProdutos').style.display = temModulo('produtos') ? 'flex' : 'none';
   } catch(e) { console.warn('Módulos não carregados:', e.message); }
 }
 
@@ -118,7 +132,7 @@ function montarAbasMobile() {
 
 // ── Abas ──────────────────────────────────────────────────
 function mudarAba(aba) {
-  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas','abaClientes','abaProdutos']
+  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas','abaClientes','abaProdutos','abaFinanceiro','abaRelatorios']
     .forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   const alvo = document.getElementById(`aba${aba.charAt(0).toUpperCase()+aba.slice(1)}`);
   if (alvo) alvo.style.display = 'block';
