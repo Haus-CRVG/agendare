@@ -21,7 +21,9 @@ async function initDB() {
         logo_url TEXT,
         cor_primaria VARCHAR(10) DEFAULT '#0d9488',
         criado_em TIMESTAMP DEFAULT NOW(),
-        vencimento DATE
+        vencimento DATE,
+        imagem_fundo_url TEXT,
+        imagem_fundo_opacidade INTEGER DEFAULT 12
       )
     `);
 
@@ -46,6 +48,7 @@ async function initDB() {
         perfil VARCHAR(20) DEFAULT 'profissional' CHECK (perfil IN ('admin','profissional','superadmin')),
         ativo BOOLEAN DEFAULT true,
         avatar_url TEXT,
+        cor_agenda VARCHAR(10) DEFAULT '#0d9488',
         criado_em TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -109,7 +112,10 @@ async function initDB() {
         token_cancelamento VARCHAR(100) UNIQUE,
         cancelado_em TIMESTAMP,
         motivo_cancelamento TEXT,
-        criado_em TIMESTAMP DEFAULT NOW()
+        criado_em TIMESTAMP DEFAULT NOW(),
+        dia_todo BOOLEAN DEFAULT false,
+        evento_pessoal VARCHAR(50),
+        tipo_evento VARCHAR(50)
       )
     `);
 
@@ -150,6 +156,48 @@ async function initDB() {
         token_resposta   VARCHAR(100) UNIQUE,
         respondido_em    TIMESTAMP,
         criado_em        TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // ── MÓDULOS POR EMPRESA ────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS modulos_empresa (
+        empresa_id  INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
+        modulo      VARCHAR(50) NOT NULL,
+        ativo       BOOLEAN DEFAULT true,
+        criado_em   TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (empresa_id, modulo)
+      )
+    `);
+
+    // ── CLIENTES ───────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS clientes (
+        id          SERIAL PRIMARY KEY,
+        empresa_id  INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
+        nome        VARCHAR(200) NOT NULL,
+        email       VARCHAR(100),
+        telefone    VARCHAR(20),
+        cpf_cnpj    VARCHAR(20),
+        nascimento  DATE,
+        endereco    TEXT,
+        observacoes TEXT,
+        ativo       BOOLEAN DEFAULT true,
+        criado_em   TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // ── PRODUTOS ───────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS produtos (
+        id          SERIAL PRIMARY KEY,
+        empresa_id  INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
+        nome        VARCHAR(200) NOT NULL,
+        descricao   TEXT,
+        preco       DECIMAL(10,2),
+        categoria   VARCHAR(100),
+        ativo       BOOLEAN DEFAULT true,
+        criado_em   TIMESTAMP DEFAULT NOW()
       )
     `);
 

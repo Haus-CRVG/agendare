@@ -454,6 +454,15 @@
           <span class="icon">⚙️</span> Configurações
         </button>
       </div>
+      <div class="sidebar-section" id="sidebarModulos" style="display:none">
+        <div class="sidebar-label">Módulos</div>
+        <button class="sidebar-item" id="menuClientes" onclick="mudarAba('clientes')" data-aba="clientes" style="display:none">
+          <span class="icon">👥</span> Clientes
+        </button>
+        <button class="sidebar-item" id="menuProdutos" onclick="mudarAba('produtos')" data-aba="produtos" style="display:none">
+          <span class="icon">📦</span> Produtos
+        </button>
+      </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Minha conta</div>
         <button class="sidebar-item" onclick="mudarAba('disponibilidade')" data-aba="disponibilidade"><span
@@ -720,6 +729,64 @@
           </div>
         </div>
       </div>
+
+      <!-- ABA: CLIENTES -->
+      <div id="abaClientes" style="display:none">
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">👥 <span>Clientes</span></div>
+            <div class="page-subtitle">Cadastre e gerencie seus clientes</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovoCliente()">+ Novo Cliente</button>
+        </div>
+        <!-- Busca -->
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-body" style="padding:0.75rem 1rem">
+            <div style="display:flex;gap:0.75rem;align-items:center">
+              <input type="text" id="buscaCliente" placeholder="🔍 Buscar por nome, e-mail ou telefone..."
+                oninput="filtrarClientes()"
+                style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.55rem 1rem;font:inherit;font-size:0.9rem;outline:none;color:var(--text)"/>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('buscaCliente').value='';carregarClientes()">✕ Limpar</button>
+            </div>
+          </div>
+        </div>
+        <!-- Tabela -->
+        <div class="card">
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>E-mail</th>
+                  <th>Telefone</th>
+                  <th>CPF/CNPJ</th>
+                  <th>Cadastrado em</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaClientes">
+                <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ABA: PRODUTOS -->
+      <div id="abaProdutos" style="display:none">
+        <div class="page-header">
+          <div class="page-title">📦 <span>Produtos</span></div>
+          <div class="page-subtitle">Em breve — módulo em desenvolvimento</div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="text-align:center;padding:3rem;color:var(--muted)">
+            <div style="font-size:3rem;margin-bottom:1rem">📦</div>
+            <p style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem">Módulo Produtos</p>
+            <p style="font-size:0.88rem">Este módulo está em desenvolvimento e estará disponível em breve.</p>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1024,6 +1091,39 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="fecharObsStatus()">Cancelar</button>
         <button class="btn btn-primary" onclick="confirmarAtualizarStatus()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Cliente -->
+  <div class="modal-overlay" id="modalCliente">
+    <div class="modal" style="max-width:520px">
+      <h3 id="tituloModalCliente">👥 Novo Cliente</h3>
+      <input type="hidden" id="clienteId"/>
+      <div class="form-grid">
+        <div class="form-group"><label>Nome <span style="color:var(--accent)">*</span></label><input type="text" id="clienteNome" placeholder="Nome completo"/></div>
+        <div class="form-group"><label>E-mail</label><input type="email" id="clienteEmail" placeholder="email@exemplo.com"/></div>
+        <div class="form-group"><label>Telefone</label><input type="text" id="clienteTelefone" placeholder="(00) 00000-0000"/></div>
+        <div class="form-group"><label>CPF / CNPJ</label><input type="text" id="clienteCpfCnpj" placeholder="000.000.000-00"/></div>
+        <div class="form-group"><label>Data de nascimento</label><input type="date" id="clienteNascimento"/></div>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem"><label>Endereço</label><input type="text" id="clienteEndereco" placeholder="Rua, número, cidade..."/></div>
+      <div class="form-group"><label>Observações</label><textarea id="clienteObs" placeholder="Anotações sobre o cliente..." style="resize:none;height:70px"></textarea></div>
+      <div id="erroCliente" class="alert alert-error" style="display:none;margin-bottom:0.5rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalCliente()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarCliente()"><span id="btnClienteText">Salvar</span><div class="spinner" id="spinnerCliente"></div></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Histórico Cliente -->
+  <div class="modal-overlay" id="modalHistoricoCliente">
+    <div class="modal" style="max-width:620px">
+      <h3>📋 Histórico — <span id="nomeHistoricoCliente" style="color:var(--accent)"></span></h3>
+      <div id="listaHistoricoCliente" style="max-height:400px;overflow-y:auto;margin:1rem 0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="document.getElementById('modalHistoricoCliente').classList.remove('active')">Fechar</button>
       </div>
     </div>
   </div>

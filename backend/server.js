@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
-const path    = require('path');
 const { pool, initDB } = require('./db');
 
 const app  = express();
@@ -9,7 +8,6 @@ const PORT = process.env.PORT || 3002;
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
-
 
 // ── Rotas da API ──────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth'));
@@ -22,10 +20,11 @@ app.use('/api/notificacoes',  require('./routes/notificacoes'));
 app.use('/api/participantes', require('./routes/participantes'));
 app.use('/api/public',        require('./routes/public'));
 app.use('/api/sso',           require('./routes/sso'));
+app.use('/api/modulos',       require('./routes/modulos'));
+app.use('/api/clientes',      require('./routes/clientes'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true, sistema: 'Agendare' }));
 
-// ── Qualquer rota não-API retorna 404 JSON (frontend é separado) ──
 app.use((req, res) => {
   res.status(404).json({ erro: 'Rota não encontrada' });
 });

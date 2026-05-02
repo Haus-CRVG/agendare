@@ -58,7 +58,6 @@ function init() {
   if (!token || !usuario) { window.location.href = 'login.html'; return; }
   usuario.id = parseInt(usuario.id);
 
-  // Aplica tema da empresa imediatamente ao carregar
   aplicarTemaEmpresa(usuario);
   document.getElementById('badgePerfil').textContent =
     usuario.perfil === 'superadmin' ? '⚡ Super Admin' :
@@ -78,11 +77,33 @@ function init() {
     badge.title = nomeEmp;
   }
 
+  // Carrega módulos ativos da empresa
+  carregarModulos();
+
   montarAbasMobile();
   carregarProfissionaisFiltro().then(() => {
     mudarAba('agenda');
     iniciarPolling();
   });
+}
+
+// ── Módulos ────────────────────────────────────────────────
+async function carregarModulos() {
+  try {
+    const mods = await apiFetch('/modulos/minha-empresa');
+    if (!Array.isArray(mods)) return;
+    window._modulosAtivos = mods;
+    const temModulo = m => mods.includes(m);
+    // Mostra seção de módulos se houver ao menos 1
+    const temAlgum = ['clientes','produtos'].some(temModulo);
+    const secao = document.getElementById('sidebarModulos');
+    if (secao) secao.style.display = temAlgum ? 'block' : 'none';
+    // Mostra itens individuais
+    if (document.getElementById('menuClientes'))
+      document.getElementById('menuClientes').style.display = temModulo('clientes') ? 'flex' : 'none';
+    if (document.getElementById('menuProdutos'))
+      document.getElementById('menuProdutos').style.display = temModulo('produtos') ? 'flex' : 'none';
+  } catch(e) { console.warn('Módulos não carregados:', e.message); }
 }
 
 function montarAbasMobile() {
@@ -97,7 +118,7 @@ function montarAbasMobile() {
 
 // ── Abas ──────────────────────────────────────────────────
 function mudarAba(aba) {
-  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas']
+  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas','abaClientes','abaProdutos']
     .forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   const alvo = document.getElementById(`aba${aba.charAt(0).toUpperCase()+aba.slice(1)}`);
   if (alvo) alvo.style.display = 'block';
@@ -110,6 +131,7 @@ function mudarAba(aba) {
   if (aba==='disponibilidade') carregarDisponibilidade();
   if (aba==='configuracoes')   carregarConfiguracoes();
   if (aba==='empresas')        carregarEmpresas();
+  if (aba==='clientes')        carregarClientes();
 }
 
 // ── Visualização ──────────────────────────────────────────
@@ -1203,6 +1225,172 @@ function salvarNotas(){
 // ── Logoff / Sair ─────────────────────────────────────────
 function logoff(){localStorage.removeItem('token');localStorage.removeItem('usuario');window.location.href='login.html';}
 function sair(){localStorage.clear();window.location.href='login.html';}
+
+/* ══════════════════════════════════════════════════════════
+   MÓDULO CLIENTES
+══════════════════════════════════════════════════════════ */
+let clientesCache = [];
+
+async function carregarClientes() {
+  const tbody = document.getElementById('tabelaClientes');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Carregando...</td></tr>';
+  try {
+    const busca = document.getElementById('buscaCliente')?.value?.trim() || '';
+    const url = busca ? `/clientes?busca=${encodeURIComponent(busca)}` : '/clientes';
+    const data = await apiFetch(url);
+    clientesCache = Array.isArray(data) ? data : [];
+    renderClientes(clientesCache);
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--error)">Erro ao carregar clientes.</td></tr>';
+  }
+}
+
+function filtrarClientes() {
+  clearTimeout(window._buscaClienteTimer);
+  window._buscaClienteTimer = setTimeout(carregarClientes, 350);
+}
+
+function renderClientes(lista) {
+  const tbody = document.getElementById('tabelaClientes');
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum cliente cadastrado.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(c => `
+    <tr>
+      <td><strong>${c.nome}</strong></td>
+      <td style="font-size:0.85rem">${c.email||'—'}</td>
+      <td style="font-size:0.85rem">${c.telefone||'—'}</td>
+      <td style="font-size:0.82rem;font-family:monospace">${c.cpf_cnpj||'—'}</td>
+      <td style="font-size:0.82rem">${new Date(c.criado_em).toLocaleDateString('pt-BR')}</td>
+      <td>
+        <div style="display:flex;gap:5px">
+          <button class="btn-icon" title="Editar" onclick="editarCliente(${c.id})">✏️</button>
+          <button class="btn-icon" title="Histórico" onclick="verHistorico(${c.id},'${c.nome.replace(/'/g,"\\'")}')">📋</button>
+          <button class="btn-icon" title="Inativar" onclick="inativarCliente(${c.id})" style="color:var(--error)">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function abrirNovoCliente() {
+  document.getElementById('clienteId').value = '';
+  document.getElementById('tituloModalCliente').textContent = '👥 Novo Cliente';
+  document.getElementById('btnClienteText').textContent = 'Cadastrar';
+  ['clienteNome','clienteEmail','clienteTelefone','clienteCpfCnpj','clienteEndereco','clienteObs'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value = '';
+  });
+  document.getElementById('clienteNascimento').value = '';
+  document.getElementById('erroCliente').style.display = 'none';
+  document.getElementById('modalCliente').classList.add('active');
+  setTimeout(() => document.getElementById('clienteNome').focus(), 80);
+}
+
+function editarCliente(id) {
+  const c = clientesCache.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('clienteId').value = id;
+  document.getElementById('tituloModalCliente').textContent = '✏️ Editar Cliente';
+  document.getElementById('btnClienteText').textContent = 'Salvar';
+  document.getElementById('clienteNome').value = c.nome || '';
+  document.getElementById('clienteEmail').value = c.email || '';
+  document.getElementById('clienteTelefone').value = c.telefone || '';
+  document.getElementById('clienteCpfCnpj').value = c.cpf_cnpj || '';
+  document.getElementById('clienteNascimento').value = c.nascimento ? c.nascimento.substring(0,10) : '';
+  document.getElementById('clienteEndereco').value = c.endereco || '';
+  document.getElementById('clienteObs').value = c.observacoes || '';
+  document.getElementById('erroCliente').style.display = 'none';
+  document.getElementById('modalCliente').classList.add('active');
+}
+
+function fecharModalCliente() {
+  document.getElementById('modalCliente').classList.remove('active');
+}
+
+async function salvarCliente() {
+  const id = document.getElementById('clienteId').value;
+  const nome = document.getElementById('clienteNome').value.trim();
+  const erro = document.getElementById('erroCliente');
+  erro.style.display = 'none';
+  if (!nome) { erro.textContent = 'Nome é obrigatório.'; erro.style.display = 'block'; return; }
+
+  document.getElementById('btnClienteText').style.display = 'none';
+  document.getElementById('spinnerCliente').style.display = 'inline-block';
+
+  const payload = {
+    nome,
+    email:      document.getElementById('clienteEmail').value.trim() || null,
+    telefone:   document.getElementById('clienteTelefone').value.trim() || null,
+    cpf_cnpj:   document.getElementById('clienteCpfCnpj').value.trim() || null,
+    nascimento: document.getElementById('clienteNascimento').value || null,
+    endereco:   document.getElementById('clienteEndereco').value.trim() || null,
+    observacoes:document.getElementById('clienteObs').value.trim() || null,
+  };
+
+  try {
+    const url = id ? `/clientes/${id}` : '/clientes';
+    const method = id ? 'PATCH' : 'POST';
+    const r = await fetch(`${API}${url}`, {
+      method, headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      body: JSON.stringify(payload)
+    });
+    const data = await r.json();
+    if (!r.ok) { erro.textContent = data.erro || 'Erro ao salvar.'; erro.style.display = 'block'; return; }
+    fecharModalCliente();
+    mostrarToast('✅ Cliente salvo!', nome);
+    carregarClientes();
+  } catch { erro.textContent = 'Erro de conexão.'; erro.style.display = 'block'; }
+  finally {
+    document.getElementById('btnClienteText').style.display = 'inline';
+    document.getElementById('spinnerCliente').style.display = 'none';
+  }
+}
+
+async function inativarCliente(id) {
+  if (!confirm('Deseja inativar este cliente?')) return;
+  try {
+    await fetch(`${API}/clientes/${id}`, {
+      method: 'DELETE', headers: { Authorization:`Bearer ${token}` }
+    });
+    mostrarToast('✅ Cliente inativado!', '');
+    carregarClientes();
+  } catch { mostrarToast('❌ Erro', 'Não foi possível inativar.'); }
+}
+
+async function verHistorico(id, nome) {
+  document.getElementById('nomeHistoricoCliente').textContent = nome;
+  document.getElementById('listaHistoricoCliente').innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Carregando...</p>';
+  document.getElementById('modalHistoricoCliente').classList.add('active');
+  try {
+    const data = await apiFetch(`/clientes/${id}/historico`);
+    if (!data.length) {
+      document.getElementById('listaHistoricoCliente').innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Nenhum agendamento encontrado.</p>';
+      return;
+    }
+    document.getElementById('listaHistoricoCliente').innerHTML = data.map(ag => {
+      const dt = new Date(ag.data_inicio).toLocaleString('pt-BR', {timeZone:'America/Sao_Paulo', day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+      const badgeStatus = { confirmado:'badge-ativo', concluido:'badge-concluido', cancelado:'badge-cancelado', pendente:'badge-pendente', faltou:'badge-faltou' };
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 1rem;border-bottom:1px solid var(--border);gap:1rem">
+        <div>
+          <div style="font-weight:600;font-size:0.9rem;color:var(--text)">${ag.cliente_nome}</div>
+          <div style="font-size:0.78rem;color:var(--muted)">${dt} — ${ag.profissional_nome||'—'}</div>
+          ${ag.observacoes ? `<div style="font-size:0.78rem;color:var(--muted2);margin-top:2px">${ag.observacoes}</div>` : ''}
+        </div>
+        <span class="badge ${badgeStatus[ag.status]||''}">${ag.status}</span>
+      </div>`;
+    }).join('');
+  } catch {
+    document.getElementById('listaHistoricoCliente').innerHTML = '<p style="color:var(--error);text-align:center;padding:1rem">Erro ao carregar histórico.</p>';
+  }
+}
+
+// Helper para chamadas autenticadas
+async function apiFetch(path) {
+  const r = await fetch(`${API}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
 function voltarInicio(){ mudarAba('agenda'); mudarVisualizacao('proximos'); }
 
 // ── Empresas (superadmin) ─────────────────────────────────
