@@ -780,15 +780,61 @@
 
       <!-- ABA: PRODUTOS -->
       <div id="abaProdutos" style="display:none">
-        <div class="page-header">
-          <div class="page-title">📦 <span>Produtos</span></div>
-          <div class="page-subtitle">Em breve — módulo em desenvolvimento</div>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div class="page-title">📦 <span>Produtos</span></div>
+            <div class="page-subtitle">Cadastre e gerencie os produtos da empresa</div>
+          </div>
+          <button class="btn btn-primary" onclick="abrirNovoProduto()">+ Novo Produto</button>
         </div>
-        <div class="card">
-          <div class="card-body" style="text-align:center;padding:3rem;color:var(--muted)">
-            <div style="font-size:3rem;margin-bottom:1rem">📦</div>
-            <p style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem">Módulo Produtos</p>
-            <p style="font-size:0.88rem">Este módulo está em desenvolvimento e estará disponível em breve.</p>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-body" style="padding:0.75rem 1rem">
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap">
+              <input type="text" id="buscaProduto" placeholder="🔍 Buscar por nome ou categoria..."
+                oninput="filtrarProdutos()"
+                style="flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.55rem 1rem;font:inherit;font-size:0.9rem;outline:none;color:var(--text)"/>
+              <select id="filtroCatProduto" onchange="filtrarProdutos()"
+                style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.55rem 0.9rem;font:inherit;font-size:0.9rem;outline:none;color:var(--text)">
+                <option value="">Todas as categorias</option>
+              </select>
+              <select id="filtroAtivoProduto" onchange="filtrarProdutos()"
+                style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.55rem 0.9rem;font:inherit;font-size:0.9rem;outline:none;color:var(--text)">
+                <option value="">Ativos e inativos</option>
+                <option value="true" selected>Somente ativos</option>
+                <option value="false">Somente inativos</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" onclick="limparFiltrosProdutos()">✕ Limpar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsProdutos" style="margin-bottom:1rem"></div>
+
+        <!-- Grid de produtos -->
+        <div id="gridProdutos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;margin-bottom:1rem"></div>
+
+        <!-- Tabela (fallback / visão admin) -->
+        <div class="card" id="tabelaProdutosCard" style="display:none">
+          <div class="card-header">
+            <h2>Lista de Produtos</h2>
+            <button class="btn btn-secondary btn-sm" onclick="toggleViewProdutos()">🔲 Grade</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th>Preço</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaProdutos"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -1160,6 +1206,74 @@
       <div id="listaHistoricoCliente" style="max-height:400px;overflow-y:auto;margin:1rem 0"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="document.getElementById('modalHistoricoCliente').classList.remove('active')">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Produto -->
+  <div class="modal-overlay" id="modalProduto">
+    <div class="modal" style="max-width:540px">
+      <h3 id="tituloModalProduto">📦 Novo Produto</h3>
+      <input type="hidden" id="produtoId"/>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome <span style="color:var(--accent)">*</span></label>
+          <input type="text" id="produtoNome" placeholder="Ex: Bolo de cenoura"/>
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <input type="text" id="produtoCategoria" placeholder="Ex: Bolos, Doces, Salgados..." list="listaCategorias"/>
+          <datalist id="listaCategorias"></datalist>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="produtoDescricao" placeholder="Descreva o produto, ingredientes, características..."
+          style="resize:none;height:80px"></textarea>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Preço (R$)</label>
+          <input type="number" id="produtoPreco" placeholder="0,00" min="0" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Unidade</label>
+          <select id="produtoUnidade">
+            <option value="unidade">Unidade</option>
+            <option value="kg">Kg</option>
+            <option value="g">Gramas</option>
+            <option value="litro">Litro</option>
+            <option value="caixa">Caixa</option>
+            <option value="pacote">Pacote</option>
+            <option value="dúzia">Dúzia</option>
+            <option value="porção">Porção</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tempo preparo (min)</label>
+          <input type="number" id="produtoTempoPreparo" placeholder="Ex: 60" min="0" step="5"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Imagem (URL)</label>
+        <input type="text" id="produtoImagem" placeholder="https://..." oninput="previewImgProduto(this.value)"/>
+        <div id="previewImagem" style="margin-top:0.5rem;display:none">
+          <img id="imgPreviewProduto" style="max-height:120px;border-radius:8px;border:1px solid var(--border)" />
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="produtoAtivo" checked style="accent-color:var(--accent);width:16px;height:16px"/>
+          Produto ativo (visível no cardápio/agendamento)
+        </label>
+      </div>
+      <div id="erroProduto" class="alert alert-error" style="display:none;margin-top:0.75rem"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModalProduto()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarProduto()">
+          <span id="btnProdutoText">Salvar</span>
+          <div class="spinner" id="spinnerProduto"></div>
+        </button>
       </div>
     </div>
   </div>

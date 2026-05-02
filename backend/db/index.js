@@ -190,16 +190,24 @@ async function initDB() {
     // ── PRODUTOS ───────────────────────────────────────────
     await pool.query(`
       CREATE TABLE IF NOT EXISTS produtos (
-        id          SERIAL PRIMARY KEY,
-        empresa_id  INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
-        nome        VARCHAR(200) NOT NULL,
-        descricao   TEXT,
-        preco       DECIMAL(10,2),
-        categoria   VARCHAR(100),
-        ativo       BOOLEAN DEFAULT true,
-        criado_em   TIMESTAMP DEFAULT NOW()
+        id            SERIAL PRIMARY KEY,
+        empresa_id    INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
+        nome          VARCHAR(200) NOT NULL,
+        descricao     TEXT,
+        preco         DECIMAL(10,2),
+        categoria     VARCHAR(100),
+        unidade       VARCHAR(50) DEFAULT 'unidade',
+        tempo_preparo INTEGER,
+        imagem_url    TEXT,
+        ativo         BOOLEAN DEFAULT true,
+        criado_em     TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Adiciona colunas novas se não existirem (para bancos já criados)
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS unidade VARCHAR(50) DEFAULT 'unidade'`).catch(()=>{});
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS tempo_preparo INTEGER`).catch(()=>{});
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS imagem_url TEXT`).catch(()=>{});
 
     console.log('✅ Banco Agendare inicializado com sucesso');
   } catch (err) {
