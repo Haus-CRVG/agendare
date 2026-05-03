@@ -862,6 +862,26 @@ async function abrirVerAgendamento(id) {
     const ehDiaTodo=ag.dia_todo;
     const dtInicio=new Date(ag.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',hour:'2-digit',minute:'2-digit'});
     const dtFim=(!ehDiaTodo&&ag.data_fim)?new Date(ag.data_fim).toLocaleTimeString('pt-BR',{timeZone:'America/Sao_Paulo',hour:'2-digit',minute:'2-digit'}):'';
+
+    // Produtos do agendamento
+    const produtos = Array.isArray(ag.produtos) ? ag.produtos : [];
+    const total = parseFloat(ag.total_produtos || 0);
+    const fmtBRL = v => `R$ ${parseFloat(v).toFixed(2).replace('.',',')}`;
+
+    const produtosHtml = produtos.length ? `
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px">🛒 Produtos</div>
+        ${produtos.map(p => `
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;padding:3px 0">
+            <span>${p.nome_produto} <span style="color:var(--muted);font-size:0.78rem">x${p.quantidade}</span></span>
+            <span style="font-weight:600">${fmtBRL(p.subtotal)}</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          <strong style="font-size:0.9rem">💰 Total</strong>
+          <strong style="font-size:1rem;color:var(--accent)">${fmtBRL(total)}</strong>
+        </div>
+      </div>` : '';
+
     document.getElementById('detalheAgendamento').innerHTML=`
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;border-top:4px solid ${cor}">
         <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:0.88rem"><span style="color:var(--muted)">Título</span><strong>${ag.cliente_nome}</strong></div>
@@ -869,11 +889,12 @@ async function abrirVerAgendamento(id) {
           <span style="color:var(--muted)">Responsável</span>
           <span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:50%;background:${cor};display:inline-block"></span>${ag.profissional_nome||'—'}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;padding:5px 0;${ag.observacoes?'border-bottom:1px solid var(--border);':''}font-size:0.88rem">
+        <div style="display:flex;justify-content:space-between;padding:5px 0;${(ag.observacoes||produtos.length)?'border-bottom:1px solid var(--border);':''}font-size:0.88rem">
           <span style="color:var(--muted)">Data/Hora</span>
           <span>${ehDiaTodo?dtInicio.split(',')[0]+' · Dia todo':dtInicio+(dtFim?` até ${dtFim}`:'')}</span>
         </div>
         ${ag.observacoes?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:0.82rem;color:var(--muted)">💬 ${ag.observacoes}</div>`:''}
+        ${produtosHtml}
       </div>`;
     document.getElementById('editAgId').value=id;
     document.getElementById('editStatus').value=ag.status;
@@ -899,6 +920,8 @@ async function atualizarStatus() {
 }
 
 // ── Modal Novo Compromisso ────────────────────────────────
+let carrinhoAgendamento = []; // [{ produto_id, nome, preco, quantidade }]
+
 function abrirNovoAgendamento() {
   document.getElementById('agId').value='';
   document.getElementById('agTitulo').value='';
@@ -919,7 +942,6 @@ function abrirNovoAgendamento() {
   if(_campoExt) _campoExt.style.display='none';
   const _emailExt=document.getElementById('emailConvidado');
   if(_emailExt) _emailExt.value='';
-  // Resetar campos de período/evento pessoal
   const _dataFim=document.getElementById('agDataFim');
   if(_dataFim) _dataFim.value='';
   const _chkPess=document.getElementById('chkEventoPessoal');
@@ -928,13 +950,110 @@ function abrirNovoAgendamento() {
   if(_campoPess) _campoPess.style.display='none';
   const _tipoEv=document.getElementById('agTipoEventoPessoal');
   if(_tipoEv) _tipoEv.value='';
-  // Resetar toggle visual do "Dia Todo"
-  const _track=document.getElementById('toggleDiaTodoTrack');
-  const _thumb=document.getElementById('toggleDiaTodoThumb');
-  if(_track) _track.style.background='#d1d5db';
-  if(_thumb) _thumb.style.transform='translateX(0)';
+
+  // Reset carrinho
+  carrinhoAgendamento = [];
+  const buscaEl = document.getElementById('buscaProdutoAg');
+  if (buscaEl) buscaEl.value = '';
+  const sugEl = document.getElementById('sugestoesProdutosAg');
+  if (sugEl) sugEl.style.display = 'none';
+  renderCarrinhoAg();
+
+  // Mostra seção produtos se módulo ativo
+  const secao = document.getElementById('secaoProdutosAg');
+  if (secao) {
+    const temProdutos = window._modulosAtivos?.includes('produtos') && produtosCache.length > 0;
+    secao.style.display = temProdutos ? 'block' : 'none';
+  }
+
   document.getElementById('modalAgendamento').classList.add('active');
 }
+
+// ── Carrinho de Produtos no Agendamento ───────────────────
+function filtrarProdutosAg(busca) {
+  const sug = document.getElementById('sugestoesProdutosAg');
+  if (!busca || busca.length < 1) { sug.style.display = 'none'; return; }
+  const lista = produtosCache.filter(p =>
+    p.ativo !== false &&
+    (p.nome.toLowerCase().includes(busca.toLowerCase()) ||
+     (p.categoria||'').toLowerCase().includes(busca.toLowerCase()))
+  ).slice(0, 8);
+  if (!lista.length) { sug.style.display = 'none'; return; }
+  sug.innerHTML = lista.map(p => {
+    const preco = p.preco ? `R$ ${parseFloat(p.preco).toFixed(2).replace('.',',')}` : 'Sob consulta';
+    return `<div onclick="adicionarProdutoAg(${p.id},'${p.nome.replace(/'/g,"\\'")}',${p.preco||0})"
+      style="padding:0.6rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);font-size:0.88rem;transition:background 0.1s"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <div>
+        <div style="font-weight:600">${p.nome}</div>
+        ${p.categoria?`<div style="font-size:0.72rem;color:var(--muted)">${p.categoria}</div>`:''}
+      </div>
+      <span style="font-weight:700;color:var(--accent)">${preco}</span>
+    </div>`;
+  }).join('');
+  sug.style.display = 'block';
+}
+
+function adicionarProdutoAg(id, nome, preco) {
+  const idx = carrinhoAgendamento.findIndex(x => x.produto_id === id);
+  if (idx >= 0) {
+    carrinhoAgendamento[idx].quantidade++;
+  } else {
+    carrinhoAgendamento.push({ produto_id: id, nome, preco: parseFloat(preco), quantidade: 1 });
+  }
+  document.getElementById('buscaProdutoAg').value = '';
+  document.getElementById('sugestoesProdutosAg').style.display = 'none';
+  renderCarrinhoAg();
+}
+
+function removerProdutoAg(idx) {
+  carrinhoAgendamento.splice(idx, 1);
+  renderCarrinhoAg();
+}
+
+function alterarQtdAg(idx, delta) {
+  carrinhoAgendamento[idx].quantidade = Math.max(1, carrinhoAgendamento[idx].quantidade + delta);
+  renderCarrinhoAg();
+}
+
+function renderCarrinhoAg() {
+  const el = document.getElementById('carrinhoAg');
+  const totalBox = document.getElementById('totalAgBox');
+  if (!el) return;
+  if (!carrinhoAgendamento.length) {
+    el.innerHTML = '';
+    if (totalBox) totalBox.style.display = 'none';
+    return;
+  }
+  let total = 0;
+  el.innerHTML = carrinhoAgendamento.map((item, idx) => {
+    const sub = item.preco * item.quantidade;
+    total += sub;
+    const fmtBRL = v => `R$ ${v.toFixed(2).replace('.',',')}`;
+    return `<div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.75rem;font-size:0.85rem">
+      <span style="flex:1;font-weight:600">${item.nome}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <button onclick="alterarQtdAg(${idx},-1)" style="width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">−</button>
+        <span style="min-width:20px;text-align:center;font-weight:700">${item.quantidade}</span>
+        <button onclick="alterarQtdAg(${idx},1)" style="width:22px;height:22px;border-radius:6px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+      <span style="font-weight:700;color:var(--accent);min-width:70px;text-align:right">${`R$ ${sub.toFixed(2).replace('.',',')}`}</span>
+      <button onclick="removerProdutoAg(${idx})" style="background:none;border:none;color:var(--error);cursor:pointer;font-size:1rem;padding:0 2px">✕</button>
+    </div>`;
+  }).join('');
+  if (totalBox) {
+    totalBox.style.display = 'flex';
+    const totalEl = document.getElementById('totalAgValor');
+    if (totalEl) totalEl.textContent = `R$ ${total.toFixed(2).replace('.',',')}`;
+  }
+}
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', e => {
+  const sug = document.getElementById('sugestoesProdutosAg');
+  const inp = document.getElementById('buscaProdutoAg');
+  if (sug && inp && !sug.contains(e.target) && e.target !== inp) sug.style.display = 'none';
+});
 function fecharModalAgendamento(){document.getElementById('modalAgendamento').classList.remove('active');}
 function toggleDiaTodo(chk){document.getElementById('camposHora').style.display=chk.checked?'none':'flex';}
 function toggleAddParticipanteNovo(chk){document.getElementById('campoParticipante').style.display=chk.checked?'block':'none';}
@@ -1003,7 +1122,8 @@ async function salvarAgendamento() {
       observacoes:     obs || null,
       email_convidado: emailConvidado,
       evento_pessoal:  eventoPessoal || null,
-      tipo_evento:     tipoEvento || null
+      tipo_evento:     tipoEvento || null,
+      produtos:        carrinhoAgendamento.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }))
     };
 
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},

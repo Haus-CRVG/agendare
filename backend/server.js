@@ -20,9 +20,10 @@ app.use('/api/notificacoes',  require('./routes/notificacoes'));
 app.use('/api/participantes', require('./routes/participantes'));
 app.use('/api/public',        require('./routes/public'));
 app.use('/api/sso',           require('./routes/sso'));
-app.use('/api/modulos',       require('./routes/modulos'));
-app.use('/api/clientes',      require('./routes/clientes'));
-app.use('/api/produtos',      require('./routes/produtos'));
+app.use('/api/modulos',               require('./routes/modulos'));
+app.use('/api/clientes',              require('./routes/clientes'));
+app.use('/api/produtos',              require('./routes/produtos'));
+app.use('/api/agendamento-produtos',  require('./routes/agendamento-produtos'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true, sistema: 'Agendare' }));
 

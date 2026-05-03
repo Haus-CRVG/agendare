@@ -18,7 +18,23 @@ router.get('/', auth(), async (req, res) => {
     if (profissional_id) { where.push(`a.profissional_id = $${idx++}`); params.push(profissional_id); }
     if (status) { where.push(`a.status = $${idx++}`); params.push(status); }
     const result = await pool.query(`
-      SELECT a.*, u.nome as profissional_nome, s.nome as servico_nome, s.cor as servico_cor, s.duracao_minutos
+      SELECT a.*,
+             u.nome as profissional_nome, s.nome as servico_nome,
+             s.cor as servico_cor, s.duracao_minutos,
+             COALESCE((
+               SELECT json_agg(json_build_object(
+                 'id', ap.id, 'produto_id', ap.produto_id,
+                 'nome_produto', ap.nome_produto,
+                 'preco_unitario', ap.preco_unitario,
+                 'quantidade', ap.quantidade,
+                 'subtotal', ap.subtotal
+               ) ORDER BY ap.id)
+               FROM agendamento_produtos ap WHERE ap.agendamento_id = a.id
+             ), '[]') as produtos,
+             COALESCE((
+               SELECT SUM(ap.subtotal)
+               FROM agendamento_produtos ap WHERE ap.agendamento_id = a.id
+             ), 0) as total_produtos
       FROM agendamentos a
       LEFT JOIN usuarios u ON a.profissional_id = u.id
       LEFT JOIN servicos s ON a.servico_id = s.id
@@ -98,43 +114,65 @@ router.get('/horarios-disponiveis', async (req, res) => {
 
 // ── POST /api/agendamentos — criar ────────────────────────
 router.post('/', async (req, res) => {
-  // Rota semi-pública: funciona com ou sem token (link público ou usuário logado)
   const {
     empresa_id, profissional_id, servico_id,
     cliente_nome, cliente_email, cliente_telefone,
-    data_inicio, data_fim, observacoes, dia_todo
+    data_inicio, data_fim, observacoes, dia_todo,
+    evento_pessoal, tipo_evento, produtos
   } = req.body;
 
   if (!empresa_id || !profissional_id || !cliente_nome || !data_inicio || !data_fim)
     return res.status(400).json({ erro: 'Campos obrigatórios faltando' });
 
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
     const token_cancelamento = crypto.randomBytes(32).toString('hex');
-    const result = await pool.query(`
+    const result = await client.query(`
       INSERT INTO agendamentos (
         empresa_id, profissional_id, servico_id, cliente_nome,
         cliente_email, cliente_telefone, data_inicio, data_fim,
-        observacoes, token_cancelamento, dia_todo
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
+        observacoes, token_cancelamento, dia_todo, evento_pessoal, tipo_evento
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
       [
         empresa_id, profissional_id, servico_id || null, cliente_nome,
         cliente_email || null, cliente_telefone || null,
         data_inicio, data_fim, observacoes || null,
-        token_cancelamento, dia_todo || false
+        token_cancelamento, dia_todo || false,
+        evento_pessoal || null, tipo_evento || null
       ]
     );
     const ag = result.rows[0];
 
+    // Salva produtos se existirem
+    if (Array.isArray(produtos) && produtos.length > 0) {
+      for (const item of produtos) {
+        const prod = await client.query('SELECT * FROM produtos WHERE id = $1', [item.produto_id]);
+        if (!prod.rows.length) continue;
+        const p = prod.rows[0];
+        await client.query(
+          `INSERT INTO agendamento_produtos (agendamento_id, produto_id, nome_produto, preco_unitario, quantidade)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [ag.id, p.id, p.nome, p.preco || 0, item.quantidade || 1]
+        );
+      }
+    }
+
     // Notificação interna
-    await pool.query(
+    await client.query(
       `INSERT INTO notificacoes (usuario_id, titulo, mensagem) VALUES ($1,$2,$3)`,
       [profissional_id,
        `Novo compromisso: ${cliente_nome}`,
        `${new Date(data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}`]
     ).catch(() => {});
 
+    await client.query('COMMIT');
     res.status(201).json({ ...ag, token_cancelamento });
-  } catch (err) { res.status(500).json({ erro: err.message }); }
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ erro: err.message });
+  } finally { client.release(); }
 });
 
 // ── PATCH /api/agendamentos/:id — atualizar status ────────
@@ -145,14 +183,12 @@ router.patch('/:id', auth(), async (req, res) => {
   const eid       = req.usuario.empresa_id;
 
   try {
-    // Verifica se o agendamento existe e pertence à empresa
     const check = await pool.query(
       `SELECT profissional_id FROM agendamentos WHERE id = $1 AND empresa_id = $2`,
       [req.params.id, eid]
     );
     if (!check.rows.length) return res.status(404).json({ erro: 'Agendamento não encontrado' });
 
-    // Analista só pode editar o próprio agendamento
     if (perfil !== 'admin' && perfil !== 'superadmin') {
       if (check.rows[0].profissional_id !== usuarioId) {
         return res.status(403).json({ erro: 'Você só pode editar seus próprios compromissos' });

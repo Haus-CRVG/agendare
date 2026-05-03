@@ -187,6 +187,20 @@ async function initDB() {
       )
     `);
 
+    // ── AGENDAMENTO PRODUTOS (vínculo pedido ↔ produto) ───
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS agendamento_produtos (
+        id               SERIAL PRIMARY KEY,
+        agendamento_id   INTEGER REFERENCES agendamentos(id) ON DELETE CASCADE,
+        produto_id       INTEGER REFERENCES produtos(id),
+        nome_produto     VARCHAR(200) NOT NULL,
+        preco_unitario   DECIMAL(10,2) NOT NULL DEFAULT 0,
+        quantidade       INTEGER NOT NULL DEFAULT 1,
+        subtotal         DECIMAL(10,2) GENERATED ALWAYS AS (preco_unitario * quantidade) STORED,
+        criado_em        TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     // ── PRODUTOS ───────────────────────────────────────────
     await pool.query(`
       CREATE TABLE IF NOT EXISTS produtos (
