@@ -128,6 +128,22 @@ router.post('/', async (req, res) => {
   try {
     await client.query('BEGIN');
 
+    // Garante que as colunas existem (migration segura)
+    await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS evento_pessoal VARCHAR(50)`).catch(()=>{});
+    await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_evento VARCHAR(50)`).catch(()=>{});
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS agendamento_produtos (
+        id             SERIAL PRIMARY KEY,
+        agendamento_id INTEGER REFERENCES agendamentos(id) ON DELETE CASCADE,
+        produto_id     INTEGER REFERENCES produtos(id),
+        nome_produto   VARCHAR(200) NOT NULL,
+        preco_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
+        quantidade     INTEGER NOT NULL DEFAULT 1,
+        subtotal       DECIMAL(10,2),
+        criado_em      TIMESTAMP DEFAULT NOW()
+      )
+    `).catch(()=>{});
+
     const token_cancelamento = crypto.randomBytes(32).toString('hex');
     const result = await client.query(`
       INSERT INTO agendamentos (
@@ -152,9 +168,9 @@ router.post('/', async (req, res) => {
         if (!prod.rows.length) continue;
         const p = prod.rows[0];
         await client.query(
-          `INSERT INTO agendamento_produtos (agendamento_id, produto_id, nome_produto, preco_unitario, quantidade)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [ag.id, p.id, p.nome, p.preco || 0, item.quantidade || 1]
+          `INSERT INTO agendamento_produtos (agendamento_id, produto_id, nome_produto, preco_unitario, quantidade, subtotal)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [ag.id, p.id, p.nome, p.preco || 0, item.quantidade || 1, (p.preco || 0) * (item.quantidade || 1)]
         );
       }
     }

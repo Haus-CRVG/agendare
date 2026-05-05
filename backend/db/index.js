@@ -196,7 +196,7 @@ async function initDB() {
         nome_produto     VARCHAR(200) NOT NULL,
         preco_unitario   DECIMAL(10,2) NOT NULL DEFAULT 0,
         quantidade       INTEGER NOT NULL DEFAULT 1,
-        subtotal         DECIMAL(10,2) GENERATED ALWAYS AS (preco_unitario * quantidade) STORED,
+        subtotal         DECIMAL(10,2),
         criado_em        TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -219,6 +219,17 @@ async function initDB() {
     `);
 
     // Adiciona colunas novas se não existirem (para bancos já criados)
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS unidade VARCHAR(50) DEFAULT 'unidade'`).catch(()=>{});
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS tempo_preparo INTEGER`).catch(()=>{});
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS imagem_url TEXT`).catch(()=>{});
+
+    // ── MIGRATIONS SEGURAS (adiciona colunas que podem não existir) ───────
+    await pool.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS dia_todo BOOLEAN DEFAULT false`).catch(()=>{});
+    await pool.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS evento_pessoal VARCHAR(50)`).catch(()=>{});
+    await pool.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_evento VARCHAR(50)`).catch(()=>{});
+    await pool.query(`ALTER TABLE empresas ADD COLUMN IF NOT EXISTS imagem_fundo_url TEXT`).catch(()=>{});
+    await pool.query(`ALTER TABLE empresas ADD COLUMN IF NOT EXISTS imagem_fundo_opacidade INTEGER DEFAULT 12`).catch(()=>{});
+    await pool.query(`ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS cor_agenda VARCHAR(10) DEFAULT '#0d9488'`).catch(()=>{});
     await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS unidade VARCHAR(50) DEFAULT 'unidade'`).catch(()=>{});
     await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS tempo_preparo INTEGER`).catch(()=>{});
     await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS imagem_url TEXT`).catch(()=>{});

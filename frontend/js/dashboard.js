@@ -98,7 +98,6 @@ async function carregarModulos() {
     window._modulosAtivos = mods;
     const tem = m => mods.includes(m);
 
-    // Módulos que aparecem na sidebar
     const menuMap = {
       clientes:   'menuClientes',
       produtos:   'menuProdutos',
@@ -117,6 +116,13 @@ async function carregarModulos() {
 
     const secao = document.getElementById('sidebarModulos');
     if (secao) secao.style.display = temAlgum ? 'block' : 'none';
+
+    // Pré-carrega produtos em background se módulo ativo
+    if (tem('produtos')) {
+      apiFetch('/produtos').then(data => {
+        produtosCache = Array.isArray(data) ? data.filter(p => p.ativo !== false) : [];
+      }).catch(() => {});
+    }
   } catch(e) { console.warn('Módulos não carregados:', e.message); }
 }
 

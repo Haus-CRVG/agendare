@@ -54,9 +54,9 @@ router.put('/:agendamento_id', auth(), async (req, res) => {
       if (!prod.rows.length) continue;
       const p = prod.rows[0];
       await client.query(
-        `INSERT INTO agendamento_produtos (agendamento_id, produto_id, nome_produto, preco_unitario, quantidade)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [aid, p.id, p.nome, p.preco || 0, item.quantidade || 1]
+        `INSERT INTO agendamento_produtos (agendamento_id, produto_id, nome_produto, preco_unitario, quantidade, subtotal)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [aid, p.id, p.nome, p.preco || 0, item.quantidade || 1, (p.preco || 0) * (item.quantidade || 1)]
       );
     }
     await client.query('COMMIT');
