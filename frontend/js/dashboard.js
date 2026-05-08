@@ -2190,4 +2190,22 @@ function toggleConvidarExterno(chk) {
   if (campo) campo.style.display = chk.checked ? 'block' : 'none';
 }
 
+// Tema Dark
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const novo = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', novo);
+  localStorage.setItem('tema', novo);
+  document.getElementById('btnDarkMode').textContent = novo === 'dark' ? '☀️' : '🌙';
+}
+
+// Restaura preferência ao carregar — cole no <head> para evitar flash
+(function() {
+  const tema = localStorage.getItem('tema') || 
+               (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  if (tema === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+
 init();

@@ -41,6 +41,30 @@
   --font:      'DM Sans', 'Inter', system-ui, sans-serif;
   --mono:      'DM Mono', monospace;
 }
+/* ── TEMA DARK ──────────────────────────────────────────────── */
+/* ── DARK MODE ─────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:          #0f172a;
+  --surface:     #1e293b;
+  --surface2:    #263348;
+  --surface3:    #2d3f57;
+  --border:      #334155;
+  --border2:     #475569;
+  --border-soft: rgba(255,255,255,0.06);
+
+  --text:   #f1f5f9;
+  --text2:  #cbd5e1;
+  --muted:  #94a3b8;
+  --muted2: #64748b;
+
+  --shadow:    0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+
+  --accent-soft: rgba(13,148,136,0.15);
+  --accent-bord: rgba(13,148,136,0.35);
+  --accent-sa-soft: rgba(79,110,247,0.15);
+  --accent-sa-bord: rgba(79,110,247,0.35);
+}
 
 /* ── BASE ──────────────────────────────────────────────────── */
 html, body {
