@@ -881,6 +881,19 @@
       <div class="form-group"><label>Título <span style="color:var(--accent)">*</span></label><input type="text"
           id="agTitulo" placeholder="Ex: Reunião com cliente..." /></div>
 
+      <!-- Campo cliente (só aparece se módulo clientes ativo) -->
+      <div class="form-group" id="campoClienteAg" style="display:none">
+        <label>👥 Cliente</label>
+        <div style="position:relative">
+          <input type="text" id="agClienteInput" placeholder="Buscar cliente cadastrado..."
+            oninput="buscarClienteAg(this.value)"
+            autocomplete="off"
+            style="width:100%"/>
+          <input type="hidden" id="agClienteId"/>
+          <div id="sugestoesClienteAg" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:180px;overflow-y:auto;box-shadow:var(--shadow-lg);margin-top:2px"></div>
+        </div>
+      </div>
+
       <!-- Datas -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
         <div class="form-group"><label>Data início <span style="color:var(--accent)">*</span></label><input type="date" id="agData" /></div>

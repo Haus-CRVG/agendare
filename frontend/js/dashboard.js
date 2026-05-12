@@ -957,6 +957,16 @@ function abrirNovoAgendamento() {
   const _tipoEv=document.getElementById('agTipoEventoPessoal');
   if(_tipoEv) _tipoEv.value='';
 
+  // Campo cliente — mostra se módulo ativo
+  const campoCliente = document.getElementById('campoClienteAg');
+  if (campoCliente) {
+    const temClientes = window._modulosAtivos?.includes('clientes');
+    campoCliente.style.display = temClientes ? 'block' : 'none';
+    document.getElementById('agClienteInput').value = '';
+    document.getElementById('agClienteId').value = '';
+    document.getElementById('sugestoesClienteAg').style.display = 'none';
+  }
+
   // Reset carrinho
   carrinhoAgendamento = [];
   const buscaEl = document.getElementById('buscaProdutoAg');
@@ -975,7 +985,45 @@ function abrirNovoAgendamento() {
   document.getElementById('modalAgendamento').classList.add('active');
 }
 
-// ── Carrinho de Produtos no Agendamento ───────────────────
+// ── Busca cliente no modal de agendamento ─────────────────
+let _clienteAgTimer = null;
+function buscarClienteAg(busca) {
+  clearTimeout(_clienteAgTimer);
+  const sug = document.getElementById('sugestoesClienteAg');
+  const idEl = document.getElementById('agClienteId');
+  idEl.value = '';
+  if (!busca || busca.length < 2) { sug.style.display = 'none'; return; }
+  _clienteAgTimer = setTimeout(async () => {
+    try {
+      const data = await apiFetch(`/clientes?busca=${encodeURIComponent(busca)}`);
+      if (!data.length) { sug.style.display = 'none'; return; }
+      sug.innerHTML = data.map(c => `
+        <div onclick="selecionarClienteAg(${c.id},'${c.nome.replace(/'/g,"\\'")}','${(c.telefone||'').replace(/'/g,"\\'")}','${(c.email||'').replace(/'/g,"\\'")}' )"
+          style="padding:0.6rem 1rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.88rem;transition:background 0.1s"
+          onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+          <div style="font-weight:600">${c.nome}</div>
+          <div style="font-size:0.75rem;color:var(--muted)">${[c.telefone,c.email].filter(Boolean).join(' · ')||'Sem contato'}</div>
+        </div>`).join('');
+      sug.style.display = 'block';
+    } catch(e) { sug.style.display = 'none'; }
+  }, 300);
+}
+
+function selecionarClienteAg(id, nome, tel, email) {
+  document.getElementById('agClienteInput').value = nome;
+  document.getElementById('agClienteId').value = id;
+  document.getElementById('sugestoesClienteAg').style.display = 'none';
+  // Preenche título se estiver vazio
+  const titulo = document.getElementById('agTitulo');
+  if (titulo && !titulo.value) titulo.value = nome;
+}
+
+// Fecha sugestões ao clicar fora
+document.addEventListener('click', e => {
+  const sug = document.getElementById('sugestoesClienteAg');
+  const inp = document.getElementById('agClienteInput');
+  if (sug && inp && !sug.contains(e.target) && e.target !== inp) sug.style.display = 'none';
+});
 function filtrarProdutosAg(busca) {
   const sug = document.getElementById('sugestoesProdutosAg');
   if (!busca || busca.length < 1) { sug.style.display = 'none'; return; }
@@ -2190,7 +2238,6 @@ function toggleConvidarExterno(chk) {
   if (campo) campo.style.display = chk.checked ? 'block' : 'none';
 }
 
-// Tema Dark
 function toggleDark() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const novo = isDark ? 'light' : 'dark';

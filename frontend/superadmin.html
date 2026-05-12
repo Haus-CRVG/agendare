@@ -152,8 +152,8 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
   <div class="topbar-right">
     <span class="badge-sa">⚡ Super Admin</span>
     <span style="color:var(--text2);font-weight:500;font-size:13px" id="nomeAdminEl"></span>
-    <button class="btn-logout" onclick="logout()">Sair</button>
     <button class="btn-icon" id="btnDarkMode" title="Alternar tema" onclick="toggleDark()">🌙</button>
+    <button class="btn-logout" onclick="logout()">Sair</button>
   </div>
 </div>
 
@@ -260,6 +260,30 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
       </div>
 
       <hr class="form-divider"/>
+      <div class="form-section-title">🔧 Modo de Operação</div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Define como os clientes fazem agendamentos pelo link público.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--surface2);border:2px solid var(--accent);border-radius:10px;cursor:pointer;transition:border-color .15s" id="labelNModoServico">
+          <input type="checkbox" name="nModo" value="servicos" id="nModoServicos" checked
+            style="accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex-shrink:0"
+            onchange="toggleModoLabel('nModoServicos','labelNModoServico')"/>
+          <div>
+            <div style="font-weight:700;font-size:13px">🛠️ Serviços</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Salão, clínica. Cliente escolhe serviço e profissional.</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s" id="labelNModoProduto">
+          <input type="checkbox" name="nModo" value="produtos" id="nModoProdutos"
+            style="accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex-shrink:0"
+            onchange="toggleModoLabel('nModoProdutos','labelNModoProduto')"/>
+          <div>
+            <div style="font-weight:700;font-size:13px">📦 Produtos</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">Confeitaria, loja. Cliente monta carrinho e escolhe data/período.</div>
+          </div>
+        </label>
+      </div>
+
+      <hr class="form-divider"/>
       <div class="form-section-title">🧩 Módulos Ativos</div>
       <p style="font-size:0.8rem;color:var(--muted);margin-bottom:1rem">Selecione quais módulos esta empresa terá acesso.</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.6rem" id="modulosCheckboxNova">
@@ -327,6 +351,25 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
         <option value="suspenso">⏸️ Suspenso</option>
         <option value="cancelado">❌ Cancelado</option>
       </select>
+    </div>
+
+    <hr class="form-divider" style="margin:1rem 0"/>
+    <div class="form-section-title">🔧 Modo de Operação</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s" id="labelEModoServico">
+        <input type="checkbox" name="eModo" value="servicos" id="eModoServicos"
+          style="accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex-shrink:0"
+          onchange="toggleModoLabel('eModoServicos','labelEModoServico')"/>
+        <div><div style="font-weight:700;font-size:13px">🛠️ Serviços</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Escolhe serviço e profissional</div></div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s" id="labelEModoProduto">
+        <input type="checkbox" name="eModo" value="produtos" id="eModoProdutos"
+          style="accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex-shrink:0"
+          onchange="toggleModoLabel('eModoProdutos','labelEModoProduto')"/>
+        <div><div style="font-weight:700;font-size:13px">📦 Produtos</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Monta carrinho e escolhe data</div></div>
+      </label>
     </div>
 
     <hr class="form-divider" style="margin:1rem 0"/>
@@ -550,6 +593,12 @@ async function toggleInline(id, nome, tr) {
     }).join('')}</div>`;
 }
 
+function toggleModoLabel(chkId, labelId) {
+  const chk = document.getElementById(chkId);
+  const lbl = document.getElementById(labelId);
+  if (lbl) lbl.style.borderColor = chk?.checked ? 'var(--accent)' : 'var(--border)';
+}
+
 async function criarEmpresa() {
   const cnpj=document.getElementById('nCnpj').value.trim(), nome=document.getElementById('nNome').value.trim();
   const email=document.getElementById('nEmail').value.trim(), tel=document.getElementById('nTelefone').value.trim();
@@ -562,17 +611,21 @@ async function criarEmpresa() {
   if (!aNome||!aEmail||!aSenha) { erro.textContent='Preencha os dados do administrador inicial.'; erro.style.display='block'; return; }
   document.getElementById('btnNovaText').textContent='Criando…';
   document.getElementById('spinnerNova').style.display='inline-block';
-  const r = await req('POST','/empresas',{ cnpj:cnpj.replace(/\D/g,''), nome_fantasia:nome, email:email||null, telefone:tel||null, slug, cor_primaria:cor, vencimento:venc, admin_nome:aNome, admin_email:aEmail, admin_senha:aSenha });
+  // Calcula modo_operacao
+  const modosSel=[...document.querySelectorAll('input[name="nModo"]:checked')].map(c=>c.value);
+  const modoOp=modosSel.includes('servicos')&&modosSel.includes('produtos')?'ambos':modosSel.includes('produtos')?'produtos':'servicos';
+  const r = await req('POST','/empresas',{ cnpj:cnpj.replace(/\D/g,''), nome_fantasia:nome, email:email||null, telefone:tel||null, slug, cor_primaria:cor, vencimento:venc, modo_operacao:modoOp, admin_nome:aNome, admin_email:aEmail, admin_senha:aSenha });
   document.getElementById('btnNovaText').textContent='Cadastrar Empresa';
   document.getElementById('spinnerNova').style.display='none';
   if (!r||r.erro) { erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
-  // Salva módulos selecionados
-  const modulosSel = [...document.querySelectorAll('input[name="nModulo"]:checked')].map(c=>c.value);
+  const modulosSel=[...document.querySelectorAll('input[name="nModulo"]:checked')].map(c=>c.value);
   if (modulosSel.length) await req('PUT',`/modulos/${r.id}`,{ modulos:modulosSel });
   suc.textContent='✅ Empresa "'+nome+'" cadastrada com sucesso!'; suc.style.display='block';
   toast('✅ Empresa "'+nome+'" criada!');
   ['nCnpj','nNome','nEmail','nTelefone','nSlug','nAdminNome','nAdminEmail','nAdminSenha','nVencimento'].forEach(id=>document.getElementById(id).value='');
   document.querySelectorAll('input[name="nModulo"]').forEach(c=>c.checked=false);
+  document.getElementById('nModoServicos').checked=true; toggleModoLabel('nModoServicos','labelNModoServico');
+  document.getElementById('nModoProdutos').checked=false; toggleModoLabel('nModoProdutos','labelNModoProduto');
   document.getElementById('nCor').value='#4f6ef7'; document.getElementById('nCorBall').style.background='#4f6ef7'; document.getElementById('slugPrev').textContent='slug';
   setTimeout(()=>{ suc.style.display='none'; mudarAba('empresas'); carregarEmpresas(); },2000);
 }
@@ -591,15 +644,15 @@ async function abrirEditar(id) {
   const cor=e.cor_primaria||'#4f6ef7';
   document.getElementById('editCor').value=cor; document.getElementById('editCorBall').style.background=cor;
   document.getElementById('erroEditar').style.display='none';
-  // Carrega módulos ativos da empresa
+  // Carrega modo de operação
+  const modo=e.modo_operacao||'servicos';
+  const eS=document.getElementById('eModoServicos'), eP=document.getElementById('eModoProdutos');
+  if(eS){ eS.checked=modo==='servicos'||modo==='ambos'; toggleModoLabel('eModoServicos','labelEModoServico'); }
+  if(eP){ eP.checked=modo==='produtos'||modo==='ambos'; toggleModoLabel('eModoProdutos','labelEModoProduto'); }
+  // Carrega módulos ativos
   document.querySelectorAll('input[name="eModulo"]').forEach(c=>c.checked=false);
-  const mods = await req('GET',`/modulos/${id}`);
-  if (Array.isArray(mods)) {
-    mods.filter(m=>m.ativo).forEach(m=>{
-      const chk = document.querySelector(`input[name="eModulo"][value="${m.modulo}"]`);
-      if(chk) chk.checked=true;
-    });
-  }
+  const mods=await req('GET',`/modulos/${id}`);
+  if(Array.isArray(mods)) mods.filter(m=>m.ativo).forEach(m=>{ const chk=document.querySelector(`input[name="eModulo"][value="${m.modulo}"]`); if(chk)chk.checked=true; });
   document.getElementById('modalEditar').classList.add('active');
 }
 
@@ -610,11 +663,12 @@ async function salvarEmpresa() {
   const cor=document.getElementById('editCor').value, status=document.getElementById('editStatus').value;
   const fundo=document.getElementById('editFundo').value.trim()||null, venc=document.getElementById('editVencimento').value||null;
   const erro=document.getElementById('erroEditar');
-  if (!nome) { erro.textContent='Nome é obrigatório.'; erro.style.display='block'; return; }
+  if(!nome){ erro.textContent='Nome é obrigatório.'; erro.style.display='block'; return; }
   erro.style.display='none';
-  const r=await req('PATCH','/empresas/'+id,{ nome_fantasia:nome, cnpj:cnpj.replace(/\D/g,''), email:email||null, telefone:tel||null, slug, cor_primaria:cor, status, imagem_fundo_url:fundo, vencimento:venc });
-  if (!r||r.erro) { erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
-  // Salva módulos
+  const modosSel=[...document.querySelectorAll('input[name="eModo"]:checked')].map(c=>c.value);
+  const modoOp=modosSel.includes('servicos')&&modosSel.includes('produtos')?'ambos':modosSel.includes('produtos')?'produtos':'servicos';
+  const r=await req('PATCH','/empresas/'+id,{ nome_fantasia:nome, cnpj:cnpj.replace(/\D/g,''), email:email||null, telefone:tel||null, slug, cor_primaria:cor, status, imagem_fundo_url:fundo, vencimento:venc, modo_operacao:modoOp });
+  if(!r||r.erro){ erro.textContent=(r&&r.erro)?r.erro:'Erro de conexão.'; erro.style.display='block'; return; }
   const modulosSel=[...document.querySelectorAll('input[name="eModulo"]:checked')].map(c=>c.value);
   await req('PUT',`/modulos/${id}`,{ modulos:modulosSel });
   fecharModal('modalEditar'); toast('✅ Empresa atualizada!'); carregarEmpresas();

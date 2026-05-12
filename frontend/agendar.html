@@ -4,59 +4,116 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agendar</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="icon" href="assets/favicon.png" />
-  <link rel="shortcut icon" href="assets/favicon.png" />
   <style>
-    body { display:flex; flex-direction:column; min-height:100vh; }
+    body { display:flex; flex-direction:column; min-height:100vh; background:var(--bg); }
+
     .pub-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 1rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0.9rem 2rem; display:flex; align-items:center; gap:12px;
+      position:sticky; top:0; z-index:10;
     }
     .pub-logo { font-family:'Syne',sans-serif; font-weight:800; font-size:1.2rem; color:var(--accent); }
     .pub-logo span { color:var(--text); }
-    .pub-empresa { font-size:0.88rem; color:var(--muted); border-left:1px solid var(--border); padding-left:12px; margin-left:4px; }
+    .pub-empresa { font-size:0.85rem; color:var(--muted); border-left:1px solid var(--border); padding-left:12px; margin-left:4px; }
+
     .pub-content { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:2rem 1rem; }
-    .pub-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow-lg); width:100%; max-width:540px; overflow:hidden; }
-    .pub-card-header { padding:1.5rem 2rem; border-bottom:1px solid var(--border); }
-    .pub-card-header h2 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--text); }
-    .pub-card-body { padding:1.5rem 2rem; }
-    .steps { display:flex; gap:0; margin-bottom:1.5rem; }
-    .step-dot {
-      flex:1; height:4px; border-radius:999px;
-      background:var(--border); transition:background 0.3s;
+    .pub-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:20px; box-shadow:var(--shadow-lg);
+      width:100%; max-width:560px; overflow:hidden;
     }
+    .pub-card-header { padding:1.5rem 2rem; border-bottom:1px solid var(--border); }
+    .pub-card-body   { padding:1.5rem 2rem; }
+    .pub-footer { text-align:center; padding:1.25rem; color:var(--muted2); font-size:0.72rem; border-top:1px solid var(--border); }
+
+    /* Steps */
+    .steps { display:flex; gap:4px; margin-bottom:0.6rem; }
+    .step-dot { flex:1; height:4px; border-radius:999px; background:var(--border); transition:background 0.3s; }
     .step-dot.ativo { background:var(--accent); }
-    .step-dot + .step-dot { margin-left:4px; }
-    .step-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); margin-bottom:1.2rem; }
+    .step-label { display:flex; justify-content:space-between; font-size:0.68rem; color:var(--muted); margin-bottom:1rem; }
+
+    /* Opção card */
     .opcao-card {
       display:flex; align-items:center; gap:12px;
-      border:2px solid var(--border); border-radius:10px;
+      border:2px solid var(--border); border-radius:12px;
       padding:12px 14px; cursor:pointer; margin-bottom:0.5rem;
       transition:all 0.15s; background:var(--surface);
     }
-    .opcao-card:hover { border-color:var(--accent); background:rgba(13,148,136,0.04); }
-    .opcao-card.selecionado { border-color:var(--accent); background:rgba(13,148,136,0.08); }
-    .opcao-cor { width:10px; height:40px; border-radius:999px; flex-shrink:0; }
-    .opcao-nome { font-weight:600; font-size:0.9rem; color:var(--text); }
-    .opcao-sub { font-size:0.78rem; color:var(--muted); }
-    .pub-footer { text-align:center; padding:1.5rem; color:var(--muted2); font-size:0.75rem; border-top:1px solid var(--border); }
+    .opcao-card:hover   { border-color:var(--accent); background:var(--accent-soft); }
+    .opcao-card.selecionado { border-color:var(--accent); background:var(--accent-soft); }
+    .opcao-cor  { width:8px; height:44px; border-radius:999px; flex-shrink:0; }
+    .opcao-nome { font-weight:700; font-size:0.92rem; color:var(--text); }
+    .opcao-sub  { font-size:0.78rem; color:var(--muted); margin-top:2px; }
 
-    /* Sucesso */
-    .sucesso-wrap { text-align:center; padding:2rem 0; }
-    .sucesso-icon { font-size:3rem; margin-bottom:1rem; }
-    .sucesso-titulo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; color:var(--text); margin-bottom:0.5rem; }
-    .sucesso-sub { font-size:0.9rem; color:var(--muted); margin-bottom:1.5rem; }
-    .detalhe-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; text-align:left; margin-bottom:1.5rem; }
+    /* Produto card no catálogo */
+    .prod-card {
+      display:flex; align-items:center; gap:12px;
+      border:1px solid var(--border); border-radius:12px;
+      padding:12px 14px; margin-bottom:0.5rem;
+      background:var(--surface); transition:box-shadow 0.15s;
+    }
+    .prod-card:hover { box-shadow:var(--shadow); }
+    .prod-img {
+      width:56px; height:56px; border-radius:10px;
+      object-fit:cover; flex-shrink:0; background:var(--surface2);
+      display:flex; align-items:center; justify-content:center; font-size:1.5rem;
+    }
+    .prod-qtd-ctrl {
+      display:flex; align-items:center; gap:6px; flex-shrink:0;
+    }
+    .prod-qtd-btn {
+      width:28px; height:28px; border-radius:8px;
+      border:1px solid var(--border); background:var(--surface2);
+      cursor:pointer; font-size:1rem; font-weight:700;
+      display:flex; align-items:center; justify-content:center;
+      transition:all 0.15s; color:var(--text);
+    }
+    .prod-qtd-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+    .prod-qtd-num { min-width:24px; text-align:center; font-weight:700; font-size:0.9rem; }
+
+    /* Carrinho */
+    .carrinho-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 12px; background:var(--surface2);
+      border:1px solid var(--border); border-radius:10px; margin-bottom:6px;
+      font-size:0.88rem;
+    }
+    .carrinho-total {
+      display:flex; justify-content:space-between; align-items:center;
+      background:var(--accent-soft); border:1px solid var(--accent-bord);
+      border-radius:10px; padding:10px 14px; margin-top:10px;
+    }
+
+    /* Período */
+    .periodo-card {
+      border:2px solid var(--border); border-radius:12px;
+      padding:16px; cursor:pointer; text-align:center;
+      transition:all 0.15s; background:var(--surface);
+    }
+    .periodo-card:hover   { border-color:var(--accent); background:var(--accent-soft); }
+    .periodo-card.selecionado { border-color:var(--accent); background:var(--accent-soft); }
+    .periodo-icon { font-size:2rem; margin-bottom:6px; }
+    .periodo-nome { font-weight:700; font-size:0.95rem; color:var(--text); }
+    .periodo-hora { font-size:0.78rem; color:var(--muted); margin-top:2px; }
+
+    /* Detalhe box */
+    .detalhe-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem 1.2rem; margin-bottom:1rem; }
     .detalhe-linha { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.88rem; }
     .detalhe-linha:last-child { border-bottom:none; }
     .detalhe-label { color:var(--muted); }
-    .detalhe-val { font-weight:600; color:var(--text); }
+    .detalhe-val   { font-weight:600; color:var(--text); text-align:right; max-width:60%; }
+
+    /* Sucesso */
+    .sucesso-wrap { text-align:center; padding:1.5rem 0; }
+    .sucesso-icon  { font-size:3rem; margin-bottom:1rem; }
+    .sucesso-titulo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; color:var(--text); margin-bottom:0.5rem; }
+    .sucesso-sub   { font-size:0.88rem; color:var(--muted); margin-bottom:1.5rem; }
+
+    /* Calendário */
+    .calendario-nav { display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem; }
   </style>
 </head>
 <body>
@@ -69,17 +126,9 @@
 <div class="pub-content">
   <div class="pub-card">
     <div class="pub-card-header">
-      <div class="steps" id="stepsBar">
-        <div class="step-dot ativo"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-        <div class="step-dot"></div>
-      </div>
-      <div class="step-label">
-        <span>Serviço</span><span>Profissional</span><span>Data</span><span>Horário</span><span>Dados</span>
-      </div>
-      <h2 id="pubTitulo">Escolha o serviço</h2>
+      <div class="steps" id="stepsBar"></div>
+      <div class="step-label" id="stepsLabel"></div>
+      <h2 id="pubTitulo" style="font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:var(--text)"></h2>
     </div>
     <div class="pub-card-body" id="pubBody">
       <p style="color:var(--muted)">Carregando...</p>
@@ -90,289 +139,607 @@
 
 <script>
 const API = 'https://agendare-backend-production.up.railway.app/api';
-// Pega slug da URL: /agendar?empresa=minha-empresa
 const params = new URLSearchParams(window.location.search);
 const slug = params.get('empresa') || params.get('slug');
 
-let empresaId = null, etapa = 1;
-let selecionado = { servico: null, profissional: null, data: null, horario: null };
+let empresaId = null, modoOp = 'servicos';
+let etapa = 1, totalEtapas = 5;
+let sel = { servico:null, profissional:null, data:null, periodo:null, horario:null };
+let carrinho = []; // [{ produto_id, nome, preco, unidade, quantidade }]
 let calAtual = new Date();
+let produtosEmpresa = [];
 
-// ── Inicialização ──────────────────────────────────────────
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DIAS  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+// ── INIT ──────────────────────────────────────────────────
 async function init() {
   if (!slug) { mostrarErro('Link de agendamento inválido.'); return; }
   try {
     const r = await fetch(`${API}/empresas/slug/${slug}`);
     if (!r.ok) { mostrarErro('Empresa não encontrada.'); return; }
     const empresa = await r.json();
-    empresaId = empresa.id;
-    document.getElementById('pubEmpresaNome').textContent = empresa.nome;
-    document.title = `Agendar — ${empresa.nome}`;
-    if (empresa.cor) {
-      document.documentElement.style.setProperty('--accent', empresa.cor);
+    empresaId  = empresa.id;
+    modoOp     = empresa.modo_operacao || 'servicos';
+    document.getElementById('pubEmpresaNome').textContent = empresa.nome_fantasia || empresa.nome;
+    document.title = `Agendar — ${empresa.nome_fantasia || empresa.nome}`;
+    if (empresa.cor_primaria) {
+      const cor = empresa.cor_primaria;
+      document.documentElement.style.setProperty('--accent', cor);
+      try {
+        const r2 = parseInt(cor.slice(1,3),16), g2 = parseInt(cor.slice(3,5),16), b2 = parseInt(cor.slice(5,7),16);
+        document.documentElement.style.setProperty('--accent-soft', `rgba(${r2},${g2},${b2},0.10)`);
+        document.documentElement.style.setProperty('--accent-bord', `rgba(${r2},${g2},${b2},0.30)`);
+      } catch(e){}
     }
-    carregarEtapa1();
-  } catch { mostrarErro('Erro ao carregar. Tente novamente.'); }
+
+    // Pré-carrega produtos se modo produtos
+    if (modoOp === 'produtos' || modoOp === 'ambos') {
+      try {
+        const rp = await fetch(`${API}/produtos?empresa_id=${empresaId}`);
+        if (rp.ok) produtosEmpresa = (await rp.json()).filter(p => p.ativo !== false);
+      } catch(e){}
+    }
+
+    // Define steps conforme modo
+    if (modoOp === 'produtos') {
+      totalEtapas = 4;
+      atualizarSteps(['Produtos','Data','Período','Seus dados']);
+    } else if (modoOp === 'ambos') {
+      // Mostra escolha de modo primeiro
+      totalEtapas = 6;
+      atualizarSteps(['Modo','Serviço/Produto','Profissional','Data','Horário','Dados']);
+      return mostrarEscolhaModo();
+    } else {
+      totalEtapas = 5;
+      atualizarSteps(['Serviço','Profissional','Data','Horário','Dados']);
+    }
+
+    if (modoOp === 'produtos') carregarEtapaProdutos();
+    else carregarEtapa1Servico();
+  } catch(e) { mostrarErro('Erro ao carregar. Tente novamente.'); }
 }
 
+// ── STEPS ─────────────────────────────────────────────────
+function atualizarSteps(labels) {
+  document.getElementById('stepsBar').innerHTML =
+    labels.map((_,i) => `<div class="step-dot ${i < etapa ? 'ativo' : ''}"></div>`).join('');
+  document.getElementById('stepsLabel').innerHTML =
+    labels.map(l => `<span>${l}</span>`).join('');
+}
+
+function setTitulo(t) { document.getElementById('pubTitulo').textContent = t; }
 function mostrarErro(msg) {
   document.getElementById('pubBody').innerHTML = `<div class="alert alert-error">${msg}</div>`;
 }
 
-// ── ETAPA 1: Serviço ──────────────────────────────────────
-async function carregarEtapa1() {
-  etapa = 1; atualizarSteps();
-  document.getElementById('pubTitulo').textContent = '🛠️ Escolha o serviço';
+// ── MODO AMBOS: escolha ────────────────────────────────────
+function mostrarEscolhaModo() {
+  etapa = 1;
+  atualizarSteps(['Modo','Serviço/Produto','Profissional','Data','Horário','Dados']);
+  setTitulo('🏪 Como deseja agendar?');
+  document.getElementById('pubBody').innerHTML = `
+    <div class="opcao-card" onclick="escolherModo('servicos')">
+      <div class="opcao-cor" style="background:var(--accent)"></div>
+      <div>
+        <div class="opcao-nome">🛠️ Contratar um Serviço</div>
+        <div class="opcao-sub">Escolha o serviço, profissional, data e horário</div>
+      </div>
+    </div>
+    <div class="opcao-card" onclick="escolherModo('produtos')">
+      <div class="opcao-cor" style="background:#f59e0b"></div>
+      <div>
+        <div class="opcao-nome">📦 Fazer um Pedido</div>
+        <div class="opcao-sub">Monte seu carrinho e escolha a data de entrega</div>
+      </div>
+    </div>`;
+}
+
+function escolherModo(modo) {
+  modoOp = modo;
+  etapa = 2;
+  if (modo === 'produtos') {
+    totalEtapas = 5; // modo + produtos + data + periodo + dados
+    atualizarSteps(['Modo','Produtos','Data','Período','Dados']);
+    carregarEtapaProdutos();
+  } else {
+    totalEtapas = 6;
+    atualizarSteps(['Modo','Serviço','Profissional','Data','Horário','Dados']);
+    carregarEtapa1Servico();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// FLUXO SERVIÇOS
+// ══════════════════════════════════════════════════════════
+async function carregarEtapa1Servico() {
+  setTitulo('🛠️ Escolha o serviço');
   document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Carregando serviços...</p>';
   try {
     const r = await fetch(`${API}/servicos?empresa_id=${empresaId}`);
     const servicos = await r.json();
     if (!servicos.length) { mostrarErro('Nenhum serviço disponível.'); return; }
     document.getElementById('pubBody').innerHTML = servicos.map(s => `
-      <div class="opcao-card ${selecionado.servico?.id === s.id ? 'selecionado' : ''}" onclick="selecionarServico(${s.id},'${s.nome.replace(/'/g,"\\'")}','${s.cor||'#0d9488'}')">
+      <div class="opcao-card ${sel.servico?.id===s.id?'selecionado':''}"
+        onclick="selecionarServico(${s.id},'${esc(s.nome)}','${s.cor||'#0d9488'}',this)">
         <div class="opcao-cor" style="background:${s.cor||'#0d9488'}"></div>
         <div>
           <div class="opcao-nome">${s.nome}</div>
-          <div class="opcao-sub">${s.duracao_minutos} min${s.preco ? ' · R$ ' + parseFloat(s.preco).toFixed(2).replace('.',',') : ''}</div>
+          <div class="opcao-sub">${s.duracao_minutos} min${s.preco?` · R$ ${fmt(s.preco)}`:''}${s.descricao?` · ${s.descricao}`:''}</div>
         </div>
-      </div>`).join('') + `
-      <button class="btn btn-primary" style="width:100%;margin-top:1rem" onclick="irEtapa2()" ${!selecionado.servico ? 'disabled' : ''} id="btnProx1">
-        Próximo →
-      </button>`;
+      </div>`).join('') +
+      btnNav(modoOp==='ambos'?mostrarEscolhaModo:null, irEtapa2Prof, !sel.servico, 'btnProx1');
   } catch { mostrarErro('Erro ao carregar serviços.'); }
 }
 
-function selecionarServico(id, nome, cor) {
-  selecionado.servico = { id, nome, cor };
-  selecionado.profissional = null; selecionado.data = null; selecionado.horario = null;
+function selecionarServico(id, nome, cor, el) {
+  sel.servico = { id, nome, cor };
+  sel.profissional = sel.data = sel.horario = null;
   document.querySelectorAll('.opcao-card').forEach(c => c.classList.remove('selecionado'));
-  event.currentTarget.classList.add('selecionado');
+  el.classList.add('selecionado');
   const btn = document.getElementById('btnProx1');
   if (btn) btn.disabled = false;
 }
 
-// ── ETAPA 2: Profissional ──────────────────────────────────
-async function irEtapa2() {
-  if (!selecionado.servico) return;
-  etapa = 2; atualizarSteps();
-  document.getElementById('pubTitulo').textContent = '👤 Escolha o profissional';
+async function irEtapa2Prof() {
+  if (!sel.servico) return;
+  etapa = modoOp==='ambos' ? 3 : 2;
+  atualizarStepsAtual();
+  setTitulo('👤 Escolha o profissional');
   document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Carregando...</p>';
   try {
-    const r = await fetch(`${API}/profissionais?empresa_id=${empresaId}&servico_id=${selecionado.servico.id}`);
+    const r = await fetch(`${API}/profissionais?empresa_id=${empresaId}&servico_id=${sel.servico.id}`);
     const profs = await r.json();
     if (!profs.length) { mostrarErro('Nenhum profissional disponível para este serviço.'); return; }
     document.getElementById('pubBody').innerHTML = profs.map(p => `
-      <div class="opcao-card ${selecionado.profissional?.id === p.id ? 'selecionado' : ''}" onclick="selecionarProf(${p.id},'${p.nome.replace(/'/g,"\\'")}')">
-        <div style="width:40px;height:40px;border-radius:50%;background:${selecionado.servico.cor};display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;flex-shrink:0;">${p.nome.charAt(0).toUpperCase()}</div>
+      <div class="opcao-card ${sel.profissional?.id===p.id?'selecionado':''}"
+        onclick="selecionarProf(${p.id},'${esc(p.nome)}',this)">
+        <div style="width:44px;height:44px;border-radius:50%;background:${sel.servico.cor};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.1rem;flex-shrink:0">${p.nome.charAt(0).toUpperCase()}</div>
         <div>
           <div class="opcao-nome">${p.nome}</div>
-          <div class="opcao-sub">${p.perfil === 'admin' ? 'Administrador' : 'Profissional'}</div>
+          <div class="opcao-sub">${p.perfil==='admin'?'Administrador':'Profissional'}</div>
         </div>
-      </div>`).join('') + `
-      <div style="display:flex;gap:0.5rem;margin-top:1rem">
-        <button class="btn btn-secondary" style="flex:1" onclick="carregarEtapa1()">← Voltar</button>
-        <button class="btn btn-primary" style="flex:2" onclick="irEtapa3()" ${!selecionado.profissional ? 'disabled' : ''} id="btnProx2">Próximo →</button>
-      </div>`;
+      </div>`).join('') +
+      btnNav(carregarEtapa1Servico, irEtapa3Data, !sel.profissional, 'btnProx2');
   } catch { mostrarErro('Erro ao carregar profissionais.'); }
 }
 
-function selecionarProf(id, nome) {
-  selecionado.profissional = { id, nome };
-  selecionado.data = null; selecionado.horario = null;
+function selecionarProf(id, nome, el) {
+  sel.profissional = { id, nome };
+  sel.data = sel.horario = null;
   document.querySelectorAll('.opcao-card').forEach(c => c.classList.remove('selecionado'));
-  event.currentTarget.classList.add('selecionado');
-  const btn = document.getElementById('btnProx2');
-  if (btn) btn.disabled = false;
+  el.classList.add('selecionado');
+  const btn = document.getElementById('btnProx2'); if (btn) btn.disabled = false;
 }
 
-// ── ETAPA 3: Data ──────────────────────────────────────────
-function irEtapa3() {
-  if (!selecionado.profissional) return;
-  etapa = 3; atualizarSteps();
-  document.getElementById('pubTitulo').textContent = '📅 Escolha a data';
-  renderCalendario();
+function irEtapa3Data() {
+  if (!sel.profissional) return;
+  etapa = modoOp==='ambos' ? 4 : 3;
+  atualizarStepsAtual();
+  setTitulo('📅 Escolha a data');
+  renderCalendarioServico();
 }
 
-function renderCalendario() {
+function renderCalendarioServico() {
   const hoje = new Date();
-  const ano = calAtual.getFullYear();
-  const mes = calAtual.getMonth();
-  const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-  const diasSem = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  const primeiroDia = new Date(ano, mes, 1).getDay();
-  const ultimoDia = new Date(ano, mes + 1, 0).getDate();
-
+  const ano = calAtual.getFullYear(), mes = calAtual.getMonth();
+  const primeiroDia = new Date(ano,mes,1).getDay();
+  const ultimoDia  = new Date(ano,mes+1,0).getDate();
   let html = `
-    <div class="calendario-nav" style="margin-bottom:0.75rem">
-      <button class="btn-icon btn-sm" onclick="navCal(-1)">‹</button>
-      <span style="font-weight:700;font-size:0.95rem">${nomesMes[mes]} ${ano}</span>
-      <button class="btn-icon btn-sm" onclick="navCal(1)">›</button>
+    <div class="calendario-nav">
+      <button class="btn btn-secondary btn-sm" onclick="navCal(-1,renderCalendarioServico)">‹</button>
+      <span style="font-weight:700">${MESES[mes]} ${ano}</span>
+      <button class="btn btn-secondary btn-sm" onclick="navCal(1,renderCalendarioServico)">›</button>
     </div>
     <div class="calendario-grid">
-      ${diasSem.map(d => `<div class="cal-header">${d}</div>`).join('')}
+      ${DIAS.map(d=>`<div class="cal-header">${d}</div>`).join('')}
       ${Array(primeiroDia).fill('<div></div>').join('')}`;
-
-  for (let d = 1; d <= ultimoDia; d++) {
-    const dataStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dataObj = new Date(ano, mes, d);
-    const passado = dataObj < new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-    const sel = selecionado.data === dataStr;
-    html += `<div class="cal-dia ${passado ? 'inativo' : ''} ${sel ? 'selecionado' : ''} ${dataStr === hoje.toISOString().split('T')[0] ? 'hoje' : ''}" onclick="${passado ? '' : `selecionarData('${dataStr}')`}"><span class="num">${d}</span></div>`;
+  for (let d=1; d<=ultimoDia; d++) {
+    const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const passado = new Date(ano,mes,d) < new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
+    const selCls = sel.data===ds ? 'selecionado' : '';
+    const hojeCls = ds===hoje.toISOString().split('T')[0] ? 'hoje' : '';
+    html += `<div class="cal-dia ${passado?'inativo':''} ${selCls} ${hojeCls}"
+      onclick="${passado?'':''}" onmousedown="${passado?'return false;':`selecionarDataSrv('${ds}');return false;`}"><span class="num">${d}</span></div>`;
   }
-  html += `</div>
-    <div style="display:flex;gap:0.5rem;margin-top:1rem">
-      <button class="btn btn-secondary" style="flex:1" onclick="irEtapa2()">← Voltar</button>
-      <button class="btn btn-primary" style="flex:2" onclick="irEtapa4()" ${!selecionado.data ? 'disabled' : ''} id="btnProx3">Próximo →</button>
-    </div>`;
+  html += `</div>${btnNav(irEtapa2Prof, irEtapa4Horario, !sel.data, 'btnProx3')}`;
   document.getElementById('pubBody').innerHTML = html;
 }
 
-function navCal(dir) { calAtual.setMonth(calAtual.getMonth() + dir); renderCalendario(); }
-
-function selecionarData(data) {
-  selecionado.data = data; selecionado.horario = null;
-  renderCalendario();
+function selecionarDataSrv(ds) {
+  sel.data = ds; sel.horario = null;
+  renderCalendarioServico();
 }
 
-// ── ETAPA 4: Horário ──────────────────────────────────────
-async function irEtapa4() {
-  if (!selecionado.data) return;
-  etapa = 4; atualizarSteps();
-  document.getElementById('pubTitulo').textContent = '🕐 Escolha o horário';
-  document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Buscando horários disponíveis...</p>';
+async function irEtapa4Horario() {
+  if (!sel.data) return;
+  etapa = modoOp==='ambos' ? 5 : 4;
+  atualizarStepsAtual();
+  setTitulo('🕐 Escolha o horário');
+  document.getElementById('pubBody').innerHTML = '<p style="color:var(--muted)">Buscando horários...</p>';
   try {
-    const r = await fetch(`${API}/agendamentos/horarios-disponiveis?empresa_id=${empresaId}&profissional_id=${selecionado.profissional.id}&servico_id=${selecionado.servico.id}&data=${selecionado.data}`);
+    const r = await fetch(`${API}/agendamentos/horarios-disponiveis?empresa_id=${empresaId}&profissional_id=${sel.profissional.id}&servico_id=${sel.servico.id}&data=${sel.data}`);
     const { horarios } = await r.json();
-    if (!horarios.length) {
+    if (!horarios?.length) {
       document.getElementById('pubBody').innerHTML = `
         <div class="alert alert-error" style="margin-bottom:1rem">😕 Nenhum horário disponível neste dia.</div>
-        <div style="display:flex;gap:0.5rem">
-          <button class="btn btn-secondary" style="flex:1" onclick="irEtapa3()">← Voltar</button>
-        </div>`;
+        ${btnNav(irEtapa3Data, null, true)}`;
       return;
     }
-    const dataFmt = new Date(selecionado.data + 'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+    const dataFmt = new Date(sel.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
     document.getElementById('pubBody').innerHTML = `
-      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;text-transform:capitalize">${dataFmt}</p>
+      <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;text-transform:capitalize">${dataFmt}</p>
       <div class="slots-grid">
-        ${horarios.map(h => `
-          <div class="slot ${selecionado.horario?.hora === h.hora ? 'selecionado' : ''}"
-            onclick="selecionarHorario('${h.hora}','${h.data_inicio}','${h.data_fim}')">
-            ${h.hora}
-          </div>`).join('')}
+        ${horarios.map(h=>`<div class="slot ${sel.horario?.hora===h.hora?'selecionado':''}"
+          onclick="selecionarHorario('${h.hora}','${h.data_inicio}','${h.data_fim}',this)">${h.hora}</div>`).join('')}
       </div>
-      <div style="display:flex;gap:0.5rem;margin-top:1rem">
-        <button class="btn btn-secondary" style="flex:1" onclick="irEtapa3()">← Voltar</button>
-        <button class="btn btn-primary" style="flex:2" onclick="irEtapa5()" ${!selecionado.horario ? 'disabled' : ''} id="btnProx4">Próximo →</button>
-      </div>`;
+      ${btnNav(irEtapa3Data, irEtapa5DadosSrv, !sel.horario, 'btnProx4')}`;
   } catch { mostrarErro('Erro ao buscar horários.'); }
 }
 
-function selecionarHorario(hora, ini, fim) {
-  selecionado.horario = { hora, data_inicio: ini, data_fim: fim };
-  document.querySelectorAll('.slot').forEach(s => s.classList.remove('selecionado'));
-  event.currentTarget.classList.add('selecionado');
-  const btn = document.getElementById('btnProx4');
-  if (btn) btn.disabled = false;
+function selecionarHorario(hora, ini, fim, el) {
+  sel.horario = { hora, data_inicio:ini, data_fim:fim };
+  document.querySelectorAll('.slot').forEach(s=>s.classList.remove('selecionado'));
+  el.classList.add('selecionado');
+  const btn = document.getElementById('btnProx4'); if (btn) btn.disabled = false;
 }
 
-// ── ETAPA 5: Dados do cliente ─────────────────────────────
-function irEtapa5() {
-  if (!selecionado.horario) return;
-  etapa = 5; atualizarSteps();
-  document.getElementById('pubTitulo').textContent = '📝 Seus dados';
-  const dataFmt = new Date(selecionado.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+function irEtapa5DadosSrv() {
+  if (!sel.horario) return;
+  etapa = modoOp==='ambos' ? 6 : 5;
+  atualizarStepsAtual();
+  setTitulo('📝 Seus dados');
+  const dataFmt = new Date(sel.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'short',day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   document.getElementById('pubBody').innerHTML = `
-    <div class="detalhe-box" style="margin-bottom:1.2rem">
-      <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${selecionado.servico.nome}</span></div>
-      <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${selecionado.profissional.nome}</span></div>
+    <div class="detalhe-box">
+      <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${sel.servico.nome}</span></div>
+      <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${sel.profissional.nome}</span></div>
       <div class="detalhe-linha"><span class="detalhe-label">Data/Hora</span><span class="detalhe-val">${dataFmt}</span></div>
     </div>
-    <div class="form-group"><label>Nome completo *</label><input type="text" id="cliNome" placeholder="Seu nome" /></div>
-    <div class="form-group"><label>Telefone</label><input type="tel" id="cliTel" placeholder="(00) 00000-0000" /></div>
-    <div class="form-group"><label>E-mail <span style="font-size:0.72rem;color:var(--muted)">(para receber confirmação)</span></label><input type="email" id="cliEmail" placeholder="seu@email.com" /></div>
-    <div class="form-group"><label>Observações</label><textarea id="cliObs" placeholder="Alguma observação?" style="resize:none;height:70px;"></textarea></div>
+    <div class="form-group"><label>Nome completo *</label><input type="text" id="cliNome" placeholder="Seu nome completo"/></div>
+    <div class="form-group"><label>Telefone</label><input type="tel" id="cliTel" placeholder="(00) 00000-0000"/></div>
+    <div class="form-group"><label>E-mail <span style="font-size:0.72rem;color:var(--muted)">(para confirmação)</span></label><input type="email" id="cliEmail" placeholder="seu@email.com"/></div>
+    <div class="form-group"><label>Observações</label><textarea id="cliObs" placeholder="Alguma observação?" style="resize:none;height:70px"></textarea></div>
     <div id="erroAgPub" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
     <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
-      <button class="btn btn-secondary" style="flex:1" onclick="irEtapa4()">← Voltar</button>
-      <button class="btn btn-primary" style="flex:2" onclick="confirmarAgendamento()">
-        <span id="btnConfText">✅ Confirmar Agendamento</span>
+      <button class="btn btn-secondary" style="flex:1" onclick="irEtapa4Horario()">← Voltar</button>
+      <button class="btn btn-primary" style="flex:2" onclick="confirmarServico()">
+        <span id="btnConfText">✅ Confirmar</span>
         <div class="spinner" id="spinnerConf"></div>
       </button>
     </div>`;
 }
 
-async function confirmarAgendamento() {
+async function confirmarServico() {
   const nome = document.getElementById('cliNome').value.trim();
-  const tel  = document.getElementById('cliTel').value.trim();
-  const email = document.getElementById('cliEmail').value.trim();
-  const obs  = document.getElementById('cliObs').value.trim();
   const erro = document.getElementById('erroAgPub');
-  if (!nome) { erro.textContent = 'Informe seu nome'; erro.style.display = 'block'; return; }
-  erro.style.display = 'none';
-  document.getElementById('btnConfText').style.display = 'none';
-  document.getElementById('spinnerConf').style.display = 'inline-block';
-
-  const payload = {
-    empresa_id: empresaId,
-    profissional_id: selecionado.profissional.id,
-    servico_id: selecionado.servico.id,
-    cliente_nome: nome,
-    cliente_email: email || null,
-    cliente_telefone: tel || null,
-    data_inicio: selecionado.horario.data_inicio,
-    data_fim: selecionado.horario.data_fim,
-    observacoes: obs || null,
-  };
-
+  if (!nome) { erro.textContent='Informe seu nome'; erro.style.display='block'; return; }
+  erro.style.display='none';
+  setLoading(true);
   try {
-    // 1ª tentativa: rota pública dedicada (sem autenticação)
-    let r = await fetch(`${API}/agendamentos/publico`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-public-booking': 'true' },
-      body: JSON.stringify(payload)
+    const r = await fetch(`${API}/agendamentos`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        empresa_id: empresaId,
+        profissional_id: sel.profissional.id,
+        servico_id: sel.servico.id,
+        cliente_nome: nome,
+        cliente_email: document.getElementById('cliEmail').value.trim()||null,
+        cliente_telefone: document.getElementById('cliTel').value.trim()||null,
+        data_inicio: sel.horario.data_inicio,
+        data_fim:    sel.horario.data_fim,
+        observacoes: document.getElementById('cliObs').value.trim()||null,
+      })
     });
-
-    // Se rota pública não existir, usa rota normal sem token
-    if (r.status === 404 || r.status === 405) {
-      r = await fetch(`${API}/agendamentos`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-public-booking': 'true' },
-        body: JSON.stringify(payload)
-      });
-    }
-
-    const data = await r.json();
-    if (!r.ok) { erro.textContent = data.erro || 'Erro ao agendar'; erro.style.display = 'block'; return; }
-    mostrarSucesso(nome, email);
-  } catch { erro.textContent = 'Erro de conexão. Tente novamente.'; erro.style.display = 'block'; }
-  finally { document.getElementById('btnConfText').style.display = 'inline'; document.getElementById('spinnerConf').style.display = 'none'; }
+    const d = await r.json();
+    if (!r.ok) { erro.textContent=d.erro||'Erro ao agendar'; erro.style.display='block'; return; }
+    mostrarSucessoServico(nome);
+  } catch { erro.textContent='Erro de conexão.'; erro.style.display='block'; }
+  finally { setLoading(false); }
 }
 
-function mostrarSucesso(nome, email) {
-  document.getElementById('pubTitulo').textContent = 'Agendado! 🎉';
-  document.getElementById('stepsBar').querySelectorAll('.step-dot').forEach(d => d.classList.add('ativo'));
-  const dataFmt = new Date(selecionado.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+function mostrarSucessoServico(nome) {
+  const dataFmt = new Date(sel.horario.data_inicio).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  document.querySelectorAll('.step-dot').forEach(d=>d.classList.add('ativo'));
+  setTitulo('Agendado! 🎉');
   document.getElementById('pubBody').innerHTML = `
     <div class="sucesso-wrap">
       <div class="sucesso-icon">✅</div>
       <div class="sucesso-titulo">Agendamento confirmado!</div>
-      <div class="sucesso-sub">${email ? `Enviamos uma confirmação para <strong>${email}</strong>` : 'Seu agendamento foi registrado com sucesso!'}</div>
+      <div class="sucesso-sub">Seu agendamento foi registrado com sucesso!</div>
       <div class="detalhe-box">
         <div class="detalhe-linha"><span class="detalhe-label">Cliente</span><span class="detalhe-val">${nome}</span></div>
-        <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${selecionado.servico.nome}</span></div>
-        <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${selecionado.profissional.nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Serviço</span><span class="detalhe-val">${sel.servico.nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Profissional</span><span class="detalhe-val">${sel.profissional.nome}</span></div>
         <div class="detalhe-linha"><span class="detalhe-label">Data/Hora</span><span class="detalhe-val" style="text-transform:capitalize">${dataFmt}</span></div>
       </div>
       <button class="btn btn-secondary" style="width:100%" onclick="location.reload()">+ Fazer outro agendamento</button>
     </div>`;
 }
 
-function atualizarSteps() {
-  document.querySelectorAll('.step-dot').forEach((d, i) => {
-    d.classList.toggle('ativo', i < etapa);
-  });
+// ══════════════════════════════════════════════════════════
+// FLUXO PRODUTOS
+// ══════════════════════════════════════════════════════════
+function carregarEtapaProdutos() {
+  etapa = modoOp==='ambos' ? 2 : 1;
+  atualizarStepsAtual();
+  setTitulo('📦 Escolha os produtos');
+
+  if (!produtosEmpresa.length) {
+    mostrarErro('Nenhum produto disponível no momento.');
+    return;
+  }
+
+  renderCatalogo();
 }
+
+function renderCatalogo() {
+  const fmtBRL = v => v ? `R$ ${parseFloat(v).toFixed(2).replace('.',',')}` : 'Sob consulta';
+  const itensCarrinho = carrinho.reduce((m,i)=>{m[i.produto_id]=i.quantidade;return m;},{});
+
+  const catalogoHtml = produtosEmpresa.map(p => {
+    const qtd = itensCarrinho[p.id] || 0;
+    const imgEl = p.imagem_url
+      ? `<img src="${p.imagem_url}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0" onerror="this.outerHTML='<div class=prod-img>📦</div>'">`
+      : `<div class="prod-img">📦</div>`;
+    return `
+    <div class="prod-card">
+      ${imgEl}
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:0.92rem;color:var(--text)">${p.nome}</div>
+        ${p.categoria?`<div style="font-size:0.72rem;color:var(--muted)">${p.categoria}</div>`:''}
+        ${p.descricao?`<div style="font-size:0.75rem;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.descricao}</div>`:''}
+        <div style="font-weight:700;color:var(--accent);font-size:0.9rem;margin-top:3px">${fmtBRL(p.preco)}${p.unidade&&p.unidade!=='unidade'?` / ${p.unidade}`:''}</div>
+      </div>
+      <div class="prod-qtd-ctrl">
+        <button class="prod-qtd-btn" onclick="alterarQtdPub(${p.id},-1)" ${qtd===0?'style="opacity:0.3;pointer-events:none"':''}>−</button>
+        <span class="prod-qtd-num">${qtd}</span>
+        <button class="prod-qtd-btn" onclick="alterarQtdPub(${p.id},1,${JSON.stringify({id:p.id,nome:p.nome,preco:parseFloat(p.preco||0),unidade:p.unidade}).replace(/"/g,"'")})">+</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalCarrinho = carrinho.reduce((s,i)=>s+(i.preco*i.quantidade),0);
+  const carrinhoHtml = carrinho.length ? `
+    <div style="margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border)">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">🛒 Seu Pedido</div>
+      ${carrinho.map(i=>`
+        <div class="carrinho-item">
+          <span>${i.nome} <span style="color:var(--muted)">x${i.quantidade}</span></span>
+          <span style="font-weight:700">R$ ${(i.preco*i.quantidade).toFixed(2).replace('.',',')}</span>
+        </div>`).join('')}
+      <div class="carrinho-total">
+        <span style="font-weight:700">💰 Total</span>
+        <span style="font-weight:800;color:var(--accent);font-size:1rem">R$ ${totalCarrinho.toFixed(2).replace('.',',')}</span>
+      </div>
+    </div>` : '';
+
+  const voltarFn = modoOp==='ambos' ? 'mostrarEscolhaModo()' : '';
+  document.getElementById('pubBody').innerHTML = catalogoHtml + carrinhoHtml + `
+    <div style="display:flex;gap:0.5rem;margin-top:1rem">
+      ${voltarFn?`<button class="btn btn-secondary" style="flex:1" onclick="${voltarFn}">← Voltar</button>`:''}
+      <button class="btn btn-primary" style="flex:2" onclick="irEtapaDataProd()" ${!carrinho.length?'disabled':''} id="btnProxProd">
+        Próximo →
+      </button>
+    </div>`;
+}
+
+function alterarQtdPub(prodId, delta, prodInfo) {
+  const idx = carrinho.findIndex(i=>i.produto_id===prodId);
+  if (idx >= 0) {
+    carrinho[idx].quantidade = Math.max(0, carrinho[idx].quantidade + delta);
+    if (carrinho[idx].quantidade === 0) carrinho.splice(idx, 1);
+  } else if (delta > 0 && prodInfo) {
+    // prodInfo vem como objeto com aspas simples — parse manual
+    const p = produtosEmpresa.find(x=>x.id===prodId);
+    if (p) carrinho.push({ produto_id:p.id, nome:p.nome, preco:parseFloat(p.preco||0), unidade:p.unidade, quantidade:1 });
+  }
+  renderCatalogo();
+}
+
+function irEtapaDataProd() {
+  if (!carrinho.length) return;
+  etapa = modoOp==='ambos' ? 3 : 2;
+  atualizarStepsAtual();
+  setTitulo('📅 Escolha a data');
+  renderCalendarioProd();
+}
+
+function renderCalendarioProd() {
+  const hoje = new Date();
+  const ano = calAtual.getFullYear(), mes = calAtual.getMonth();
+  const primeiroDia = new Date(ano,mes,1).getDay();
+  const ultimoDia  = new Date(ano,mes+1,0).getDate();
+  let html = `
+    <div class="calendario-nav">
+      <button class="btn btn-secondary btn-sm" onclick="navCal(-1,renderCalendarioProd)">‹</button>
+      <span style="font-weight:700">${MESES[mes]} ${ano}</span>
+      <button class="btn btn-secondary btn-sm" onclick="navCal(1,renderCalendarioProd)">›</button>
+    </div>
+    <div class="calendario-grid">
+      ${DIAS.map(d=>`<div class="cal-header">${d}</div>`).join('')}
+      ${Array(primeiroDia).fill('<div></div>').join('')}`;
+  for (let d=1; d<=ultimoDia; d++) {
+    const ds = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const passado = new Date(ano,mes,d) < new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate());
+    html += `<div class="cal-dia ${passado?'inativo':''} ${sel.data===ds?'selecionado':''} ${ds===hoje.toISOString().split('T')[0]?'hoje':''}"
+      onmousedown="${passado?'return false;':`selecionarDataProd('${ds}');return false;`}"><span class="num">${d}</span></div>`;
+  }
+  html += `</div>${btnNav(carregarEtapaProdutos, irEtapaPeriodo, !sel.data, 'btnProxData')}`;
+  document.getElementById('pubBody').innerHTML = html;
+}
+
+function selecionarDataProd(ds) {
+  sel.data = ds;
+  renderCalendarioProd();
+}
+
+function irEtapaPeriodo() {
+  if (!sel.data) return;
+  etapa = modoOp==='ambos' ? 4 : 3;
+  atualizarStepsAtual();
+  setTitulo('⏰ Escolha o período');
+  const dataFmt = new Date(sel.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  document.getElementById('pubBody').innerHTML = `
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1rem;text-transform:capitalize">${dataFmt}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem">
+      <div class="periodo-card ${sel.periodo==='manha'?'selecionado':''}" onclick="selecionarPeriodo('manha',this)">
+        <div class="periodo-icon">🌅</div>
+        <div class="periodo-nome">Manhã</div>
+        <div class="periodo-hora">08:00 – 12:00</div>
+      </div>
+      <div class="periodo-card ${sel.periodo==='tarde'?'selecionado':''}" onclick="selecionarPeriodo('tarde',this)">
+        <div class="periodo-icon">🌤️</div>
+        <div class="periodo-nome">Tarde</div>
+        <div class="periodo-hora">13:00 – 18:00</div>
+      </div>
+    </div>
+    ${btnNav(renderCalendarioProd, irEtapaDadosProd, !sel.periodo, 'btnProxPer')}`;
+}
+
+function selecionarPeriodo(p, el) {
+  sel.periodo = p;
+  document.querySelectorAll('.periodo-card').forEach(c=>c.classList.remove('selecionado'));
+  el.classList.add('selecionado');
+  const btn = document.getElementById('btnProxPer'); if (btn) btn.disabled = false;
+}
+
+function irEtapaDadosProd() {
+  if (!sel.periodo) return;
+  etapa = modoOp==='ambos' ? 5 : 4;
+  atualizarStepsAtual();
+  setTitulo('📝 Seus dados');
+
+  const dataFmt = new Date(sel.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const totalCarrinho = carrinho.reduce((s,i)=>s+(i.preco*i.quantidade),0);
+  const periodoLabel  = sel.periodo==='manha' ? '🌅 Manhã (08:00–12:00)' : '🌤️ Tarde (13:00–18:00)';
+
+  document.getElementById('pubBody').innerHTML = `
+    <div class="detalhe-box">
+      <div class="detalhe-linha"><span class="detalhe-label">Data</span><span class="detalhe-val" style="text-transform:capitalize">${dataFmt}</span></div>
+      <div class="detalhe-linha"><span class="detalhe-label">Período</span><span class="detalhe-val">${periodoLabel}</span></div>
+      ${carrinho.map(i=>`<div class="detalhe-linha">
+        <span class="detalhe-label">${i.nome} x${i.quantidade}</span>
+        <span class="detalhe-val">R$ ${(i.preco*i.quantidade).toFixed(2).replace('.',',')}</span>
+      </div>`).join('')}
+      <div class="detalhe-linha" style="font-weight:700">
+        <span>💰 Total</span>
+        <span style="color:var(--accent)">R$ ${totalCarrinho.toFixed(2).replace('.',',')}</span>
+      </div>
+    </div>
+    <div class="form-group"><label>Nome completo *</label><input type="text" id="cliNome" placeholder="Seu nome completo"/></div>
+    <div class="form-group"><label>Telefone</label><input type="tel" id="cliTel" placeholder="(00) 00000-0000"/></div>
+    <div class="form-group"><label>E-mail <span style="font-size:0.72rem;color:var(--muted)">(para confirmação)</span></label><input type="email" id="cliEmail" placeholder="seu@email.com"/></div>
+    <div class="form-group"><label>Observações <span style="font-size:0.72rem;color:var(--muted)">(horário preferido, endereço de entrega...)</span></label>
+      <textarea id="cliObs" placeholder="Ex: entregar às 10h, Rua das Flores 123..." style="resize:none;height:80px"></textarea></div>
+    <div id="erroAgPub" class="alert alert-error" style="display:none;margin-bottom:0.75rem"></div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+      <button class="btn btn-secondary" style="flex:1" onclick="irEtapaPeriodo()">← Voltar</button>
+      <button class="btn btn-primary" style="flex:2" onclick="confirmarPedido()">
+        <span id="btnConfText">✅ Confirmar Pedido</span>
+        <div class="spinner" id="spinnerConf"></div>
+      </button>
+    </div>`;
+}
+
+async function confirmarPedido() {
+  const nome = document.getElementById('cliNome').value.trim();
+  const obs  = document.getElementById('cliObs').value.trim();
+  const erro = document.getElementById('erroAgPub');
+  if (!nome) { erro.textContent='Informe seu nome'; erro.style.display='block'; return; }
+  erro.style.display='none';
+  setLoading(true);
+
+  // Data/hora: usa o período escolhido
+  const horaIni = sel.periodo==='manha' ? '08:00' : '13:00';
+  const horaFim = sel.periodo==='manha' ? '12:00' : '18:00';
+  const tz = (() => {
+    const off = -new Date().getTimezoneOffset();
+    const sign = off>=0?'+':'-';
+    return `${sign}${String(Math.floor(Math.abs(off)/60)).padStart(2,'0')}:${String(Math.abs(off)%60).padStart(2,'0')}`;
+  })();
+  const totalStr = carrinho.map(i=>`${i.nome} x${i.quantidade}`).join(', ');
+  const obsCompleto = [obs, `Período: ${sel.periodo==='manha'?'Manhã':'Tarde'}`, `Produtos: ${totalStr}`].filter(Boolean).join('\n');
+  const totalVal = carrinho.reduce((s,i)=>s+(i.preco*i.quantidade),0);
+
+  try {
+    const r = await fetch(`${API}/agendamentos`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        empresa_id: empresaId,
+        profissional_id: (await buscarProfPrincipal()),
+        cliente_nome: nome,
+        cliente_email: document.getElementById('cliEmail').value.trim()||null,
+        cliente_telefone: document.getElementById('cliTel').value.trim()||null,
+        data_inicio: `${sel.data}T${horaIni}:00${tz}`,
+        data_fim:    `${sel.data}T${horaFim}:00${tz}`,
+        observacoes: obsCompleto,
+        dia_todo: false,
+        produtos: carrinho.map(i=>({ produto_id:i.produto_id, quantidade:i.quantidade }))
+      })
+    });
+    const d = await r.json();
+    if (!r.ok) { erro.textContent=d.erro||'Erro ao confirmar pedido'; erro.style.display='block'; return; }
+    mostrarSucessoPedido(nome, totalVal);
+  } catch { erro.textContent='Erro de conexão.'; erro.style.display='block'; }
+  finally { setLoading(false); }
+}
+
+async function buscarProfPrincipal() {
+  try {
+    const r = await fetch(`${API}/profissionais?empresa_id=${empresaId}`);
+    const profs = await r.json();
+    return profs[0]?.id || null;
+  } catch { return null; }
+}
+
+function mostrarSucessoPedido(nome, total) {
+  const dataFmt = new Date(sel.data+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const periodoLabel = sel.periodo==='manha' ? '🌅 Manhã (08:00–12:00)' : '🌤️ Tarde (13:00–18:00)';
+  document.querySelectorAll('.step-dot').forEach(d=>d.classList.add('ativo'));
+  setTitulo('Pedido confirmado! 🎉');
+  document.getElementById('pubBody').innerHTML = `
+    <div class="sucesso-wrap">
+      <div class="sucesso-icon">🎂</div>
+      <div class="sucesso-titulo">Pedido confirmado!</div>
+      <div class="sucesso-sub">Em breve entraremos em contato para confirmar os detalhes.</div>
+      <div class="detalhe-box">
+        <div class="detalhe-linha"><span class="detalhe-label">Cliente</span><span class="detalhe-val">${nome}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Data</span><span class="detalhe-val" style="text-transform:capitalize">${dataFmt}</span></div>
+        <div class="detalhe-linha"><span class="detalhe-label">Período</span><span class="detalhe-val">${periodoLabel}</span></div>
+        ${carrinho.map(i=>`<div class="detalhe-linha"><span class="detalhe-label">${i.nome} x${i.quantidade}</span><span class="detalhe-val">R$ ${(i.preco*i.quantidade).toFixed(2).replace('.',',')}</span></div>`).join('')}
+        <div class="detalhe-linha" style="font-weight:700"><span>💰 Total</span><span style="color:var(--accent)">R$ ${total.toFixed(2).replace('.',',')}</span></div>
+      </div>
+      <button class="btn btn-secondary" style="width:100%" onclick="location.reload()">+ Fazer outro pedido</button>
+    </div>`;
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function navCal(dir, fn) { calAtual.setMonth(calAtual.getMonth()+dir); fn(); }
+
+function btnNav(voltarFn, proximoFn, proximoDisabled, proximoId) {
+  const voltarHtml = voltarFn
+    ? `<button class="btn btn-secondary" style="flex:1" onclick="(${voltarFn.toString()})()">← Voltar</button>`
+    : '';
+  const proximoHtml = proximoFn
+    ? `<button class="btn btn-primary" style="flex:2" onclick="(${proximoFn.toString()})()" ${proximoDisabled?'disabled':''} id="${proximoId||''}">Próximo →</button>`
+    : '';
+  return `<div style="display:flex;gap:0.5rem;margin-top:1rem">${voltarHtml}${proximoHtml}</div>`;
+}
+
+function atualizarStepsAtual() {
+  document.querySelectorAll('.step-dot').forEach((d,i) => d.classList.toggle('ativo', i < etapa));
+}
+
+function setLoading(on) {
+  const txt = document.getElementById('btnConfText');
+  const sp  = document.getElementById('spinnerConf');
+  if (txt) txt.style.display = on ? 'none' : 'inline';
+  if (sp)  sp.style.display  = on ? 'inline-block' : 'none';
+}
+
+function esc(s) { return String(s||'').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function fmt(v) { return parseFloat(v).toFixed(2).replace('.',','); }
 
 init();
 </script>
