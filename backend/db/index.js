@@ -234,6 +234,44 @@ async function initDB() {
     await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS tempo_preparo INTEGER`).catch(()=>{});
     await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS imagem_url TEXT`).catch(()=>{});
 
+    // ── VEÍCULOS ───────────────────────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS veiculos (
+        id           SERIAL PRIMARY KEY,
+        empresa_id   INTEGER REFERENCES empresas(id) ON DELETE CASCADE,
+        cliente_id   INTEGER REFERENCES clientes(id) ON DELETE SET NULL,
+        placa        VARCHAR(10) NOT NULL,
+        montadora    VARCHAR(100),
+        modelo       VARCHAR(100),
+        ano          INTEGER,
+        km_atual     INTEGER,
+        observacoes  TEXT,
+        criado_em    TIMESTAMP DEFAULT NOW(),
+        UNIQUE(empresa_id, placa)
+      )
+    `);
+
+    // ── ITENS DA ORDEM DE SERVIÇO ──────────────────────────
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS itens_ordem (
+        id             SERIAL PRIMARY KEY,
+        agendamento_id INTEGER REFERENCES agendamentos(id) ON DELETE CASCADE,
+        produto_id     INTEGER REFERENCES produtos(id) ON DELETE SET NULL,
+        descricao      VARCHAR(300) NOT NULL,
+        valor_unitario DECIMAL(10,2) NOT NULL DEFAULT 0,
+        quantidade     INTEGER NOT NULL DEFAULT 1,
+        subtotal       DECIMAL(10,2),
+        tipo           VARCHAR(20) DEFAULT 'cadastrado' CHECK (tipo IN ('cadastrado','manual')),
+        criado_em      TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // ── MIGRATIONS SEGURAS ─────────────────────────────────
+    await pool.query(`ALTER TABLE produtos ADD COLUMN IF NOT EXISTS referencia VARCHAR(100)`).catch(()=>{});
+    await pool.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS veiculo_id INTEGER REFERENCES veiculos(id)`).catch(()=>{});
+    await pool.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS km_entrada INTEGER`).catch(()=>{});
+    await pool.query(`ALTER TABLE empresas ADD COLUMN IF NOT EXISTS modo_operacao VARCHAR(20) DEFAULT 'servicos'`).catch(()=>{});
+
     console.log('✅ Banco Agendare inicializado com sucesso');
   } catch (err) {
     console.error('❌ Erro ao inicializar banco:', err.message);

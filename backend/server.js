@@ -24,6 +24,8 @@ app.use('/api/modulos',               require('./routes/modulos'));
 app.use('/api/clientes',              require('./routes/clientes'));
 app.use('/api/produtos',              require('./routes/produtos'));
 app.use('/api/agendamento-produtos',  require('./routes/agendamento-produtos'));
+app.use('/api/veiculos',              require('./routes/veiculos'));
+app.use('/api/itens-ordem',           require('./routes/itens-ordem'));
 
 app.get('/api/health', (_, res) => res.json({ ok: true, sistema: 'Agendare' }));
 

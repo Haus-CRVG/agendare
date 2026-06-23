@@ -118,7 +118,8 @@ router.post('/', async (req, res) => {
     empresa_id, profissional_id, servico_id,
     cliente_nome, cliente_email, cliente_telefone,
     data_inicio, data_fim, observacoes, dia_todo,
-    evento_pessoal, tipo_evento, produtos
+    evento_pessoal, tipo_evento, produtos,
+    status, veiculo_id, km_entrada
   } = req.body;
 
   if (!empresa_id || !profissional_id || !cliente_nome || !data_inicio || !data_fim)
@@ -131,6 +132,8 @@ router.post('/', async (req, res) => {
     // Garante que as colunas existem (migration segura)
     await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS evento_pessoal VARCHAR(50)`).catch(()=>{});
     await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS tipo_evento VARCHAR(50)`).catch(()=>{});
+    await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS veiculo_id INTEGER`).catch(()=>{});
+    await client.query(`ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS km_entrada INTEGER`).catch(()=>{});
     await client.query(`
       CREATE TABLE IF NOT EXISTS agendamento_produtos (
         id             SERIAL PRIMARY KEY,
@@ -145,18 +148,21 @@ router.post('/', async (req, res) => {
     `).catch(()=>{});
 
     const token_cancelamento = crypto.randomBytes(32).toString('hex');
+    const statusFinal = status || 'confirmado';
     const result = await client.query(`
       INSERT INTO agendamentos (
         empresa_id, profissional_id, servico_id, cliente_nome,
         cliente_email, cliente_telefone, data_inicio, data_fim,
-        observacoes, token_cancelamento, dia_todo, evento_pessoal, tipo_evento
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING *`,
+        observacoes, token_cancelamento, dia_todo, evento_pessoal, tipo_evento,
+        status, veiculo_id, km_entrada
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
       [
         empresa_id, profissional_id, servico_id || null, cliente_nome,
         cliente_email || null, cliente_telefone || null,
         data_inicio, data_fim, observacoes || null,
         token_cancelamento, dia_todo || false,
-        evento_pessoal || null, tipo_evento || null
+        evento_pessoal || null, tipo_evento || null,
+        statusFinal, veiculo_id || null, km_entrada || null
       ]
     );
     const ag = result.rows[0];

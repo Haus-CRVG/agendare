@@ -103,6 +103,7 @@ async function carregarModulos() {
       produtos:   'menuProdutos',
       financeiro: 'menuFinanceiro',
       relatorios: 'menuRelatorios',
+      veiculos:   'menuHistorico',
     };
     let temAlgum = false;
     Object.entries(menuMap).forEach(([mod, menuId]) => {
@@ -967,6 +968,23 @@ function abrirNovoAgendamento() {
     document.getElementById('sugestoesClienteAg').style.display = 'none';
   }
 
+  // Campos veículo — mostra se módulo ativo
+  const secaoVeic = document.getElementById('secaoVeiculoAg');
+  if (secaoVeic) {
+    const temVeiculos = window._modulosAtivos?.includes('veiculos');
+    secaoVeic.style.display = temVeiculos ? 'block' : 'none';
+    if (temVeiculos) {
+      popularMontadoras();
+      document.getElementById('agPlaca').value = '';
+      document.getElementById('agKm').value = '';
+      document.getElementById('agMontadora').value = '';
+      document.getElementById('agAno').value = '';
+      atualizarModelosVeiculo();
+      document.getElementById('historicoVeiculoBox').style.display = 'none';
+      _veiculoAtualId = null;
+    }
+  }
+
   // Reset carrinho
   carrinhoAgendamento = [];
   const buscaEl = document.getElementById('buscaProdutoAg');
@@ -1138,6 +1156,14 @@ async function salvarAgendamento() {
 
   if(!titulo){erro.textContent='Informe o título';erro.style.display='block';return;}
   if(!data){erro.textContent='Informe a data';erro.style.display='block';return;}
+
+  // Validação de placa (se módulo veículos ativo)
+  const temVeiculos = window._modulosAtivos?.includes('veiculos');
+  const placa = document.getElementById('agPlaca')?.value?.trim() || '';
+  if (temVeiculos && !placa) {
+    erro.textContent='A placa do veículo é obrigatória'; erro.style.display='block'; return;
+  }
+
   if(dataFimInput && dataFimInput < data){erro.textContent='A data fim não pode ser anterior à data início';erro.style.display='block';return;}
   if(!diaTodo&&!horaIni){erro.textContent='Informe o horário de início';erro.style.display='block';return;}
   if(!diaTodo&&!horaFim){erro.textContent='Informe o horário de fim';erro.style.display='block';return;}
@@ -1166,6 +1192,27 @@ async function salvarAgendamento() {
     const emailConvidado = document.getElementById('chkConvidarExterno')?.checked
       ? (document.getElementById('emailConvidado')?.value?.trim() || null) : null;
 
+    // Salva/atualiza veículo primeiro, se módulo ativo
+    let veiculoId = null;
+    if (temVeiculos && placa) {
+      try {
+        const vData = await fetch(`${API}/veiculos`, {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+          body: JSON.stringify({
+            placa,
+            montadora: document.getElementById('agMontadora')?.value || null,
+            modelo:    document.getElementById('agModelo')?.value || null,
+            ano:       parseInt(document.getElementById('agAno')?.value) || null,
+            km_atual:  parseInt(document.getElementById('agKm')?.value) || null,
+            cliente_id: document.getElementById('agClienteId')?.value || null,
+          })
+        });
+        const v = await vData.json();
+        veiculoId = v.id;
+      } catch(e) { console.warn('Erro ao salvar veículo:', e); }
+    }
+
     const payload = {
       empresa_id:      usuario.empresa_id,
       profissional_id: usuario.id,
@@ -1177,7 +1224,10 @@ async function salvarAgendamento() {
       email_convidado: emailConvidado,
       evento_pessoal:  eventoPessoal || null,
       tipo_evento:     tipoEvento || null,
-      produtos:        carrinhoAgendamento.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade }))
+      produtos:        carrinhoAgendamento.map(i => ({ produto_id: i.produto_id, quantidade: i.quantidade })),
+      status:          temVeiculos ? 'pendente' : undefined,
+      veiculo_id:      veiculoId,
+      km_entrada:      temVeiculos ? (parseInt(document.getElementById('agKm')?.value) || null) : undefined,
     };
 
     const r=await fetch(`${API}/agendamentos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
@@ -1391,6 +1441,10 @@ async function confirmarAtualizarStatus(){
     const body={status};if(obs)body.observacoes=obs;
     const r=await fetch(`${API}/agendamentos/${id}`,{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify(body)});
     if(!r.ok){const d=await r.json();mostrarToast('❌ Erro',d.erro||'Sem permissão');return;}
+    // Salva itens da ordem se concluído
+    if (status === 'concluido' && itensOrdemAtual.length) {
+      await salvarItensOrdem(id);
+    }
     fecharObsStatus();fecharModalVer();
     carregarPainelAgenda();
     if(document.getElementById('abaLista').style.display!=='none') carregarLista();
@@ -2254,5 +2308,273 @@ function toggleDark() {
     document.documentElement.setAttribute('data-theme', 'dark');
   }
 })();
+
+/* ══════════════════════════════════════════════════════════
+   MÓDULO VEÍCULOS — Montadoras/Modelos, Placa, Histórico
+══════════════════════════════════════════════════════════ */
+const MONTADORAS_MODELOS = {
+  'Fiat':      ['Argo','Cronos','Mobi','Pulse','Strada','Toro','Uno','Palio','Siena','Punto','Doblo','Fiorino'],
+  'Volkswagen':['Gol','Polo','Virtus','T-Cross','Nivus','Saveiro','Voyage','Fox','Up!','Jetta','Tiguan','Amarok'],
+  'Chevrolet': ['Onix','Onix Plus','Tracker','S10','Spin','Cruze','Prisma','Celta','Corsa','Montana','Equinox'],
+  'Ford':      ['Ka','EcoSport','Fiesta','Focus','Ranger','Fusion','Edge','Territory'],
+  'Peugeot':   ['208','2008','3008','207','206','Partner'],
+  'Renault':   ['Kwid','Sandero','Logan','Duster','Captur','Oroch','Stepway'],
+  'Toyota':    ['Corolla','Etios','Yaris','Hilux','SW4','RAV4'],
+  'Honda':     ['Civic','City','Fit','HR-V','WR-V','CR-V'],
+  'Hyundai':   ['HB20','HB20S','Creta','Tucson','i30','Santa Fe'],
+  'Nissan':    ['March','Versa','Kicks','Sentra','Frontier'],
+  'Jeep':      ['Renegade','Compass','Commander','Wrangler'],
+  'Citroën':   ['C3','C4 Cactus','C4 Lounge','Aircross'],
+  'Outra':     [],
+};
+
+function popularMontadoras() {
+  const sel = document.getElementById('agMontadora');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Selecione...</option>' +
+    Object.keys(MONTADORAS_MODELOS).map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+function atualizarModelosVeiculo() {
+  const montadora = document.getElementById('agMontadora').value;
+  const selModelo = document.getElementById('agModelo');
+  const modelos = MONTADORAS_MODELOS[montadora] || [];
+  selModelo.innerHTML = modelos.length
+    ? '<option value="">Selecione...</option>' + modelos.map(m => `<option value="${m}">${m}</option>`).join('')
+    : '<option value="">Digite o modelo</option>';
+}
+
+let _veiculoAtualId = null;
+async function buscarVeiculoPorPlaca(placa) {
+  const box = document.getElementById('historicoVeiculoBox');
+  _veiculoAtualId = null;
+  if (!placa || placa.replace(/[^A-Z0-9]/g,'').length < 7) { box.style.display='none'; return; }
+  try {
+    const placaLimpa = placa.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    const data = await apiFetch(`/veiculos?placa=${placaLimpa}`);
+    if (data.length) {
+      const v = data[0];
+      _veiculoAtualId = v.id;
+      // Preenche campos automaticamente
+      if (v.montadora) {
+        document.getElementById('agMontadora').value = v.montadora;
+        atualizarModelosVeiculo();
+        setTimeout(()=>{ if(v.modelo) document.getElementById('agModelo').value = v.modelo; }, 50);
+      }
+      if (v.ano) document.getElementById('agAno').value = v.ano;
+      if (v.km_atual) document.getElementById('agKm').value = v.km_atual;
+      if (v.cliente_id) {
+        document.getElementById('agClienteInput').value = v.cliente_nome || '';
+        document.getElementById('agClienteId').value = v.cliente_id;
+      }
+      box.style.display = 'block';
+      box.innerHTML = `📋 Veículo cadastrado${v.cliente_nome?` — Cliente: <strong>${v.cliente_nome}</strong>`:''}. Clique para ver histórico.`;
+    } else {
+      box.style.display = 'block';
+      box.innerHTML = `🆕 Veículo novo — será cadastrado ao salvar.`;
+    }
+  } catch(e) { box.style.display = 'none'; }
+}
+
+function abrirHistoricoVeiculoAtual() {
+  if (_veiculoAtualId) abrirHistoricoVeiculo(_veiculoAtualId, document.getElementById('agPlaca').value);
+}
+
+async function abrirHistoricoVeiculo(veiculoId, placa) {
+  document.getElementById('placaHistoricoVeiculo').textContent = placa;
+  document.getElementById('listaHistoricoVeiculo').innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Carregando...</p>';
+  document.getElementById('modalHistoricoVeiculo').classList.add('active');
+  try {
+    const data = await apiFetch(`/veiculos/${veiculoId}/historico`);
+    if (!data.length) {
+      document.getElementById('listaHistoricoVeiculo').innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Nenhum atendimento registrado.</p>';
+      return;
+    }
+    const statusBadge = { confirmado:'badge-ativo', concluido:'badge-concluido', cancelado:'badge-cancelado', pendente:'badge-pendente', faltou:'badge-faltou' };
+    document.getElementById('listaHistoricoVeiculo').innerHTML = data.map(ag => {
+      const dt = new Date(ag.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+      const itens = Array.isArray(ag.itens) ? ag.itens : [];
+      const itensHtml = itens.length ? itens.map(i =>
+        `<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0;color:var(--muted)">
+          <span>${i.descricao} x${i.quantidade}</span><span>R$ ${parseFloat(i.subtotal).toFixed(2).replace('.',',')}</span>
+        </div>`).join('') : '';
+      return `<div style="padding:0.85rem 1rem;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <strong style="font-size:0.9rem">${dt} — ${ag.cliente_nome}</strong>
+          <span class="badge ${statusBadge[ag.status]||''}">${ag.status}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted)">${ag.profissional_nome||'—'}${ag.observacoes?` · ${ag.observacoes}`:''}</div>
+        ${itensHtml}
+        ${parseFloat(ag.total)>0?`<div style="font-weight:700;color:var(--accent);font-size:0.85rem;margin-top:4px">Total: R$ ${parseFloat(ag.total).toFixed(2).replace('.',',')}</div>`:''}
+      </div>`;
+    }).join('');
+  } catch {
+    document.getElementById('listaHistoricoVeiculo').innerHTML = '<p style="color:var(--error);text-align:center;padding:1rem">Erro ao carregar histórico.</p>';
+  }
+}
+
+async function buscarHistoricoPlaca() {
+  const placa = document.getElementById('buscaPlacaHist').value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const result = document.getElementById('resultadoHistorico');
+  if (!placa) { result.innerHTML = ''; return; }
+  result.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">Buscando...</p>';
+  try {
+    const veiculos = await apiFetch(`/veiculos?placa=${placa}`);
+    if (!veiculos.length) {
+      result.innerHTML = '<div class="card"><div class="card-body" style="text-align:center;padding:2rem;color:var(--muted)">Nenhum veículo encontrado com essa placa.</div></div>';
+      return;
+    }
+    const v = veiculos[0];
+    const historico = await apiFetch(`/veiculos/${v.id}/historico`);
+    const statusBadge = { confirmado:'badge-ativo', concluido:'badge-concluido', cancelado:'badge-cancelado', pendente:'badge-pendente', faltou:'badge-faltou' };
+    result.innerHTML = `
+      <div class="card" style="margin-bottom:1rem">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+            <div style="font-size:2rem">🚗</div>
+            <div>
+              <div style="font-weight:800;font-size:1.1rem">${v.placa}</div>
+              <div style="color:var(--muted);font-size:0.88rem">${v.montadora||'—'} ${v.modelo||''} ${v.ano?`(${v.ano})`:''}</div>
+              ${v.cliente_nome?`<div style="color:var(--accent);font-size:0.85rem;font-weight:600;margin-top:2px">👤 ${v.cliente_nome}</div>`:''}
+              ${v.km_atual?`<div style="color:var(--muted);font-size:0.8rem">📏 ${v.km_atual.toLocaleString('pt-BR')} km</div>`:''}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h2>📋 Histórico de Atendimentos (${historico.length})</h2></div>
+        <div class="table-wrapper">
+          ${historico.length ? historico.map(ag => {
+            const dt = new Date(ag.data_inicio).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'});
+            const itens = Array.isArray(ag.itens) ? ag.itens : [];
+            return `<div style="padding:0.85rem 1.25rem;border-bottom:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <strong>${dt}</strong>
+                <span class="badge ${statusBadge[ag.status]||''}">${ag.status}</span>
+              </div>
+              <div style="font-size:0.82rem;color:var(--muted)">${ag.cliente_nome} · ${ag.profissional_nome||'—'}</div>
+              ${ag.observacoes?`<div style="font-size:0.78rem;color:var(--muted2);margin-top:3px">${ag.observacoes}</div>`:''}
+              ${itens.map(i=>`<div style="display:flex;justify-content:space-between;font-size:0.78rem;padding:2px 0;color:var(--muted)"><span>${i.descricao} x${i.quantidade}</span><span>R$ ${parseFloat(i.subtotal).toFixed(2).replace('.',',')}</span></div>`).join('')}
+              ${parseFloat(ag.total)>0?`<div style="font-weight:700;color:var(--accent);font-size:0.85rem;margin-top:4px">Total: R$ ${parseFloat(ag.total).toFixed(2).replace('.',',')}</div>`:''}
+            </div>`;
+          }).join('') : '<div style="padding:2rem;text-align:center;color:var(--muted)">Nenhum atendimento registrado.</div>'}
+        </div>
+      </div>`;
+  } catch {
+    result.innerHTML = '<div class="alert alert-error">Erro ao buscar histórico.</div>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   ITENS DA ORDEM (produtos/serviços ao concluir)
+══════════════════════════════════════════════════════════ */
+let itensOrdemAtual = []; // [{ produto_id, descricao, valor_unitario, quantidade, tipo }]
+let _agIdEmEdicao = null;
+
+function toggleSecaoItensOrdem(status) {
+  const secao = document.getElementById('secaoItensOrdem');
+  if (!secao) return;
+  secao.style.display = status === 'concluido' ? 'block' : 'none';
+  if (status === 'concluido' && !itensOrdemAtual.length) carregarItensOrdemExistentes();
+}
+
+async function carregarItensOrdemExistentes() {
+  const id = document.getElementById('editAgId').value;
+  if (!id) return;
+  try {
+    const data = await apiFetch(`/itens-ordem/${id}`);
+    itensOrdemAtual = (data || []).map(i => ({
+      produto_id: i.produto_id, descricao: i.descricao,
+      valor_unitario: parseFloat(i.valor_unitario), quantidade: i.quantidade, tipo: i.tipo
+    }));
+    renderItensOrdem();
+  } catch(e) { itensOrdemAtual = []; }
+}
+
+function filtrarItemOrdem(busca) {
+  const sug = document.getElementById('sugestoesItemOrdem');
+  if (!busca || busca.length < 1) { sug.style.display = 'none'; return; }
+  const lista = (produtosCache||[]).filter(p =>
+    p.ativo !== false && p.nome.toLowerCase().includes(busca.toLowerCase())
+  ).slice(0, 8);
+  if (!lista.length) { sug.style.display = 'none'; return; }
+  sug.innerHTML = lista.map(p => `
+    <div onclick="adicionarItemCadastrado(${p.id},'${p.nome.replace(/'/g,"\\'")}',${p.preco||0},'${(p.referencia||'').replace(/'/g,"\\'")}' )"
+      style="padding:0.55rem 0.9rem;cursor:pointer;border-bottom:1px solid var(--border);font-size:0.85rem"
+      onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <div style="font-weight:600">${p.nome}${p.referencia?` <span style="color:var(--muted);font-weight:400;font-size:0.75rem">(${p.referencia})</span>`:''}</div>
+      <div style="color:var(--accent);font-weight:700;font-size:0.8rem">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.',',')}</div>
+    </div>`).join('');
+  sug.style.display = 'block';
+}
+
+function adicionarItemCadastrado(produtoId, nome, preco, ref) {
+  itensOrdemAtual.push({ produto_id: produtoId, descricao: nome, valor_unitario: parseFloat(preco), quantidade: 1, tipo: 'cadastrado' });
+  document.getElementById('buscaItemOrdem').value = '';
+  document.getElementById('sugestoesItemOrdem').style.display = 'none';
+  renderItensOrdem();
+}
+
+function adicionarItemManual() {
+  const desc = document.getElementById('itemManualDesc').value.trim();
+  const valor = parseFloat(document.getElementById('itemManualValor').value) || 0;
+  const qtd = parseInt(document.getElementById('itemManualQtd').value) || 1;
+  if (!desc) { mostrarToast('⚠️ Atenção', 'Informe a descrição do item.'); return; }
+  itensOrdemAtual.push({ produto_id: null, descricao: desc, valor_unitario: valor, quantidade: qtd, tipo: 'manual' });
+  document.getElementById('itemManualDesc').value = '';
+  document.getElementById('itemManualValor').value = '';
+  document.getElementById('itemManualQtd').value = '1';
+  renderItensOrdem();
+}
+
+function removerItemOrdem(idx) {
+  itensOrdemAtual.splice(idx, 1);
+  renderItensOrdem();
+}
+
+function renderItensOrdem() {
+  const el = document.getElementById('listaItensOrdem');
+  const totalBox = document.getElementById('totalItensOrdemBox');
+  if (!el) return;
+  if (!itensOrdemAtual.length) {
+    el.innerHTML = '';
+    if (totalBox) totalBox.style.display = 'none';
+    return;
+  }
+  let total = 0;
+  el.innerHTML = itensOrdemAtual.map((item, idx) => {
+    const sub = item.valor_unitario * item.quantidade;
+    total += sub;
+    const corManual = item.tipo === 'manual' ? 'background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.35)' : 'background:var(--surface);border-color:var(--border)';
+    const tagManual = item.tipo === 'manual' ? '<span style="font-size:0.65rem;background:#f59e0b;color:#fff;padding:1px 6px;border-radius:999px;margin-left:6px">manual</span>' : '';
+    return `<div style="display:flex;align-items:center;gap:0.5rem;border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;font-size:0.85rem;${corManual}">
+      <span style="flex:1;font-weight:600">${item.descricao}${tagManual}</span>
+      <span style="color:var(--muted);font-size:0.78rem">x${item.quantidade}</span>
+      <span style="font-weight:700;color:var(--accent);min-width:70px;text-align:right">R$ ${sub.toFixed(2).replace('.',',')}</span>
+      <button onclick="removerItemOrdem(${idx})" style="background:none;border:none;color:var(--error);cursor:pointer;font-size:1rem">✕</button>
+    </div>`;
+  }).join('');
+  if (totalBox) {
+    totalBox.style.display = 'flex';
+    document.getElementById('totalItensOrdemValor').textContent = `R$ ${total.toFixed(2).replace('.',',')}`;
+  }
+}
+
+async function salvarItensOrdem(agendamentoId) {
+  if (!itensOrdemAtual.length) return;
+  try {
+    await fetch(`${API}/itens-ordem/${agendamentoId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type':'application/json', Authorization:`Bearer ${token}` },
+      body: JSON.stringify({ itens: itensOrdemAtual })
+    });
+  } catch(e) { console.error('Erro ao salvar itens da ordem:', e); }
+}
+
+document.addEventListener('click', e => {
+  const sug = document.getElementById('sugestoesItemOrdem');
+  const inp = document.getElementById('buscaItemOrdem');
+  if (sug && inp && !sug.contains(e.target) && e.target !== inp) sug.style.display = 'none';
+});
 
 init();

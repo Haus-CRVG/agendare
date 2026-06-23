@@ -469,6 +469,9 @@
         <button class="sidebar-item" id="menuRelatorios" onclick="mudarAba('relatorios')" data-aba="relatorios" style="display:none">
           <span class="icon">📊</span> Relatórios
         </button>
+        <button class="sidebar-item" id="menuHistorico" onclick="mudarAba('historico')" data-aba="historico" style="display:none">
+          <span class="icon">🚗</span> Histórico
+        </button>
       </div>
       <div class="sidebar-section">
         <div class="sidebar-label">Minha conta</div>
@@ -870,6 +873,26 @@
         </div>
       </div>
 
+      <!-- ABA: HISTÓRICO (veículos) -->
+      <div id="abaHistorico" style="display:none">
+        <div class="page-header">
+          <div class="page-title">🚗 <span>Histórico de Veículos</span></div>
+          <div class="page-subtitle">Busque pela placa para ver todos os atendimentos</div>
+        </div>
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-body" style="padding:1rem">
+            <div style="display:flex;gap:0.5rem">
+              <input type="text" id="buscaPlacaHist" placeholder="🔍 Digite a placa (ex: ABC1234)..." maxlength="8"
+                oninput="this.value=this.value.toUpperCase()"
+                onkeydown="if(event.key==='Enter')buscarHistoricoPlaca()"
+                style="flex:1;text-transform:uppercase"/>
+              <button class="btn btn-primary" onclick="buscarHistoricoPlaca()">Buscar</button>
+            </div>
+          </div>
+        </div>
+        <div id="resultadoHistorico"></div>
+      </div>
+
     </main>
   </div>
 
@@ -884,13 +907,45 @@
       <!-- Campo cliente (só aparece se módulo clientes ativo) -->
       <div class="form-group" id="campoClienteAg" style="display:none">
         <label>👥 Cliente</label>
-        <div style="position:relative">
-          <input type="text" id="agClienteInput" placeholder="Buscar cliente cadastrado..."
-            oninput="buscarClienteAg(this.value)"
-            autocomplete="off"
-            style="width:100%"/>
-          <input type="hidden" id="agClienteId"/>
-          <div id="sugestoesClienteAg" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:180px;overflow-y:auto;box-shadow:var(--shadow-lg);margin-top:2px"></div>
+        <div style="display:flex;gap:0.5rem">
+          <div style="position:relative;flex:1">
+            <input type="text" id="agClienteInput" placeholder="Buscar cliente..."
+              oninput="buscarClienteAg(this.value)" autocomplete="off" style="width:100%"/>
+            <input type="hidden" id="agClienteId"/>
+            <div id="sugestoesClienteAg" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:180px;overflow-y:auto;box-shadow:var(--shadow-lg);margin-top:2px"></div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="abrirCadastroRapidoCliente()" style="flex-shrink:0">+ Novo</button>
+        </div>
+      </div>
+
+      <!-- Campos Veículo (módulo veiculos) -->
+      <div id="secaoVeiculoAg" style="display:none;margin-bottom:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.85rem">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.6rem">🚗 Dados do Veículo</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.6rem">
+          <div class="form-group" style="margin:0;position:relative">
+            <label>Placa <span style="color:var(--accent)">*</span></label>
+            <input type="text" id="agPlaca" placeholder="ABC-1234" maxlength="8" style="text-transform:uppercase"
+              oninput="this.value=this.value.toUpperCase()" onblur="buscarVeiculoPorPlaca(this.value)"/>
+            <div id="historicoVeiculoBox" style="display:none;margin-top:6px;background:var(--accent-soft);border:1px solid var(--accent-bord);border-radius:8px;padding:6px 10px;font-size:0.76rem;color:var(--accent);cursor:pointer" onclick="abrirHistoricoVeiculoAtual()"></div>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>KM atual</label>
+            <input type="number" id="agKm" placeholder="Ex: 85000" min="0"/>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 100px;gap:0.6rem">
+          <div class="form-group" style="margin:0">
+            <label>Montadora</label>
+            <select id="agMontadora" onchange="atualizarModelosVeiculo()"></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Modelo</label>
+            <select id="agModelo"><option value="">Selecione a montadora</option></select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Ano</label>
+            <input type="number" id="agAno" placeholder="2020" min="1950" max="2030"/>
+          </div>
         </div>
       </div>
 
@@ -991,7 +1046,8 @@
       <h3>📋 Detalhes do Compromisso</h3>
       <div id="detalheAgendamento" style="margin-bottom:1.5rem"></div>
       <div class="form-group"><label>Status</label>
-        <select id="editStatus">
+        <select id="editStatus" onchange="toggleSecaoItensOrdem(this.value)">
+          <option value="pendente">⏳ Pendente</option>
           <option value="confirmado">✅ Confirmado</option>
           <option value="concluido">🏁 Concluído</option>
           <option value="faltou">❌ Faltou</option>
@@ -999,6 +1055,36 @@
         </select>
       </div>
       <input type="hidden" id="editAgId" />
+
+      <!-- Itens da Ordem (produtos/serviços) — aparece ao marcar Concluído -->
+      <div id="secaoItensOrdem" style="display:none;margin-top:1rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:0.9rem">
+        <label style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.6rem">🛠️ Produtos e Serviços</label>
+
+        <!-- Busca produto cadastrado -->
+        <div style="position:relative;margin-bottom:0.6rem">
+          <input type="text" id="buscaItemOrdem" placeholder="🔍 Buscar produto cadastrado..." oninput="filtrarItemOrdem(this.value)"
+            style="width:100%"/>
+          <div id="sugestoesItemOrdem" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--surface);border:1px solid var(--border);border-radius:10px;max-height:160px;overflow-y:auto;box-shadow:var(--shadow-lg);margin-top:2px"></div>
+        </div>
+
+        <!-- Adicionar item manual -->
+        <div style="display:grid;grid-template-columns:1fr 90px 90px 36px;gap:6px;margin-bottom:0.6rem;align-items:end">
+          <div class="form-group" style="margin:0"><label style="font-size:0.68rem">Descrição manual</label><input type="text" id="itemManualDesc" placeholder="Ex: Troca de óleo"/></div>
+          <div class="form-group" style="margin:0"><label style="font-size:0.68rem">Valor</label><input type="number" id="itemManualValor" placeholder="0,00" min="0" step="0.01"/></div>
+          <div class="form-group" style="margin:0"><label style="font-size:0.68rem">Qtd</label><input type="number" id="itemManualQtd" value="1" min="1"/></div>
+          <button class="btn btn-secondary btn-sm" onclick="adicionarItemManual()" style="height:36px;padding:0" title="Adicionar">+</button>
+        </div>
+
+        <!-- Lista de itens -->
+        <div id="listaItensOrdem" style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.6rem"></div>
+
+        <!-- Total -->
+        <div id="totalItensOrdemBox" style="display:none;background:var(--accent-soft);border:1px solid var(--accent-bord);border-radius:8px;padding:0.6rem 0.9rem;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:0.88rem">💰 Total</span>
+          <span id="totalItensOrdemValor" style="font-weight:800;color:var(--accent)">R$ 0,00</span>
+        </div>
+      </div>
+
       <hr style="border-color:var(--border);margin:1.25rem 0" />
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
         <strong style="font-size:0.88rem">👥 Participantes</strong>
@@ -1258,6 +1344,10 @@
         </div>
       </div>
       <div class="form-group">
+        <label>Referência <span style="font-size:0.72rem;color:var(--muted)">(código da peça, opcional)</span></label>
+        <input type="text" id="produtoReferencia" placeholder="Ex: REF-12345"/>
+      </div>
+      <div class="form-group">
         <label>Descrição</label>
         <textarea id="produtoDescricao" placeholder="Descreva o produto, ingredientes, características..."
           style="resize:none;height:80px"></textarea>
@@ -1305,6 +1395,17 @@
           <span id="btnProdutoText">Salvar</span>
           <div class="spinner" id="spinnerProduto"></div>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Histórico Veículo -->
+  <div class="modal-overlay" id="modalHistoricoVeiculo">
+    <div class="modal" style="max-width:620px">
+      <h3>🚗 Histórico — <span id="placaHistoricoVeiculo" style="color:var(--accent)"></span></h3>
+      <div id="listaHistoricoVeiculo" style="max-height:420px;overflow-y:auto;margin:1rem 0"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="document.getElementById('modalHistoricoVeiculo').classList.remove('active')">Fechar</button>
       </div>
     </div>
   </div>
