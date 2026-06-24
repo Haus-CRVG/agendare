@@ -17,6 +17,14 @@
   --shadow-lg:0 8px 32px rgba(0,0,0,.14);
   --radius:8px; --font:'DM Sans',sans-serif; --mono:'DM Mono',monospace;
 }
+[data-theme="dark"] {
+  --bg:#0f172a; --surface:#1e293b; --surface2:#263348; --surface3:#2d3f57;
+  --border:#334155; --border2:#475569;
+  --text:#f1f5f9; --text2:#cbd5e1; --muted:#94a3b8; --muted2:#64748b;
+  --shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.4);
+  --accent-bg:rgba(79,110,247,0.15); --accent-bd:rgba(79,110,247,0.35);
+}
 html,body { min-height:100vh; font-family:var(--font); background:var(--bg); color:var(--text); font-size:13.5px; line-height:1.5; }
 
 /* TOPBAR */
@@ -137,6 +145,7 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
 .cor-dot { width:18px; height:18px; border-radius:50%; border:2px solid var(--border2); display:inline-block; vertical-align:middle; }
 @media(max-width:640px){.form-grid,.form-grid-3{grid-template-columns:1fr}.page{padding:16px}}
   </style>
+  <script>(function(){const t=localStorage.getItem('tema')||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body>
 
@@ -305,6 +314,9 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
         <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.88rem">
           <input type="checkbox" name="nModulo" value="email_auto" style="accent-color:var(--accent);width:16px;height:16px"/> 📧 E-mail Automático
         </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.88rem">
+          <input type="checkbox" name="nModulo" value="veiculos" style="accent-color:var(--accent);width:16px;height:16px"/> 🚗 Veículos (CRM Mecânica)
+        </label>
       </div>
 
       <div id="erroNova"    class="alert alert-error"   style="display:none;margin-top:14px"></div>
@@ -393,6 +405,9 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
       <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.85rem">
         <input type="checkbox" name="eModulo" value="email_auto" style="accent-color:var(--accent);width:15px;height:15px"/> 📧 E-mail Auto
       </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:0.85rem">
+        <input type="checkbox" name="eModulo" value="veiculos" style="accent-color:var(--accent);width:15px;height:15px"/> 🚗 Veículos (CRM Mecânica)
+      </label>
     </div>
 
     <div id="erroEditar" class="alert alert-error" style="display:none;margin-top:12px"></div>
@@ -436,7 +451,19 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
 const API = 'https://agendare-backend-production.up.railway.app/api';
 let token = null, usuarioLogado = null, empresas = [], empresaModalId = null;
 
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const novo = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', novo);
+  localStorage.setItem('tema', novo);
+  const btn = document.getElementById('btnDarkMode');
+  if (btn) btn.textContent = novo === 'dark' ? '☀️' : '🌙';
+}
+
 function init() {
+  // Restaura estado do botão dark mode
+  const btn = document.getElementById('btnDarkMode');
+  if (btn) btn.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
   token = localStorage.getItem('token');
   usuarioLogado = JSON.parse(localStorage.getItem('usuario') || 'null');
   if (!token || !usuarioLogado) { window.location.href = 'login.html'; return; }
