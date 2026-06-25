@@ -139,7 +139,7 @@ function montarAbasMobile() {
 
 // ── Abas ──────────────────────────────────────────────────
 function mudarAba(aba) {
-  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas','abaClientes','abaProdutos','abaFinanceiro','abaRelatorios']
+  ['abaAgenda','abaLista','abaServicos','abaProfissionais','abaDisponibilidade','abaConfiguracoes','abaEmpresas','abaClientes','abaProdutos','abaFinanceiro','abaRelatorios','abaHistorico']
     .forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   const alvo = document.getElementById(`aba${aba.charAt(0).toUpperCase()+aba.slice(1)}`);
   if (alvo) alvo.style.display = 'block';
@@ -154,6 +154,7 @@ function mudarAba(aba) {
   if (aba==='empresas')        carregarEmpresas();
   if (aba==='clientes')        carregarClientes();
   if (aba==='produtos')        carregarProdutos();
+  if (aba==='historico')       { document.getElementById('buscaPlacaHist').value=''; document.getElementById('resultadoHistorico').innerHTML=''; }
 }
 
 // ── Visualização ──────────────────────────────────────────
@@ -2312,7 +2313,7 @@ function toggleDark() {
 /* ══════════════════════════════════════════════════════════
    MÓDULO VEÍCULOS — Montadoras/Modelos, Placa, Histórico
 ══════════════════════════════════════════════════════════ */
-const MONTADORAS_MODELOS = {
+/* const MONTADORAS_MODELOS = {
   'Fiat':      ['Argo','Cronos','Mobi','Pulse','Strada','Toro','Uno','Palio','Siena','Punto','Doblo','Fiorino'],
   'Volkswagen':['Gol','Polo','Virtus','T-Cross','Nivus','Saveiro','Voyage','Fox','Up!','Jetta','Tiguan','Amarok'],
   'Chevrolet': ['Onix','Onix Plus','Tracker','S10','Spin','Cruze','Prisma','Celta','Corsa','Montana','Equinox'],
@@ -2326,6 +2327,139 @@ const MONTADORAS_MODELOS = {
   'Jeep':      ['Renegade','Compass','Commander','Wrangler'],
   'Citroën':   ['C3','C4 Cactus','C4 Lounge','Aircross'],
   'Outra':     [],
+}; */
+
+const MONTADORAS_MODELOS = {
+  'Fiat': [
+    '147','Uno','Mille','Palio','Siena','Weekend','Strada','Toro',
+    'Argo','Cronos','Pulse','Fastback','Mobi','Punto','Bravo',
+    'Linea','Tempra','Tipo','Doblo','Fiorino','Idea','Stilo','Freemont'
+  ],
+
+  'Volkswagen': [
+    'Gol','Parati','Saveiro','Voyage','Fox','CrossFox','SpaceFox',
+    'Up!','Polo','Virtus','Nivus','T-Cross','Taos','Jetta',
+    'Passat','Tiguan','Amarok','Santana','Quantum','Fusca','Kombi'
+  ],
+
+  'Chevrolet': [
+    'Celta','Corsa','Classic','Prisma','Onix','Onix Plus',
+    'Cruze','Tracker','Spin','Montana','S10','Blazer',
+    'Equinox','Captiva','Astra','Vectra','Meriva','Zafira',
+    'Monza','Kadett','Omega','Agile','Cobalt'
+  ],
+
+  'Ford': [
+    'Ka','Fiesta','Focus','EcoSport','Territory','Ranger',
+    'Fusion','Edge','Explorer','Courier','F-1000',
+    'Belina','Corcel','Del Rey','Escort','Verona','Pampa'
+  ],
+
+  'Peugeot': [
+    '106','205','206','207','208','2008','3008','4008',
+    '307','308','408','Partner','Hoggar','Expert'
+  ],
+
+  'Citroën': [
+    'C3','C3 Aircross','C4','C4 Lounge','C4 Cactus',
+    'Xsara','Xsara Picasso','Aircross','Berlingo','Jumpy'
+  ],
+
+  'Renault': [
+    'Kwid','Clio','Sandero','Stepway','Logan','Duster',
+    'Oroch','Captur','Megane','Fluence','Scenic',
+    'Master','Kangoo','Symbol'
+  ],
+
+  'Toyota': [
+    'Corolla','Corolla Cross','Etios','Yaris','Hilux',
+    'SW4','RAV4','Camry','Bandeirante','Prius'
+  ],
+
+  'Honda': [
+    'Civic','City','Fit','HR-V','WR-V','CR-V',
+    'Accord','ZR-V','Passport'
+  ],
+
+  'Hyundai': [
+    'HB20','HB20S','HB20X','Creta','Tucson',
+    'Santa Fe','i30','Azera','Veracruz','ix35'
+  ],
+
+  'Nissan': [
+    'March','Versa','Sentra','Kicks','Frontier',
+    'Livina','Grand Livina','Tiida','Pathfinder'
+  ],
+
+  'Jeep': [
+    'Renegade','Compass','Commander',
+    'Wrangler','Cherokee','Grand Cherokee'
+  ],
+
+  'Mitsubishi': [
+    'L200','Pajero','Pajero Sport','Pajero TR4',
+    'ASX','Outlander','Eclipse Cross'
+  ],
+
+  'Suzuki': [
+    'Jimny','Vitara','Grand Vitara','SX4'
+  ],
+
+  'Kia': [
+    'Picanto','Cerato','Sportage','Sorento',
+    'Bongo','Soul','Carnival'
+  ],
+
+  'BMW': [
+    '116i','118i','120i','320i','328i','330i',
+    'X1','X3','X4','X5','X6','M3'
+  ],
+
+  'Mercedes-Benz': [
+    'Classe A','Classe B','Classe C','Classe E',
+    'GLA','GLB','GLC','GLE','Sprinter'
+  ],
+
+  'Audi': [
+    'A1','A3','A4','A5','A6',
+    'Q3','Q5','Q7','TT'
+  ],
+
+  'Volvo': [
+    'XC40','XC60','XC90','S60','S90','C40'
+  ],
+
+  'BYD': [
+    'Dolphin','Dolphin Mini','Seal','Song Plus',
+    'Yuan Plus','Tan','Han','King'
+  ],
+
+  'GWM': [
+    'Haval H6','Ora 03','Tank 300'
+  ],
+
+  'Chery': [
+    'QQ','Celer','Face','Tiggo 2',
+    'Tiggo 3X','Tiggo 5X','Tiggo 7','Tiggo 8','Arrizo 6'
+  ],
+
+  'JAC': [
+    'J2','J3','J5','J6','T40',
+    'T50','T60','E-JS1'
+  ],
+
+  'Land Rover': [
+    'Defender','Discovery','Discovery Sport',
+    'Range Rover Evoque','Range Rover Sport',
+    'Range Rover Velar'
+  ],
+
+  'Porsche': [
+    '911','Boxster','Cayenne','Macan',
+    'Panamera','Taycan'
+  ],
+
+  'Outra': []
 };
 
 function popularMontadoras() {
