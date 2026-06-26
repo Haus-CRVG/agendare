@@ -273,7 +273,7 @@ tbody tr.row-open td { background:rgba(79,110,247,.05); }
       <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Define como os clientes fazem agendamentos pelo link público.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px">
         <label style="display:flex;align-items:flex-start;gap:10px;padding:14px;background:var(--surface2);border:2px solid var(--accent);border-radius:10px;cursor:pointer;transition:border-color .15s" id="labelNModoServico">
-          <input type="checkbox" name="nModo" value="servicos" id="nModoServicos" checked
+          <input type="checkbox" name="nModo" value="servicos" id="nModoServicos"
             style="accent-color:var(--accent);width:16px;height:16px;margin-top:2px;flex-shrink:0"
             onchange="toggleModoLabel('nModoServicos','labelNModoServico')"/>
           <div>
@@ -672,10 +672,10 @@ async function abrirEditar(id) {
   document.getElementById('editCor').value=cor; document.getElementById('editCorBall').style.background=cor;
   document.getElementById('erroEditar').style.display='none';
   // Carrega modo de operação
-  const modo=e.modo_operacao||'servicos';
+  const modo = e.modo_operacao || '';
   const eS=document.getElementById('eModoServicos'), eP=document.getElementById('eModoProdutos');
-  if(eS){ eS.checked=modo==='servicos'||modo==='ambos'; toggleModoLabel('eModoServicos','labelEModoServico'); }
-  if(eP){ eP.checked=modo==='produtos'||modo==='ambos'; toggleModoLabel('eModoProdutos','labelEModoProduto'); }
+  if(eS){ eS.checked = modo==='servicos' || modo==='ambos'; toggleModoLabel('eModoServicos','labelEModoServico'); }
+  if(eP){ eP.checked = modo==='produtos' || modo==='ambos'; toggleModoLabel('eModoProdutos','labelEModoProduto'); }
   // Carrega módulos ativos
   document.querySelectorAll('input[name="eModulo"]').forEach(c=>c.checked=false);
   const mods=await req('GET',`/modulos/${id}`);

@@ -93,9 +93,13 @@ function init() {
 // ── Módulos ────────────────────────────────────────────────
 async function carregarModulos() {
   try {
-    const mods = await apiFetch('/modulos/minha-empresa');
+    const [mods, empresa] = await Promise.all([
+      apiFetch('/modulos/minha-empresa'),
+      apiFetch('/empresas/minha').catch(() => ({}))
+    ]);
     if (!Array.isArray(mods)) return;
     window._modulosAtivos = mods;
+    window._modoOperacao  = empresa.modo_operacao || 'servicos';
     const tem = m => mods.includes(m);
 
     const menuMap = {
@@ -117,6 +121,12 @@ async function carregarModulos() {
 
     const secao = document.getElementById('sidebarModulos');
     if (secao) secao.style.display = temAlgum ? 'block' : 'none';
+
+    // Controla itens de Gestão conforme modo_operacao
+    const modo = window._modoOperacao;
+    // Serviços → mostra Serviços na sidebar de Gestão
+    const menuServicos = document.querySelector('.sidebar-item[data-aba="servicos"]');
+    if (menuServicos) menuServicos.style.display = (modo === 'servicos' || modo === 'ambos') ? 'flex' : 'none';
 
     // Pré-carrega produtos em background se módulo ativo
     if (tem('produtos')) {
